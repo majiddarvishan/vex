@@ -17,6 +17,8 @@ configure_file(
     @ONLY
 )
 
+include(cmake/CPM.cmake)
+
 # ──────────────────────────────────────────────────────────────
 # Options
 # ──────────────────────────────────────────────────────────────
@@ -71,7 +73,8 @@ option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(BUILD_LOGGER "Build Logger module" ON)
 option(BUILD_THREADPOOL "Build ThreadPool module" ON)
 option(BUILD_NETWORKING "Build Networking module" ON)
-option(BUILD_OBJECT_POOL "Build ObjectPool module" ON)
+option(BUILD_OBJECT_POOL "Build  ObjectPool" ON)
+option(BUILD_MONITORING "Build Monitoring module" ON)
 option(VEX_BUILD_TESTS "Build tests" ON)
 option(VEX_BUILD_EXAMPLES "Build examples" ON)
 
@@ -90,6 +93,27 @@ endif()
 
 if(BUILD_NETWORKING)
     list(APPEND VEX_SOURCES src/networking.cpp)
+endif()
+
+if(BUILD_MONITORING)
+    if(METRICS_MULTI_THREADED)
+        add_compile_definitions(METRICS_MULTI_THREADED)
+        find_package(Threads REQUIRED)
+    endif()
+
+    # find_package(prometheus-cpp CONFIG REQUIRED)
+    CPMAddPackage(
+        NAME prometheus_cpp
+        VERSION 1.3.0
+        GIT_REPOSITORY "https://github.com/jupp0r/prometheus-cpp.git"
+        GIT_TAG v1.3.0
+        OPTIONS
+            "BUILD_SHARED_LIBS ON"
+            "ENABLE_TESTING OFF"
+            "OVERRIDE_CXX_STANDARD_FLAGS OFF"
+            "GENERATE_PKGCONFIG OFF"
+            "USE_THIRDPARTY_LIBRARIES ON"
+    )
 endif()
 
 # ──────────────────────────────────────────────────────────────
