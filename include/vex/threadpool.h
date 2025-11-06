@@ -7,7 +7,7 @@
 #include <thread>
 #include <vector>
 
-namespace daric
+namespace vex
 {
 
 class ThreadPool
@@ -68,4 +68,4 @@ class ThreadPool
     std::atomic<bool> stop;
 };
 
-}  // namespace daric
+}  // namespace vex

@@ -7,9 +7,9 @@
 #include <vector>
 
 // #include "object_pool.h"
-#include "daric/daric.h"
+#include "vex/vex.h"
 
-using namespace daric::object_pool;
+using namespace vex::object_pool;
 
 // A small test object
 struct TestObj {

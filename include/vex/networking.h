@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <vector>
 
-namespace daric
+namespace vex
 {
 
 class TCPServer
@@ -138,4 +138,4 @@ class TCPClient
     int sock_;
 };
 
-}  // namespace daric
+}  // namespace vex

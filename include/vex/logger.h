@@ -3,7 +3,7 @@
 #include <mutex>
 #include <string>
 
-namespace daric
+namespace vex
 {
 
 enum class LogLevel
@@ -46,4 +46,4 @@ class Logger
     std::mutex mutex_;
 };
 
-}  // namespace daric
+}  // namespace vex

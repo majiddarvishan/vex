@@ -14,7 +14,7 @@
 #include <sstream>
 #include <memory>
 
-namespace daric::object_pool::internal
+namespace vex::object_pool::internal
 {
 class PrometheusMetrics {
 public:
@@ -140,7 +140,7 @@ private:
 #include <thread>
 
 // Provide dummy definitions so code compiles without Prometheus
-namespace daric::object_pool::internal {
+namespace vex::object_pool::internal {
 class PrometheusMetrics {
 public:
     static PrometheusMetrics& instance() { static PrometheusMetrics inst; return inst; }

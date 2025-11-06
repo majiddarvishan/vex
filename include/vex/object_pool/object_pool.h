@@ -15,7 +15,7 @@
 
 #include "internal/prometheus_metrics.h"
 
-namespace daric::object_pool
+namespace vex::object_pool
 {
 class ObjectPool : public std::enable_shared_from_this<ObjectPool>
 {
@@ -257,4 +257,4 @@ class ObjectPool : public std::enable_shared_from_this<ObjectPool>
     mutable std::mutex lifetime_mtx_;
     std::unordered_map<void*, LifetimeInfo> lifetime_map_;
 };
-}  // namespace daric::object_pool
+}  // namespace vex::object_pool

@@ -1,10 +1,20 @@
-# Daric
+<!-- ![Vex Logo](assets/logo.jpg) -->
+<p align="center">
+  <img src="assets/vex-logo.png" alt="Vex Logo" width="180"/>
+</p>
 
-**Daric** is a modern C++ utility library.
+# Vex — Fast. Simple. Professional.
+
+A modern C++ utility library focused on **performance**, **simplicity**, and **professional-grade tooling**.
+
+**Vex** is a modern C++ utility library.
 It provides **thread-safe logging, thread pool management, and networking modules** out of the box.
-Daric is modular, so you can enable only the features you need.
+Vex is modular, so you can enable only the features you need.
 
 ## Features
+- 🚀 Zero-overhead
+- ⚡ High-performance
+- 🛠 Minimal, header-only
 
 - **Logger**: Thread-safe singleton logging system with `Info`, `Warning`, and `Error` levels.
 - **ThreadPool**: Flexible thread pool for parallel task execution.
@@ -12,14 +22,12 @@ Daric is modular, so you can enable only the features you need.
 - **Modular CMake**: Select which modules to build: Logger, ThreadPool, Networking.
 - **Expandable**: Easily add new modules (database, serialization, etc.) without breaking existing code.
 
-
-
 ## Directory Structure
 
 ```bash
-Daric/
+vex/
 ├── CMakeLists.txt
-├── include/daric/ # Public headers
+├── include/vex/ # Public headers
 ├── src/ # Source files
 ├── examples/ # Usage examples
 └── tests/ # Unit tests
@@ -30,8 +38,8 @@ Daric/
 1. **Clone the repository**
 
 ```bash
-git clone <your-repo-url> Daric
-cd Daric
+git clone <your-repo-url> vex
+cd vex
 ```
 
 2. **Configure the build**
@@ -74,27 +82,27 @@ cmake --install build --prefix /usr/local
 
 This will install:
 
-- libDaric.a → /usr/local/lib
-- include/daric/* → /usr/local/include/daric
+- libvex.a → /usr/local/lib
+- include/vex/* → /usr/local/include/vex
 
-## Usage Example
+## Quick Start
 
 ```cpp
-#include "daric/daric.h"
+#include "vex/vex.h"
 
 int main() {
 #ifdef BUILD_LOGGER
-    auto &logger = daric::Logger::instance();
-    logger.log(daric::LogLevel::Info, "Daric Logger is working!");
+    auto &logger = ::vexLogger::instance();
+    logger.log(::vexLogLevel::Info, "Vex Logger is working!");
 #endif
 
 #ifdef BUILD_THREADPOOL
-    daric::ThreadPool pool(4);
+    ::vexThreadPool pool(4);
     pool.enqueue([]{ /* your task */ });
 #endif
 
 #ifdef BUILD_NETWORKING
-    daric::TCPClient client("127.0.0.1", 8080);
+    ::vexTCPClient client("127.0.0.1", 8080);
     client.connectToServer();
 #endif
 

@@ -16,7 +16,7 @@
 #include <prometheus/gauge.h>
 #include <prometheus/registry.h>
 
-namespace daric::object_pool::internal
+namespace vex::object_pool::internal
 {
 class PrometheusMetrics
 {
@@ -148,4 +148,4 @@ class PrometheusMetrics
 
     std::unordered_map<Key, Handles, KeyHash> handles_;
 };
-}  // namespace daric::object_pool::internal
+}  // namespace vex::object_pool::internal

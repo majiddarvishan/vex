@@ -3,7 +3,7 @@
 # -----------------------------
 # if(BUILD_LOGGER)
 #     add_executable(test_logger test_logger.cpp)
-#     target_link_libraries(test_logger PRIVATE daric)
+#     target_link_libraries(test_logger PRIVATE vex)
 #     add_test(NAME LoggerTest COMMAND test_logger)
 # endif()
 
@@ -13,7 +13,7 @@
 # You can add networking tests similarly
 # if(BUILD_NETWORKING)
 #     add_executable(test_network test_network.cpp)
-#     target_link_libraries(test_network PRIVATE daric)
+#     target_link_libraries(test_network PRIVATE vex)
 #     add_test(NAME NetworkTest COMMAND test_network)
 # endif()
 
@@ -34,7 +34,7 @@ if(BUILD_OBJECT_POOL)
         target_compile_definitions(pool_tsan_test PRIVATE ENABLE_PROMETHEUS_METRICS)
         target_link_libraries(pool_tsan_test
             PRIVATE
-            daric
+            vex
             prometheus-cpp::pull
             pthread
         )
@@ -42,7 +42,7 @@ if(BUILD_OBJECT_POOL)
         message(STATUS "ENABLE_PROMETHEUS_METRICS is OFF")
         target_link_libraries(pool_tsan_test
             PRIVATE
-            daric
+            vex
             pthread
         )
     endif()

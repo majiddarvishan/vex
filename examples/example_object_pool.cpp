@@ -1,6 +1,6 @@
 // #ifdef BUILD_OBJECT_POOL
 
-#include "daric/daric.h"
+#include "vex/vex.h"
 
 #include <prometheus/registry.h>
 #include <prometheus/exposer.h>
@@ -10,7 +10,7 @@
 #include <vector>
 #include <chrono>
 
-using namespace daric::object_pool;
+using namespace vex::object_pool;
 
 // Example message class
 struct Message {

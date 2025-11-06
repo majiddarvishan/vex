@@ -18,7 +18,7 @@ CPMAddPackage(
 # -----------------------------
 if(BUILD_LOGGER)
     add_executable(example_logger example_logger.cpp)
-    target_link_libraries(example_logger PRIVATE daric)
+    target_link_libraries(example_logger PRIVATE vex)
 endif()
 
 # -----------------------------
@@ -26,7 +26,7 @@ endif()
 # -----------------------------
 if(BUILD_NETWORKING)
     add_executable(example_network example_network.cpp)
-    target_link_libraries(example_network PRIVATE daric)
+    target_link_libraries(example_network PRIVATE vex)
 endif()
 
 # -----------------------------
@@ -42,11 +42,11 @@ if(BUILD_OBJECT_POOL)
         target_compile_definitions(example_object_pool PRIVATE ENABLE_PROMETHEUS_METRICS)
         target_link_libraries(example_object_pool
             PRIVATE
-            daric
+            vex
             prometheus-cpp::pull
         )
     else()
         message(STATUS "ENABLE_PROMETHEUS_METRICS is OFF")
-        target_link_libraries(example_object_pool PRIVATE daric)
+        target_link_libraries(example_object_pool PRIVATE vex)
     endif()
 endif()

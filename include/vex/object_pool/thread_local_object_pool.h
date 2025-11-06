@@ -12,7 +12,7 @@
 // created using std::make_shared<ObjectPool>() so deleters can use
 // weak_from_this safely.
 
-namespace daric::object_pool
+namespace vex::object_pool
 {
 class ThreadLocalObjectPool
 {
@@ -50,4 +50,4 @@ class ThreadLocalObjectPool
         internal::PrometheusMetrics::instance().set_registry(registry);
     }
 };
-}  // namespace daric::object_pool
+}  // namespace vex::object_pool
