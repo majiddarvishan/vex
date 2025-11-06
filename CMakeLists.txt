@@ -5,6 +5,18 @@ project(vex
         LANGUAGES CXX
 )
 
+set(VEX_VERSION_MAJOR ${vex_VERSION_MAJOR})
+set(VEX_VERSION_MINOR ${vex_VERSION_MINOR})
+set(VEX_VERSION_PATCH ${vex_VERSION_PATCH})
+set(VEX_VERSION_TAG   "")
+
+# autimatially generate version.hpp
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vex/version.hpp
+    @ONLY
+)
+
 # ──────────────────────────────────────────────────────────────
 # Options
 # ──────────────────────────────────────────────────────────────
