@@ -1,3 +1,0 @@
-#include "vex/networking.h"
-
-// Empty: all implemented inline for simplicity (can split later if needed)

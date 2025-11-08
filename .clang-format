@@ -1,0 +1,204 @@
+# Main style properties
+Language: Cpp
+Standard: Latest
+BasedOnStyle: Google
+
+# Columns and Lines
+ColumnLimit: 80
+#ReflowComments: true
+#TabWidth: 4
+#UseCRLF: false
+UseTab: Never
+#DeriveLineEnding: true
+
+# Breaking around braces
+BreakBeforeBraces: Allman #Mozilla
+
+BraceWrapping:
+
+  # Control
+  AfterControlStatement: Always
+  AfterCaseLabel: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeWhile: true
+
+  # Definition
+  AfterNamespace: true
+  AfterStruct: true
+  AfterClass: true
+  AfterObjCDeclaration: true
+  SplitEmptyRecord: true
+  AfterFunction: true
+  SplitEmptyFunction: true
+  BeforeLambdaBody: false
+  AfterEnum: true
+  SplitEmptyNamespace: true
+  AfterUnion: true
+  AfterExternBlock: true
+
+  # Extra
+  IndentBraces: true
+
+# Breaking around specifiers
+
+# Namespaces
+#CompactNamespaces: false
+
+# Templates
+#AlwaysBreakTemplateDeclarations: Yes
+#BreakBeforeConceptDeclarations: true
+
+# Classes
+BreakInheritanceList: BeforeComma
+#EmptyLineAfterAccessModifier: Never
+#EmptyLineBeforeAccessModifier: Leave
+
+# Functions
+#AlwaysBreakAfterDefinitionReturnType: None
+#AlwaysBreakAfterReturnType: None
+MaxEmptyLinesToKeep: 2
+
+# Strings
+AlwaysBreakBeforeMultilineStrings: true
+BreakStringLiterals: true
+
+# Expressions
+BreakConstructorInitializers: BeforeColon
+#BreakBeforeBinaryOperators: All
+#BreakBeforeTernaryOperators: false
+
+# Breaking single line blocks
+# Control
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Declarations
+#AllowShortEnumsOnASingleLine: false
+
+# Function
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortFunctionsOnASingleLine: Empty
+#AllowShortLambdasOnASingleLine: Inline
+
+# Expressions
+AllowAllArgumentsOnNextLine: true
+
+# Indentation
+IndentFunctionDeclarationAfterType: true
+IndentWidth: 4
+
+# Definitions
+NamespaceIndentation: All
+#IndentExternBlock: NoIndent
+#IndentPPDirectives: AfterHash
+
+# Classes
+AccessModifierOffset: -4
+#IndentAccessModifiers: false
+
+# Templates
+#IndentRequires: false
+
+# Functions
+#IndentWrappedFunctionNames: false
+#LambdaBodyIndentation: OuterScope
+
+# Control
+ConstructorInitializerIndentWidth: 4
+#IndentCaseBlocks: false
+IndentCaseLabels: true
+#IndentGotoLabels: true
+
+# Expressions
+ContinuationIndentWidth: 2
+
+#InsertTrailingCommas: None
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Alignment
+# Macros
+AlignConsecutiveMacros: Consecutive
+AttributeMacros: ['FUTURES_CONSTEXPR']
+
+# Declaration
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+DerivePointerAlignment: true
+AlignConsecutiveDeclarations: false
+
+# Namespace
+ShortNamespaceLines: 0
+
+# Brackets
+AlignAfterOpenBracket: BlockIndent
+
+# Expressions
+AlignArrayOfStructures: Left
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveBitFields: Consecutive
+AlignEscapedNewlines: Right
+AlignOperands: Align
+AlignTrailingComments: true
+
+# Spaces
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: false
+SpacesInSquareBrackets: false
+SpaceBeforeSquareBrackets: false
+SpacesBeforeTrailingComments: 1
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesInAngles: Never
+SpacesInCStyleCastParentheses: false
+SpacesInConditionalStatement: false
+SpacesInParentheses: false
+Cpp11BracedListStyle: true
+
+# BinPack
+BinPackArguments: false
+#BinPackParameters: false
+#BitFieldColonSpacing: After
+#ExperimentalAutoDetectBinPacking: true
+
+# Penalties
+PenaltyBreakAssignment: 512
+PenaltyBreakBeforeFirstCallParameter: 512
+PenaltyBreakComment: 512
+PenaltyBreakFirstLessLess: 512
+PenaltyBreakString: 512
+PenaltyBreakTemplateDeclaration: 512
+PenaltyExcessCharacter: 256
+PenaltyIndentedWhitespace: 8
+PenaltyReturnTypeOnItsOwnLine: 2
+
+# Sorting
+SortIncludes: CaseInsensitive
+#SortUsingDeclarations: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^"[a-z0-9_\-\.\/]+\.(h|hpp)"$'                          # impl header
+    SortPriority:        5
+  - Regex:           '^<[a-z0-9_\-\.\/]+\.(h|hpp)>$'                          # external
+    SortPriority:        3
+  - Regex:           '^(["<](boost|cppkafka|small|asio|futures|fmt)/)'   # external
+    SortPriority:        2
+  - Regex:           '<[[:alnum:].]+>'                          # C++
+    SortPriority:        6
+  - Regex:           '.*'                                       # any other
+    SortPriority:        7
+
+# Comments
+# FixNamespaceComments: true
+# CommentPragmas:  '^ clang-format'

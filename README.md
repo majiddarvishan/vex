@@ -1,6 +1,6 @@
-<!-- ![Vex Logo](assets/logo.jpg) -->
+<!-- ![Vex Logo](assets/logo.png) -->
 <p align="center">
-  <img src="assets/vex-logo.png" alt="Vex Logo" width="180"/>
+  <img src="assets/logo.png" alt="Vex Logo" width="180"/>
 </p>
 
 # Vex — Fast. Simple. Professional.
