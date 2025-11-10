@@ -4,7 +4,6 @@
 
 namespace vex
 {
-
     namespace detail
     {
         /// Use inline helper to work around static_assert in expression context
@@ -60,47 +59,3 @@ namespace vex
     (detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
      vex::MetricsManager::CreateHistogram(registry, name, help, ##__VA_ARGS__) \
     )
-
-
-// #define SAFE_CREATE_COUNTER(registry, name, help, ...) \
-//     [&]() { \
-//         static_assert(vex::detail::ValidateName(name), \
-//                      "Invalid metric name: " name); \
-//         return vex::MetricsManager::CreateCounter(registry, name, help, ##__VA_ARGS__); \
-//     }()
-
-// #define SAFE_CREATE_GAUGE(registry, name, help, ...) \
-//     [&]() { \
-//         static_assert(vex::detail::ValidateName(name), \
-//                      "Invalid metric name: " name); \
-//         return vex::MetricsManager::CreateGauge(registry, name, help, ##__VA_ARGS__); \
-//     }()
-
-// #define SAFE_CREATE_HISTOGRAM(registry, name, help, ...) \
-//     [&]() { \
-//         static_assert(vex::detail::ValidateName(name), \
-//                      "Invalid metric name: " name); \
-//         return vex::MetricsManager::CreateHistogram(registry, name, help, ##__VA_ARGS__); \
-//     }()
-
-
-// // #define SAFE_CREATE_COUNTER(registry, name, help, labels) \
-// //     []() { \
-// //         static_assert(vex::detail::ValidateName(name), \
-// //                      "Invalid metric name: " name); \
-// //         return vex::MetricsManager::CreateCounter(registry, name, help, labels); \
-// //     }()
-
-// // #define SAFE_CREATE_GAUGE(registry, name, help, labels) \
-// //     []() { \
-// //         static_assert(vex::detail::ValidateName(name), \
-// //                      "Invalid metric name: " name); \
-// //         return vex::MetricsManager::CreateGauge(registry, name, help, labels); \
-// //     }()
-
-// // #define SAFE_CREATE_HISTOGRAM(registry, name, help, labels, buckets) \
-// //     []() { \
-// //         static_assert(vex::detail::ValidateName(name), \
-// //                      "Invalid metric name: " name); \
-// //         return vex::MetricsManager::CreateHistogram(registry, name, help, labels, buckets); \
-// //     }()

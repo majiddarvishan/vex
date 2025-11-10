@@ -34,13 +34,13 @@ include(GNUInstallDirs)
 # )
 # FetchContent_MakeAvailable(CPM)
 
-include(${CMAKE_SOURCE_DIR}/cmake/CPM.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
 
 # Headers available to consumers
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Load module options and add_subdirectory calls
-include(${CMAKE_SOURCE_DIR}/modules.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/modules.cmake)
 
 # Collect targets for install/export
 set(VEX_EXPORT_TARGETS "")
@@ -82,7 +82,7 @@ install(
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
-    "${CMAKE_SOURCE_DIR}/cmake/VexConfig.cmake.in"
+    "${PROJECT_SOURCE_DIR}/cmake/VexConfig.cmake.in"
     "${CMAKE_BINARY_DIR}/VexConfig.cmake"
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vex
 )
