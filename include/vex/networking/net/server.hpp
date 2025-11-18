@@ -53,8 +53,11 @@ public:
         {
             if (auto* bind_req = std::get_if<bind_request>(&req))
             {
-                bind_callback_(*bind_req, sequence_number);
-                bind_callback_ = {}; // Clear bind callback after handling
+                // CRITICAL: Move the callback to a local variable first
+                // This keeps it (and any captured shared_ptrs) alive during the call
+                auto callback = std::move(bind_callback_);
+                bind_callback_ = {}; // Clear the member now
+                callback(*bind_req, sequence_number); // Call with callback still alive
                 return;
             }
         }
@@ -67,7 +70,12 @@ public:
     void on_response(response&& resp, uint32_t sequence_number, command_status status) override
     {
         if (response_callback_)
-            response_callback_(std::move(resp), sequence_number, status);
+        {
+            // Defensive: copy callback to local variable to ensure it stays alive
+            // during execution, even if the callback clears itself
+            auto callback = response_callback_;
+            callback(std::move(resp), sequence_number, status);
+        }
     }
 };
 
