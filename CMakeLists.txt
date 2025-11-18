@@ -57,6 +57,9 @@ endif()
 if(TARGET thread_pool)
     list(APPEND VEX_EXPORT_TARGETS thread_pool)
 endif()
+if(TARGET networking)
+    list(APPEND VEX_EXPORT_TARGETS networking)
+endif()
 
 # Install targets and headers
 if(VEX_EXPORT_TARGETS)

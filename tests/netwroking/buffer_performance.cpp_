@@ -1,0 +1,896 @@
+#include <vex/networking/net/detail/flat_buffer.hpp>
+#include "reference_buffer.hpp"
+#include <chrono>
+#include <iostream>
+#include <random>
+#include <vector>
+#include <algorithm>
+#include <iomanip>
+#include <thread>
+#include <memory>
+#include <cstring>
+#include <numeric>
+
+namespace test {
+
+using Clock = std::chrono::high_resolution_clock;
+using Duration = std::chrono::microseconds;
+
+// Test configuration
+constexpr size_t BUFFER_SIZE = 1024 * 1024;  // 1MB
+constexpr size_t NUM_ITERATIONS = 1000;
+constexpr size_t SMALL_SIZE = 16;
+constexpr size_t MEDIUM_SIZE = 1024;
+constexpr size_t LARGE_SIZE = 64 * 1024;
+
+// Usage pattern enum for different test scenarios
+enum class UsagePattern {
+    Sequential,      // Sequential prepare-commit-consume pattern
+    PingPong,       // Alternating prepare and consume operations
+    BatchProcess    // Batch prepare followed by batch consume
+};
+
+// Forward declarations
+struct OperationStats;
+struct TestResult;
+template<typename BufferType, size_t Size> TestResult run_test(const char* name);
+template<size_t Size> void compare_implementations();
+void print_results(const char* test_name, const TestResult& result);
+template<typename BufferType>
+TestResult run_pattern_test(UsagePattern pattern);
+
+// Test configuration
+constexpr size_t BUFFER_SIZE = 1024 * 1024;  // 1MB
+constexpr size_t NUM_ITERATIONS = 1000;
+constexpr size_t SMALL_SIZE = 16;
+constexpr size_t MEDIUM_SIZE = 1024;
+constexpr size_t LARGE_SIZE = 64 * 1024;
+
+// Test structures
+struct OperationStats {
+    Duration total_time{};
+    Duration min_time{Duration::max()};
+    Duration max_time{};
+    size_t count{0};
+
+    void update(Duration duration) {
+        total_time += duration;
+        min_time = std::min(min_time, duration);
+        max_time = std::max(max_time, duration);
+        ++count;
+    }
+
+    double avg_time() const {
+        return count > 0 ? static_cast<double>(total_time.count()) / count : 0.0;
+    }
+};
+
+struct TestResult {
+    OperationStats prepare_stats;
+    OperationStats commit_stats;
+    OperationStats consume_stats;
+    Duration total_time{};
+    size_t bytes_processed{0};
+    size_t num_operations{0};
+    size_t cache_misses{0};
+    mutable double avg_latency{0.0};
+    size_t compactions{0};
+};
+
+// Function declarations
+template<typename BufferType, size_t Size>
+TestResult run_test(const char* name);
+
+template<size_t Size>
+void compare_implementations();
+
+void print_results(const char* test_name, const TestResult& result);
+
+template<typename BufferType>
+TestResult run_pattern_test(UsagePattern pattern);
+    Duration total_time{};
+    Duration min_time{Duration::max()};
+    Duration max_time{};
+    size_t count{0};
+
+    void update(Duration duration) {
+        total_time += duration;
+        min_time = std::min(min_time, duration);
+        max_time = std::max(max_time, duration);
+        ++count;
+    }
+
+    double avg_time() const {
+        return count > 0 ? static_cast<double>(total_time.count()) / count : 0.0;
+    }
+};
+
+// Test result structure
+struct TestResult {
+    OperationStats prepare_stats;
+    OperationStats commit_stats;
+    OperationStats consume_stats;
+    Duration total_time{};
+    size_t bytes_processed{0};
+    size_t num_operations{0};
+    size_t cache_misses{0};
+    mutable double avg_latency{0.0};
+    size_t compactions{0};
+};
+
+// Print test results with detailed statistics
+void print_results(const char* test_name, const TestResult& result) {
+    std::cout << "\n=== " << test_name << " ===\n"
+              << "Total time: " << result.total_time.count() << " μs\n"
+              << "Average latency: " << result.avg_latency << " μs\n"
+              << "Operations: " << result.num_operations << "\n"
+              << "Bytes processed: " << result.bytes_processed << "\n"
+              << "Throughput: " << (result.bytes_processed / 1024.0 / 1024.0) /
+                                 (result.total_time.count() / 1000000.0) << " MB/s\n";
+
+    std::cout << "\n=== Prepare Operations ===\n"
+              << "Average time: " << result.prepare_stats.avg_time() << " μs\n"
+              << "Min time: " << result.prepare_stats.min_time.count() << " μs\n"
+              << "Max time: " << result.prepare_stats.max_time.count() << " μs\n";
+
+    std::cout << "\n=== Commit Operations ===\n"
+              << "Average time: " << result.commit_stats.avg_time() << " μs\n"
+              << "Min time: " << result.commit_stats.min_time.count() << " μs\n"
+              << "Max time: " << result.commit_stats.max_time.count() << " μs\n";
+
+    std::cout << "\n=== Consume Operations ===\n"
+              << "Average time: " << result.consume_stats.avg_time() << " μs\n"
+              << "Min time: " << result.consume_stats.min_time.count() << " μs\n"
+              << "Max time: " << result.consume_stats.max_time.count() << " μs\n\n";
+}
+
+// Implementation of the test function
+template<typename BufferType, size_t Size>
+TestResult run_test(const char* name) {
+    TestResult result{};
+    BufferType buffer(BUFFER_SIZE);
+    std::vector<char> test_data(Size);
+
+    // Generate random test data
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 255);
+    std::generate(test_data.begin(), test_data.end(), [&]() { return static_cast<char>(dis(gen)); });
+
+    result.bytes_processed = Size * NUM_ITERATIONS;
+    result.num_operations = NUM_ITERATIONS;
+
+    auto test_start = Clock::now();
+
+    for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+        auto t1 = Clock::now();
+
+        // Prepare operation
+        char* write_ptr = buffer.prepare(Size);
+        auto t2 = Clock::now();
+
+        // Commit operation
+        std::memcpy(write_ptr, test_data.data(), Size);
+        buffer.commit(Size);
+        auto t3 = Clock::now();
+
+        // Consume operation
+        buffer.consume(Size);
+        auto t4 = Clock::now();
+
+        // Record timing statistics
+        result.prepare_stats.update(std::chrono::duration_cast<Duration>(t2 - t1));
+        result.commit_stats.update(std::chrono::duration_cast<Duration>(t3 - t2));
+        result.consume_stats.update(std::chrono::duration_cast<Duration>(t4 - t3));
+    }
+
+    result.total_time = std::chrono::duration_cast<Duration>(Clock::now() - test_start);
+    result.avg_latency = static_cast<double>(result.total_time.count()) / NUM_ITERATIONS;
+
+    print_results(name, result);
+    return result;
+}
+
+// Run tests comparing different buffer implementations
+template<size_t Size>
+void compare_implementations() {
+    std::cout << "\nRunning performance comparison with size: " << Size << " bytes\n"
+              << "=================================================\n";
+
+    using FlatBuffer = pa::pinex::net::detail::flat_buffer;
+    using ReferenceBuffer = test::reference_buffer;
+
+    auto flat_result = run_test<FlatBuffer, Size>("Flat Buffer");
+    auto ref_result = run_test<ReferenceBuffer, Size>("Reference Buffer");
+
+    // Compare results
+    auto flat_throughput = (flat_result.bytes_processed / 1024.0 / 1024.0) /
+                          (flat_result.total_time.count() / 1000000.0);
+    auto ref_throughput = (ref_result.bytes_processed / 1024.0 / 1024.0) /
+                         (ref_result.total_time.count() / 1000000.0);
+
+    double speedup = ref_throughput > 0 ? flat_throughput / ref_throughput : 0;
+
+    std::cout << "\nComparison Summary:\n"
+              << "===================\n"
+              << "Flat Buffer Throughput: " << flat_throughput << " MB/s\n"
+              << "Reference Buffer Throughput: " << ref_throughput << " MB/s\n"
+              << "Speedup: " << speedup << "x\n\n";
+}
+
+} // namespace test
+
+int main() {
+    std::cout << "Starting buffer performance tests...\n";
+
+    // Run tests with different buffer sizes
+    test::compare_implementations<test::SMALL_SIZE>();
+    test::compare_implementations<test::MEDIUM_SIZE>();
+    test::compare_implementations<test::LARGE_SIZE>();
+
+    return 0;
+}
+
+}
+              << "Min time: " << result.prepare_stats.min_time.count() << " μs\n"
+              << "Max time: " << result.prepare_stats.max_time.count() << " μs\n";
+
+    std::cout << "\n=== Commit Operations ===\n"
+              << "Average time: " << result.commit_stats.avg_time() << " μs\n"
+              << "Min time: " << result.commit_stats.min_time.count() << " μs\n"
+              << "Max time: " << result.commit_stats.max_time.count() << " μs\n";
+
+    std::cout << "\n=== Consume Operations ===\n"
+              << "Average time: " << result.consume_stats.avg_time() << " μs\n"
+              << "Min time: " << result.consume_stats.min_time.count() << " μs\n"
+              << "Max time: " << result.consume_stats.max_time.count() << " μs\n\n";
+}
+
+// Run tests comparing different buffer implementations
+template<size_t Size>
+void compare_implementations() {
+    std::cout << "\nRunning performance comparison with size: " << Size << " bytes\n"
+              << "=================================================\n";
+
+    using FlatBuffer = pa::pinex::net::detail::flat_buffer;
+    using ReferenceBuffer = test::reference_buffer;
+
+    auto flat_result = run_test<FlatBuffer, Size>("Flat Buffer");
+    auto ref_result = run_test<ReferenceBuffer, Size>("Reference Buffer");
+
+    // Compare results
+    auto flat_throughput = (flat_result.bytes_processed / 1024.0 / 1024.0) /
+                          (flat_result.total_time.count() / 1000000.0);
+    auto ref_throughput = (ref_result.bytes_processed / 1024.0 / 1024.0) /
+                         (ref_result.total_time.count() / 1000000.0);
+
+    double speedup = ref_throughput > 0 ? flat_throughput / ref_throughput : 0;
+
+    std::cout << "\nComparison Summary:\n"
+              << "===================\n"
+              << "Flat Buffer Throughput: " << flat_throughput << " MB/s\n"
+              << "Reference Buffer Throughput: " << ref_throughput << " MB/s\n"
+              << "Speedup: " << speedup << "x\n\n";
+}
+
+// Implementation of the test function
+template<typename BufferType, size_t Size>
+TestResult run_test(const char* name) {
+    TestResult result{};
+    BufferType buffer(BUFFER_SIZE);
+    std::vector<char> test_data(Size);
+
+    // Generate random test data
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 255);
+    std::generate(test_data.begin(), test_data.end(), [&]() { return static_cast<char>(dis(gen)); });
+
+    result.bytes_processed = Size * NUM_ITERATIONS;
+    result.num_operations = NUM_ITERATIONS;
+
+    auto test_start = Clock::now();
+
+    for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+        auto t1 = Clock::now();
+
+        // Prepare operation
+        char* write_ptr = buffer.prepare(Size);
+        auto t2 = Clock::now();
+
+        // Commit operation
+        std::memcpy(write_ptr, test_data.data(), Size);
+        buffer.commit(Size);
+        auto t3 = Clock::now();
+
+        // Consume operation
+        buffer.consume(Size);
+        auto t4 = Clock::now();
+
+        // Record timing statistics
+        result.prepare_stats.update(std::chrono::duration_cast<Duration>(t2 - t1));
+        result.commit_stats.update(std::chrono::duration_cast<Duration>(t3 - t2));
+        result.consume_stats.update(std::chrono::duration_cast<Duration>(t4 - t3));
+    }
+
+    result.total_time = std::chrono::duration_cast<Duration>(Clock::now() - test_start);
+    result.avg_latency = static_cast<double>(result.total_time.count()) / NUM_ITERATIONS;
+
+    print_results(name, result);
+    return result;
+}
+struct OperationStats {
+    Duration total_time{};
+    Duration min_time{Duration::max()};
+    Duration max_time{};
+    size_t count{0};
+
+    void update(Duration duration) {
+        total_time += duration;
+        min_time = std::min(min_time, duration);
+        max_time = std::max(max_time, duration);
+        ++count;
+    }
+
+    double avg_time() const {
+        return count > 0 ? static_cast<double>(total_time.count()) / count : 0.0;
+    }
+};
+
+// Test result structure containing operation statistics
+struct TestResult {
+    OperationStats prepare_stats;
+    OperationStats commit_stats;
+    OperationStats consume_stats;
+    Duration total_time{};
+    size_t bytes_processed{0};
+    size_t num_operations{0};
+    size_t cache_misses{0};
+    mutable double avg_latency{0.0};
+    size_t compactions{0};  // Number of times buffer was compacted
+};
+
+// Function to print test results
+void print_results(const char* test_name, const TestResult& result) {
+    const double mb_processed = static_cast<double>(result.bytes_processed) / (1024 * 1024);
+    const double seconds = static_cast<double>(result.total_time.count()) / 1'000'000;
+    const double throughput = mb_processed / seconds;
+
+    // Calculate average latency
+    result.avg_latency = result.num_operations > 0 ?
+        static_cast<double>(result.total_time.count()) / result.num_operations : 0.0;
+
+    std::cout << "\nTest: " << test_name << "\n"
+              << "=== Overall Performance ===\n"
+              << std::fixed << std::setprecision(2)
+              << "Total time: " << result.total_time.count() / 1000.0 << " ms\n"
+              << "Throughput: " << throughput << " MB/s\n"
+              << std::setprecision(3)
+              << "Average latency: " << result.avg_latency << " µs\n"
+              << "Operations: " << result.num_operations << "\n"
+              << "Bytes processed: " << mb_processed << " MB\n";
+
+    std::cout << "\n=== Prepare Operations ===\n"
+              << "Count: " << result.prepare_stats.count << "\n"
+              << "Average time: " << result.prepare_stats.avg_time() << " µs\n"
+              << "Min time: " << result.prepare_stats.min_time.count() << " µs\n"
+              << "Max time: " << result.prepare_stats.max_time.count() << " µs\n";
+
+    std::cout << "\n=== Commit Operations ===\n"
+              << "Count: " << result.commit_stats.count << "\n"
+              << "Average time: " << result.commit_stats.avg_time() << " µs\n"
+              << "Min time: " << result.commit_stats.min_time.count() << " µs\n"
+              << "Max time: " << result.commit_stats.max_time.count() << " µs\n";
+
+    std::cout << "\n=== Consume Operations ===\n"
+              << "Count: " << result.consume_stats.count << "\n"
+              << "Average time: " << result.consume_stats.avg_time() << " µs\n"
+              << "Min time: " << result.consume_stats.min_time.count() << " µs\n"
+              << "Max time: " << result.consume_stats.max_time.count() << " µs\n";
+}
+
+// Run basic benchmark with fixed-size operations
+template<typename BufferType, size_t Size>
+TestResult run_test(const char* /*name*/) {
+    BufferType buffer;
+    std::vector<uint8_t> test_data(Size);
+
+    // Initialize test data with random values
+    std::mt19937 gen{std::random_device{}()};
+    std::uniform_int_distribution<unsigned> dist(0, 255);
+    std::generate(test_data.begin(), test_data.end(),
+                 [&] { return static_cast<uint8_t>(dist(gen)); });
+
+    TestResult result{};
+    auto start = Clock::now();
+
+    // Test prepare/commit/consume cycle
+    for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+        auto t1 = Clock::now();
+        auto mutable_buf = buffer.prepare(Size);
+        auto t2 = Clock::now();
+
+        std::memcpy(mutable_buf.data(), test_data.data(), Size);
+        buffer.commit(Size);
+        auto t3 = Clock::now();
+
+        buffer.consume(Size);
+        auto t4 = Clock::now();
+
+        auto prepare_duration = std::chrono::duration_cast<Duration>(t2 - t1);
+        auto commit_duration = std::chrono::duration_cast<Duration>(t3 - t2);
+        auto consume_duration = std::chrono::duration_cast<Duration>(t4 - t3);
+
+        result.prepare_stats.update(prepare_duration);
+        result.commit_stats.update(commit_duration);
+        result.consume_stats.update(consume_duration);
+
+        result.total_time += prepare_duration + commit_duration + consume_duration;
+        result.num_operations++;
+        result.bytes_processed += Size;
+    }
+
+    return result;
+}
+
+// Compare optimized and reference implementations
+template<size_t Size>
+void compare_implementations() {
+    std::cout << "\n=== Testing with " << Size << " byte chunks ===\n";
+
+    using OptimizedBuffer = pa::pinex::detail::flat_buffer<uint8_t, BUFFER_SIZE>;
+    using ReferenceBuffer = pa::pinex::detail::reference_buffer<uint8_t, BUFFER_SIZE>;
+
+    auto opt_result = run_test<OptimizedBuffer, Size>("Optimized");
+    auto ref_result = run_test<ReferenceBuffer, Size>("Reference");
+
+    print_results("Optimized Implementation", opt_result);
+    print_results("Reference Implementation", ref_result);
+
+    // Calculate improvement percentage
+    double time_improvement = ((double)ref_result.total_time.count() - opt_result.total_time.count())
+                            / ref_result.total_time.count() * 100.0;
+
+    std::cout << "\nPerformance improvement: " << std::fixed << std::setprecision(1)
+              << time_improvement << "%\n";
+}
+
+int main() {
+    std::cout << "Running buffer performance comparison...\n"
+              << "Buffer size: " << BUFFER_SIZE << " bytes\n"
+              << "Iterations: " << NUM_ITERATIONS << "\n";
+
+    compare_implementations<SMALL_SIZE>();   // Small writes
+    compare_implementations<MEDIUM_SIZE>();  // Medium writes
+    compare_implementations<LARGE_SIZE>();   // Large writes
+
+    return 0;
+}
+
+// Print test results
+void print_results(const char* test_name, const TestResult& result) {
+    const double mb_processed = static_cast<double>(result.bytes_processed) / (1024 * 1024);
+    const double seconds = static_cast<double>(result.total_time.count()) / 1'000'000;
+    const double throughput = mb_processed / seconds;
+
+    // Calculate average latency
+    result.avg_latency = result.num_operations > 0 ?
+        static_cast<double>(result.total_time.count()) / result.num_operations : 0.0;
+
+    std::cout << "\nTest: " << test_name << "\n"
+              << "=== Overall Performance ===\n"
+              << std::fixed << std::setprecision(2)
+              << "Total time: " << result.total_time.count() / 1000.0 << " ms\n"
+              << "Throughput: " << throughput << " MB/s\n"
+              << std::setprecision(3)
+              << "Average latency: " << result.avg_latency << " µs\n"
+              << "Operations: " << result.num_operations << "\n"
+              << "Bytes processed: " << mb_processed << " MB\n";
+
+    std::cout << "\n=== Prepare Operations ===\n"
+              << "Count: " << result.prepare_stats.count << "\n"
+              << "Average time: " << result.prepare_stats.avg_time() << " µs\n"
+              << "Min time: " << result.prepare_stats.min_time.count() << " µs\n"
+              << "Max time: " << result.prepare_stats.max_time.count() << " µs\n";
+
+    std::cout << "\n=== Commit Operations ===\n"
+              << "Count: " << result.commit_stats.count << "\n"
+              << "Average time: " << result.commit_stats.avg_time() << " µs\n"
+              << "Min time: " << result.commit_stats.min_time.count() << " µs\n"
+              << "Max time: " << result.commit_stats.max_time.count() << " µs\n";
+
+    std::cout << "\n=== Consume Operations ===\n"
+              << "Count: " << result.consume_stats.count << "\n"
+              << "Average time: " << result.consume_stats.avg_time() << " µs\n"
+              << "Min time: " << result.consume_stats.min_time.count() << " µs\n"
+              << "Max time: " << result.consume_stats.max_time.count() << " µs\n";
+}
+
+// Run basic benchmark with fixed-size operations
+template<typename BufferType, size_t Size>
+TestResult run_test(const char* name) {
+    BufferType buffer;
+    std::vector<uint8_t> test_data(Size);
+
+    // Initialize test data with random values
+    std::mt19937 gen{std::random_device{}()};
+    std::uniform_int_distribution<unsigned> dist(0, 255);
+    std::generate(test_data.begin(), test_data.end(),
+                 [&] { return static_cast<uint8_t>(dist(gen)); });
+
+    TestResult result{};
+    auto start = Clock::now();
+
+    // Test prepare/commit/consume cycle
+    for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+        auto t1 = Clock::now();
+        auto mutable_buf = buffer.prepare(Size);
+        auto t2 = Clock::now();
+
+        std::memcpy(mutable_buf.data(), test_data.data(), Size);
+        buffer.commit(Size);
+        auto t3 = Clock::now();
+
+        buffer.consume(Size);
+        auto t4 = Clock::now();
+
+        auto prepare_duration = std::chrono::duration_cast<Duration>(t2 - t1);
+        auto commit_duration = std::chrono::duration_cast<Duration>(t3 - t2);
+        auto consume_duration = std::chrono::duration_cast<Duration>(t4 - t3);
+
+        result.prepare_stats.update(prepare_duration);
+        result.commit_stats.update(commit_duration);
+        result.consume_stats.update(consume_duration);
+
+        result.total_time += prepare_duration + commit_duration + consume_duration;
+        result.num_operations++;
+        result.bytes_processed += Size;
+    }
+
+    return result;
+}
+
+// Compare optimized and reference implementations
+template<size_t Size>
+void compare_implementations() {
+    std::cout << "\n=== Testing with " << Size << " byte chunks ===\n";
+
+    using OptimizedBuffer = pa::pinex::detail::flat_buffer<uint8_t, BUFFER_SIZE>;
+    using ReferenceBuffer = pa::pinex::detail::reference_buffer<uint8_t, BUFFER_SIZE>;
+
+    auto opt_result = run_test<OptimizedBuffer, Size>("Optimized");
+    auto ref_result = run_test<ReferenceBuffer, Size>("Reference");
+
+    print_results("Optimized Implementation", opt_result);
+    print_results("Reference Implementation", ref_result);
+
+    // Calculate improvement percentage
+    double time_improvement = ((double)ref_result.total_time.count() - opt_result.total_time.count())
+                            / ref_result.total_time.count() * 100.0;
+
+    std::cout << "\nPerformance improvement: " << std::fixed << std::setprecision(1)
+              << time_improvement << "%\n";
+}
+
+int main() {
+    std::cout << "Running buffer performance comparison...\n"
+              << "Buffer size: " << BUFFER_SIZE << " bytes\n"
+              << "Iterations: " << NUM_ITERATIONS << "\n";
+
+    compare_implementations<SMALL_SIZE>();   // Small writes
+    compare_implementations<MEDIUM_SIZE>();  // Medium writes
+    compare_implementations<LARGE_SIZE>();   // Large writes
+
+    return 0;
+}
+};
+};
+
+template<typename BufferType>
+TestResult run_pattern_test(UsagePattern pattern) {
+    BufferType buffer;
+    // Initialize random number generators
+    std::mt19937 gen{std::random_device{}()};
+    std::uniform_int_distribution<size_t> size_dist(SMALL_SIZE, LARGE_SIZE);
+
+    // Prepare test data
+    std::vector<uint8_t> test_data(LARGE_SIZE);  // Preallocate maximum size
+    std::uniform_int_distribution<unsigned> data_dist(0, 255);
+    std::generate(test_data.begin(), test_data.end(),
+                 [&] { return static_cast<uint8_t>(data_dist(gen)); });
+
+    TestResult result{};
+    auto start = Clock::now();
+    size_t compactions = 0;
+
+    switch (pattern) {
+        case UsagePattern::Sequential: {
+            // Sequential operations with fixed size
+            for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+                auto t1 = Clock::now();
+                auto mutable_buf = buffer.prepare(MEDIUM_SIZE);
+                auto t2 = Clock::now();
+
+                std::memcpy(mutable_buf.data(), test_data.data(), MEDIUM_SIZE);
+                buffer.commit(MEDIUM_SIZE);
+                auto t3 = Clock::now();
+
+                buffer.consume(MEDIUM_SIZE);
+                auto t4 = Clock::now();
+
+                auto prepare_duration = std::chrono::duration_cast<Duration>(t2 - t1);
+                auto commit_duration = std::chrono::duration_cast<Duration>(t3 - t2);
+                auto consume_duration = std::chrono::duration_cast<Duration>(t4 - t3);
+
+                result.prepare_stats.update(prepare_duration);
+                result.commit_stats.update(commit_duration);
+                result.consume_stats.update(consume_duration);
+
+                result.total_time += prepare_duration + commit_duration + consume_duration;
+                result.num_operations++;
+                result.bytes_processed += MEDIUM_SIZE;
+            }
+            break;
+        }
+
+        case UsagePattern::Interleaved: {
+            // Alternating small and large operations
+            for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+                size_t size = (i % 2 == 0) ? SMALL_SIZE : LARGE_SIZE;
+
+                auto t1 = Clock::now();
+                auto mutable_buf = buffer.prepare(size);
+                auto t2 = Clock::now();
+
+                std::memcpy(mutable_buf.data(), test_data.data(), size);
+                buffer.commit(size);
+                auto t3 = Clock::now();
+
+                // Consume only part of the data sometimes
+                size_t consume_size = (i % 4 == 0) ? size / 2 : size;
+                buffer.consume(consume_size);
+                auto t4 = Clock::now();
+
+                result.prepare_stats.update(std::chrono::duration_cast<Duration>(t2 - t1));
+                result.commit_stats.update(std::chrono::duration_cast<Duration>(t3 - t2));
+                result.consume_stats.update(std::chrono::duration_cast<Duration>(t4 - t3));
+                result.bytes_processed += size;
+            }
+            break;
+        }
+
+        case UsagePattern::RandomSized: {
+            // Random sized operations
+            for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+                size_t size = size_dist(gen);
+
+                auto t1 = Clock::now();
+                auto mutable_buf = buffer.prepare(size);
+                auto t2 = Clock::now();
+
+                std::memcpy(mutable_buf.data(), test_data.data(), size);
+                buffer.commit(size);
+                auto t3 = Clock::now();
+
+                buffer.consume(size);
+                auto t4 = Clock::now();
+
+                auto prepare_duration = std::chrono::duration_cast<Duration>(t2 - t1);
+                auto commit_duration = std::chrono::duration_cast<Duration>(t3 - t2);
+                auto consume_duration = std::chrono::duration_cast<Duration>(t4 - t3);
+
+                result.prepare_stats.update(prepare_duration);
+                result.commit_stats.update(commit_duration);
+                result.consume_stats.update(consume_duration);
+
+                result.total_time += prepare_duration + commit_duration + consume_duration;
+                result.num_operations++;
+                result.bytes_processed += size;
+            }
+            break;
+        }
+
+        case UsagePattern::BurstMode: {
+            // Bursts of rapid operations followed by pauses
+            constexpr size_t BURST_SIZE = 50;
+            for (size_t i = 0; i < NUM_ITERATIONS/BURST_SIZE; ++i) {
+                // Rapid burst
+                for (size_t j = 0; j < BURST_SIZE; ++j) {
+                    auto t1 = Clock::now();
+                    auto mutable_buf = buffer.prepare(SMALL_SIZE);
+                    auto t2 = Clock::now();
+
+                    std::memcpy(mutable_buf.data(), test_data.data(), SMALL_SIZE);
+                    buffer.commit(SMALL_SIZE);
+                    auto t3 = Clock::now();
+
+                    auto prepare_duration = std::chrono::duration_cast<Duration>(t2 - t1);
+                    auto commit_duration = std::chrono::duration_cast<Duration>(t3 - t2);
+
+                    result.prepare_stats.update(prepare_duration);
+                    result.commit_stats.update(commit_duration);
+
+                    result.total_time += prepare_duration + commit_duration;
+                    result.num_operations++;
+                    result.bytes_processed += SMALL_SIZE;
+                }
+
+                // Consume entire burst at once
+                auto t3 = Clock::now();
+                buffer.consume(SMALL_SIZE * BURST_SIZE);
+                auto t4 = Clock::now();
+
+                auto consume_duration = std::chrono::duration_cast<Duration>(t4 - t3);
+                result.consume_stats.update(consume_duration);
+                result.total_time += consume_duration;
+                result.num_operations++; // Count the bulk consume as one operation
+
+                // Simulate pause
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            break;
+        }
+
+        case UsagePattern::HighContention: {
+            // Frequent prepare/consume cycles with varying sizes
+            for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+                size_t prepare_size = MEDIUM_SIZE;
+
+                // Multiple prepare operations before consume
+                auto t1 = Clock::now();
+                auto mutable_buf1 = buffer.prepare(prepare_size / 2);
+                auto t2 = Clock::now();
+                buffer.commit(prepare_size / 2);
+                auto t3 = Clock::now();
+
+                auto mutable_buf2 = buffer.prepare(prepare_size / 2);
+                auto t4 = Clock::now();
+                buffer.commit(prepare_size / 2);
+                auto t5 = Clock::now();
+
+                // Consume all at once
+                buffer.consume(prepare_size);
+                auto t6 = Clock::now();
+
+                auto prepare_duration1 = std::chrono::duration_cast<Duration>(t2 - t1);
+                auto prepare_duration2 = std::chrono::duration_cast<Duration>(t4 - t3);
+                auto commit_duration1 = std::chrono::duration_cast<Duration>(t3 - t2);
+                auto commit_duration2 = std::chrono::duration_cast<Duration>(t5 - t4);
+                auto consume_duration = std::chrono::duration_cast<Duration>(t6 - t5);
+
+                result.prepare_stats.update(prepare_duration1);
+                result.prepare_stats.update(prepare_duration2);
+                result.commit_stats.update(commit_duration1);
+                result.commit_stats.update(commit_duration2);
+                result.consume_stats.update(consume_duration);
+
+                result.total_time += prepare_duration1 + prepare_duration2 +
+                                   commit_duration1 + commit_duration2 +
+                                   consume_duration;
+                result.num_operations += 3; // Count as 3 operations
+                result.bytes_processed += prepare_size;
+            }
+            break;
+        }
+    }
+
+    result.total_time = std::chrono::duration_cast<Duration>(Clock::now() - start);
+    result.num_operations = NUM_ITERATIONS;
+    result.avg_latency = static_cast<double>(result.total_time.count()) / NUM_ITERATIONS;
+
+    return result;
+}
+
+}
+
+void print_results(const char* test_name, const TestResult& result) {
+    const double mb_processed = static_cast<double>(result.bytes_processed) / (1024 * 1024);
+    const double seconds = static_cast<double>(result.total_time.count()) / 1'000'000;
+    const double throughput = mb_processed / seconds;
+
+    // Calculate average latency
+    result.avg_latency = result.num_operations > 0 ?
+        static_cast<double>(result.total_time.count()) / result.num_operations : 0.0;
+
+    // Use std::cout for now until we fix fmt::print issues
+    std::cout << "\nTest: " << test_name << "\n"
+              << "=== Overall Performance ===\n"
+              << "Total time: " << result.total_time.count() / 1000.0 << " ms\n"
+              << "Throughput: " << throughput << " MB/s\n"
+              << "Average latency: " << result.avg_latency << " µs\n"
+              << "Operations: " << result.num_operations << "\n"
+              << "Bytes processed: " << mb_processed << " MB\n";
+
+    std::cout << "\n=== Prepare Operations ===\n"
+              << "Count: " << result.prepare_stats.count << "\n"
+              << "Average time: " << result.prepare_stats.avg_time() << " µs\n"
+              << "Min time: " << result.prepare_stats.min_time.count() << " µs\n"
+              << "Max time: " << result.prepare_stats.max_time.count() << " µs\n";
+
+    std::cout << "\n=== Commit Operations ===\n"
+              << "Count: " << result.commit_stats.count << "\n"
+              << "Average time: " << result.commit_stats.avg_time() << " µs\n"
+              << "Min time: " << result.commit_stats.min_time.count() << " µs\n"
+              << "Max time: " << result.commit_stats.max_time.count() << " µs\n";
+
+    std::cout << "\n=== Consume Operations ===\n"
+              << "Count: " << result.consume_stats.count << "\n"
+              << "Average time: " << result.consume_stats.avg_time() << " µs\n"
+              << "Min time: " << result.consume_stats.min_time.count() << " µs\n"
+              << "Max time: " << result.consume_stats.max_time.count() << " µs\n";
+}
+
+template<typename BufferType, size_t Size>
+TestResult run_test(const char* name) {
+    BufferType buffer;
+    std::vector<uint8_t> test_data(Size);
+
+    // Initialize test data with random values
+    std::mt19937 gen{std::random_device{}()};
+    std::uniform_int_distribution<unsigned> dist(0, 255);
+    std::generate(test_data.begin(), test_data.end(),
+                 [&] { return static_cast<uint8_t>(dist(gen)); });
+
+    TestResult result{};
+    auto start = Clock::now();
+
+    // Test prepare/commit/consume cycle
+    for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+        auto t1 = Clock::now();
+        auto mutable_buf = buffer.prepare(Size);
+        auto t2 = Clock::now();
+
+        std::memcpy(mutable_buf.data(), test_data.data(), Size);
+        buffer.commit(Size);
+        auto t3 = Clock::now();
+
+        buffer.consume(Size);
+        auto t4 = Clock::now();
+
+        auto prepare_duration = std::chrono::duration_cast<Duration>(t2 - t1);
+        auto commit_duration = std::chrono::duration_cast<Duration>(t3 - t2);
+        auto consume_duration = std::chrono::duration_cast<Duration>(t4 - t3);
+
+        result.prepare_stats.update(prepare_duration);
+        result.commit_stats.update(commit_duration);
+        result.consume_stats.update(consume_duration);
+
+        result.total_time += prepare_duration + commit_duration + consume_duration;
+        result.num_operations++;
+        result.bytes_processed += Size;
+    }
+
+    return result;
+}
+
+template<size_t Size>
+void compare_implementations() {
+    fmt::print("\n=== Testing with {} byte chunks ===\n", Size);
+
+    using OptimizedBuffer = pa::pinex::detail::flat_buffer<uint8_t, BUFFER_SIZE>;
+    using ReferenceBuffer = pa::pinex::detail::reference_buffer<uint8_t, BUFFER_SIZE>;
+
+    auto opt_result = run_test<OptimizedBuffer, Size>("Optimized");
+    auto ref_result = run_test<ReferenceBuffer, Size>("Reference");
+
+    print_results("Optimized Implementation", opt_result);
+    print_results("Reference Implementation", ref_result);
+
+    // Calculate improvement percentage
+    double time_improvement = ((double)ref_result.total_time.count() - opt_result.total_time.count())
+                            / ref_result.total_time.count() * 100.0;
+
+    fmt::print("\nPerformance improvement: {:.1f}%\n", time_improvement);
+}
+
+int main() {
+    fmt::print("Running buffer performance comparison...\n");
+    fmt::print("Buffer size: {} bytes\n", BUFFER_SIZE);
+    fmt::print("Iterations: {}\n", NUM_ITERATIONS);
+
+    compare_implementations<SMALL_SIZE>();   // Small writes
+    compare_implementations<MEDIUM_SIZE>();  // Medium writes
+    compare_implementations<LARGE_SIZE>();   // Large writes
+
+    return 0;
+}

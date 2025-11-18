@@ -1,0 +1,333 @@
+// Example usage of the redesigned session architecture
+
+#include <vex/networking/net/session_builder.hpp>
+#include <vex/networking/net/session_manager.hpp>
+#include <vex/networking/net/protocol_handler.hpp>
+#include <vex/networking/net/error_handler.hpp>
+#include <vex/networking/net/tcp_utils.hpp>
+
+#include <iostream>
+#include <memory>
+
+// ============================================================================
+// Custom Protocol Handler Implementation
+// ============================================================================
+
+class my_protocol_handler : public pa::pinex::protocol_handler
+{
+public:
+    void on_request(pa::pinex::request&& req, uint32_t seq) override
+    {
+        if (auto* bind_req = std::get_if<pa::pinex::bind_request>(&req))
+        {
+            std::cout << "Bind request received from: " << bind_req->system_id
+                      << " (seq: " << seq << ")" << std::endl;
+            // Handle bind logic...
+        }
+        else if (auto* stream_req = std::get_if<pa::pinex::stream_request>(&req))
+        {
+            std::cout << "Stream request received (seq: " << seq << ")" << std::endl;
+            // Handle stream logic...
+        }
+    }
+
+    void on_response(pa::pinex::response&& resp, uint32_t seq, pa::pinex::command_status status) override
+    {
+        std::cout << "Response received (seq: " << seq
+                  << ", status: " << static_cast<int>(status) << ")" << std::endl;
+
+        if (auto* bind_resp = std::get_if<pa::pinex::bind_response>(&resp))
+        {
+            std::cout << "Bind successful" << std::endl;
+        }
+        else if (auto* stream_resp = std::get_if<pa::pinex::stream_response>(&resp))
+        {
+            std::cout << "Stream response received" << std::endl;
+        }
+    }
+};
+
+// ============================================================================
+// Custom Error Handler Implementation
+// ============================================================================
+
+class custom_error_handler : public pa::pinex::error_handler
+{
+public:
+    void on_deserialization_error(const std::string& msg, pa::pinex::command_id id,
+                                  std::span<const uint8_t> data) override
+    {
+        std::cerr << "[ERROR] Deserialization failed for command "
+                  << static_cast<int>(id) << ": " << msg
+                  << " (data size: " << data.size() << " bytes)" << std::endl;
+
+        // Log to file, send alert, etc.
+    }
+
+    void on_protocol_error(const std::string& msg) override
+    {
+        std::cerr << "[ERROR] Protocol error: " << msg << std::endl;
+    }
+
+    void on_network_error(const std::string& msg) override
+    {
+        std::cerr << "[ERROR] Network error: " << msg << std::endl;
+    }
+};
+
+// ============================================================================
+// Example 1: Simple Session Creation
+// ============================================================================
+
+void example_simple_session(boost::asio::io_context& io, boost::asio::ip::tcp::socket socket)
+{
+    auto session = pa::pinex::session_builder()
+        .with_protocol_handler(std::make_unique<my_protocol_handler>())
+        .with_close_handler([](auto session, auto reason) {
+            if (reason)
+                std::cout << "Session closed: " << *reason << std::endl;
+            else
+                std::cout << "Session closed normally" << std::endl;
+        })
+        .build(io, std::move(socket));
+
+    // Enable TCP options
+    if (auto endpoint = session->remote_endpoint())
+    {
+        auto [addr, port] = *endpoint;
+        std::cout << "Connected to " << addr << ":" << port << std::endl;
+    }
+
+    session->start();
+
+    // Send a bind request
+    pa::pinex::bind_request req;
+    req.system_id = "my_system";
+    req.password = "secret";
+    auto seq = session->send_request(req);
+    std::cout << "Sent bind request with sequence: " << seq << std::endl;
+}
+
+// ============================================================================
+// Example 2: Advanced Configuration
+// ============================================================================
+
+void example_advanced_session(boost::asio::io_context& io, boost::asio::ip::tcp::socket socket)
+{
+    auto session = pa::pinex::session_builder()
+        // Configure buffers
+        .with_send_capacity(2 * 1024 * 1024)      // 2MB send buffer
+        .with_send_threshold(1 * 1024 * 1024)     // 1MB threshold
+        .with_receive_buffer(2 * 1024 * 1024)     // 2MB receive buffer
+
+        // Configure protocol limits
+        .with_max_message_size(20 * 1024 * 1024)  // 20MB max message
+        .with_unbind_timeout(std::chrono::seconds{10})
+
+        // Configure backpressure
+        .with_backpressure(512 * 1024, 1024 * 1024)  // Low/high watermarks
+
+        // Set handlers
+        .with_protocol_handler(std::make_unique<my_protocol_handler>())
+        .with_error_handler(std::make_unique<custom_error_handler>())
+
+        // Close handler
+        .with_close_handler([](auto session, auto reason) {
+            auto& metrics = session->metrics();
+            std::cout << "Session statistics:" << std::endl;
+            std::cout << "  Bytes sent: " << metrics.bytes_sent << std::endl;
+            std::cout << "  Bytes received: " << metrics.bytes_received << std::endl;
+            std::cout << "  Messages sent: " << metrics.messages_sent << std::endl;
+            std::cout << "  Messages received: " << metrics.messages_received << std::endl;
+            std::cout << "  Errors: " << metrics.errors << std::endl;
+            std::cout << "  Uptime: " << metrics.uptime().count() << "ms" << std::endl;
+
+            if (reason)
+                std::cout << "  Close reason: " << *reason << std::endl;
+        })
+
+        // Buffer available callback
+        .with_send_buf_available_handler([]() {
+            std::cout << "Send buffer now available" << std::endl;
+        })
+
+        .build(io, std::move(socket));
+
+    session->start();
+}
+
+// ============================================================================
+// Example 3: Session Manager
+// ============================================================================
+
+void example_session_manager(boost::asio::io_context& io)
+{
+    pa::pinex::session_manager manager(io);
+
+    // Accept connections
+    boost::asio::ip::tcp::acceptor acceptor(io,
+        boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 8080));
+
+    std::cout << "Server listening on port 8080..." << std::endl;
+
+    // Accept loop
+    for (int i = 0; i < 3; ++i)  // Accept 3 connections
+    {
+        boost::asio::ip::tcp::socket socket(io);
+        acceptor.accept(socket);
+
+        // Configure socket
+        pa::pinex::enable_keepalive(socket, 60);
+        pa::pinex::enable_no_delay(socket);
+
+        // Add session to manager
+        auto session_id = manager.add_session(std::move(socket), [](auto session) {
+            // Configure each session
+            session->set_protocol_handler(std::make_unique<my_protocol_handler>());
+
+            if (auto endpoint = session->remote_endpoint())
+            {
+                auto [addr, port] = *endpoint;
+                std::cout << "New connection [" << addr << ":" << port << "]" << std::endl;
+            }
+
+            session->start();
+        });
+
+        std::cout << "Session " << session_id << " added" << std::endl;
+    }
+
+    // Run for a while
+    std::cout << "Active sessions: " << manager.active_count() << std::endl;
+
+    // Get aggregate metrics
+    auto metrics = manager.get_metrics();
+    std::cout << "\nAggregate Metrics:" << std::endl;
+    std::cout << "  Active sessions: " << metrics.active_sessions << std::endl;
+    std::cout << "  Open sessions: " << metrics.open_sessions << std::endl;
+    std::cout << "  Total bytes sent: " << metrics.total_bytes_sent << std::endl;
+    std::cout << "  Total bytes received: " << metrics.total_bytes_received << std::endl;
+    std::cout << "  Total messages: " << metrics.total_messages_sent + metrics.total_messages_received << std::endl;
+    std::cout << "  Total errors: " << metrics.total_errors << std::endl;
+
+    // Iterate over sessions
+    manager.for_each([](auto id, auto session) {
+        std::cout << "Session " << id << " state: " << session->state_name() << std::endl;
+    });
+
+    // Close all gracefully
+    std::cout << "\nClosing all sessions..." << std::endl;
+    manager.close_all();
+}
+
+// ============================================================================
+// Example 4: Client with Reconnection
+// ============================================================================
+
+class reconnecting_client
+{
+    boost::asio::io_context& io_;
+    std::string host_;
+    std::string port_;
+    pa::pinex::session_ptr session_;
+    boost::asio::steady_timer reconnect_timer_;
+
+public:
+    reconnecting_client(boost::asio::io_context& io, std::string host, std::string port)
+        : io_(io), host_(std::move(host)), port_(std::move(port)), reconnect_timer_(io)
+    {
+        connect();
+    }
+
+    void connect()
+    {
+        boost::asio::ip::tcp::resolver resolver(io_);
+        auto endpoints = resolver.resolve(host_, port_);
+
+        boost::asio::ip::tcp::socket socket(io_);
+        boost::asio::connect(socket, endpoints);
+
+        std::cout << "Connected to " << host_ << ":" << port_ << std::endl;
+
+        session_ = pa::pinex::session_builder()
+            .with_protocol_handler(std::make_unique<my_protocol_handler>())
+            .with_close_handler([this](auto, auto reason) {
+                std::cout << "Disconnected: " << (reason ? *reason : "normal") << std::endl;
+                schedule_reconnect();
+            })
+            .build(io_, std::move(socket));
+
+        session_->start();
+
+        // Send bind request
+        pa::pinex::bind_request req;
+        req.system_id = "client";
+        req.password = "pass";
+        session_->send_request(req);
+    }
+
+    void schedule_reconnect()
+    {
+        std::cout << "Reconnecting in 5 seconds..." << std::endl;
+        reconnect_timer_.expires_after(std::chrono::seconds{5});
+        reconnect_timer_.async_wait([this](boost::system::error_code ec) {
+            if (!ec)
+            {
+                try {
+                    connect();
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "Reconnect failed: " << e.what() << std::endl;
+                    schedule_reconnect();
+                }
+            }
+        });
+    }
+};
+
+// ============================================================================
+// Main
+// ============================================================================
+
+int main()
+{
+    try
+    {
+        boost::asio::io_context io;
+
+        // Choose an example to run:
+        // example_session_manager(io);
+
+        // Or run as client:
+        // reconnecting_client client(io, "localhost", "8080");
+
+        io.run();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+// ============================================================================
+// Compilation Instructions
+// ============================================================================
+
+/*
+Multi-threaded mode (with strand protection):
+g++ -std=c++20 -DNETWORKING_MULTI_THREADED example_usage.cpp -o example_single \
+    -I/path/to/include \
+    -lboost_system -lfmt
+
+Single-threaded mode (default, no strand overhead):
+g++ -std=c++20 example_usage.cpp -o example_multi \
+    -I/path/to/include \
+    -lboost_system -lfmt -pthread
+
+Run:
+./example_single
+./example_multi
+*/

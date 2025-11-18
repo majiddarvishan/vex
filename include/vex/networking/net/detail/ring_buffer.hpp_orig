@@ -1,0 +1,188 @@
+#pragma once
+#include <boost/asio.hpp>
+#include <algorithm>
+#include <array>
+#include <cstring>
+#include <memory>
+#include <optional>
+#include <span>
+#include <variant>
+#include <vector>
+
+namespace pa::pinex::detail {
+
+template<typename T, std::size_t Capacity>
+class ring_buffer {
+    static_assert((Capacity & (Capacity - 1)) == 0, "Capacity must be a power of 2");
+    static_assert(std::is_trivial_v<T>, "ring_buffer only supports trivial types");
+
+    std::array<T, Capacity> buffer_{};
+    std::size_t head_{0};
+    std::size_t tail_{0};
+    std::size_t size_{0};
+    std::vector<T> temp_linear_;
+
+  public:
+    void clear() noexcept { head_ = tail_ = size_ = 0; }
+
+    [[gnu::hot]] [[gnu::always_inline]]
+    inline std::size_t size() const noexcept { return size_; }
+
+    [[gnu::hot]] [[gnu::always_inline]]
+    inline std::size_t capacity() const noexcept { return Capacity; }
+
+    [[gnu::hot]] [[gnu::always_inline]]
+    inline bool empty() const noexcept { return size_ == 0; }
+
+    [[gnu::hot]] [[gnu::always_inline]]
+    inline bool full() const noexcept { return size_ == Capacity; }
+
+    [[gnu::hot]] [[gnu::always_inline]]
+    inline std::size_t space_remaining() const noexcept { return Capacity - size_; }
+
+    boost::asio::const_buffer data() const noexcept {
+        if (size_ == 0) return {};
+        std::size_t contiguous = std::min(size_, Capacity - head_);
+        return boost::asio::const_buffer(&buffer_[head_], contiguous);
+    }
+
+    boost::asio::mutable_buffer prepare(std::size_t n) {
+        if (n > Capacity - size_) [[unlikely]]
+            throw std::length_error("ring_buffer overflow");
+        std::size_t contiguous = std::min(n, Capacity - tail_);
+        return boost::asio::mutable_buffer(&buffer_[tail_], contiguous);
+    }
+
+    [[gnu::hot]] [[gnu::always_inline]]
+    inline void commit(std::size_t n) noexcept {
+        n = std::min(n, Capacity - size_);
+        tail_ = (tail_ + n) & (Capacity - 1);  // Faster modulo for power-of-2
+        size_ += n;
+    }
+
+    [[gnu::hot]] [[gnu::always_inline]]
+    inline void consume(std::size_t n) noexcept {
+        n = std::min(n, size_);
+        head_ = (head_ + n) & (Capacity - 1);  // Faster modulo for power-of-2
+        size_ -= n;
+    }
+
+    // Returns true if the data is contiguous (no wrap-around)
+    bool is_contiguous() const noexcept {
+        if (size_ == 0) return true;
+        return (head_ + size_) <= Capacity;
+    }
+
+    // Get contiguous view if possible, otherwise returns empty span
+    std::span<const T> get_contiguous_view() const noexcept {
+        if (size_ == 0) return {};
+        std::size_t contiguous = std::min(size_, Capacity - head_);
+        if (contiguous == size_) {
+            return std::span<const T>(&buffer_[head_], size_);
+        }
+        return {};
+    }
+
+    std::span<const T> linearize() {
+        if (size_ == 0) return {};
+
+        // Fast path: already contiguous
+        if (is_contiguous()) {
+            return std::span<const T>(&buffer_[head_], size_);
+        }
+
+        // Slow path: need to copy
+        temp_linear_.resize(size_);
+        std::size_t first_part = Capacity - head_;
+        std::memcpy(temp_linear_.data(), &buffer_[head_], first_part * sizeof(T));
+        std::memcpy(temp_linear_.data() + first_part, &buffer_[0], (size_ - first_part) * sizeof(T));
+        return std::span<const T>(temp_linear_.data(), size_);
+    }
+
+    size_t enqueue_scatter_gather(std::array<std::span<T>, 2>& spans, size_t bytes) noexcept {
+        if (bytes == 0 || full()) {
+            spans[0] = {};
+            spans[1] = {};
+            return 0;
+        }
+
+        size_t space = std::min(bytes, Capacity - size_);
+        size_t first_len = std::min(space, Capacity - tail_);
+        size_t second_len = space - first_len;
+
+        spans[0] = std::span<T>(&buffer_[tail_], first_len);
+        spans[1] = (second_len > 0) ? std::span<T>(&buffer_[0], second_len) : std::span<T>();
+        return space;
+    }
+
+    size_t dequeue_scatter_gather(std::array<std::span<const T>, 2>& spans,
+                                  size_t bytes,
+                                  bool peek_only = false) noexcept {
+        if (bytes == 0 || size_ == 0) {
+            spans[0] = {};
+            spans[1] = {};
+            return 0;
+        }
+
+        size_t available = std::min(bytes, size_);
+        size_t first_len = std::min(available, Capacity - head_);
+        size_t second_len = available - first_len;
+
+        spans[0] = std::span<const T>(&buffer_[head_], first_len);
+        spans[1] = (second_len > 0) ? std::span<const T>(&buffer_[0], second_len) : std::span<const T>();
+
+        if (!peek_only) {
+            head_ = (head_ + available) & (Capacity - 1);  // Faster modulo
+            size_ -= available;
+        }
+        return available;
+    }
+
+    void commit_scatter_gather(size_t n) noexcept {
+        n = std::min(n, Capacity - size_);
+        tail_ = (tail_ + n) & (Capacity - 1);  // Faster modulo
+        size_ += n;
+    }
+
+    // Old vector-based interface for backward compatibility
+    bool try_enqueue_from_buffers(const std::vector<boost::asio::const_buffer>& buffers) noexcept {
+        return try_enqueue_from_buffers(buffers.data(), buffers.size());
+    }
+
+    // New pointer + size interface that works with arrays and vectors
+    bool try_enqueue_from_buffers(const boost::asio::const_buffer* buffers, size_t count) noexcept {
+        if (count == 0) return true;
+
+        // Calculate total size needed
+        size_t total = 0;
+        for (size_t i = 0; i < count; ++i)
+            total += boost::asio::buffer_size(buffers[i]);
+
+        if (total > space_remaining())
+            return false;
+
+        // Enqueue all buffers
+        for (size_t i = 0; i < count; ++i) {
+            const auto* src = static_cast<const T*>(buffers[i].data());
+            size_t len = boost::asio::buffer_size(buffers[i]);
+
+            // Optimized: handle wrap-around in chunks instead of byte-by-byte
+            size_t first_chunk = std::min(len, Capacity - tail_);
+            if (first_chunk > 0) {
+                std::memcpy(&buffer_[tail_], src, first_chunk * sizeof(T));
+                tail_ = (tail_ + first_chunk) & (Capacity - 1);
+                size_ += first_chunk;
+            }
+
+            if (first_chunk < len) {
+                size_t second_chunk = len - first_chunk;
+                std::memcpy(&buffer_[tail_], src + first_chunk, second_chunk * sizeof(T));
+                tail_ = (tail_ + second_chunk) & (Capacity - 1);
+                size_ += second_chunk;
+            }
+        }
+        return true;
+    }
+};
+
+}  // namespace pa::pinex::detail

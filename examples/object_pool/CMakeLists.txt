@@ -1,3 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+project(vex_example_object_pool)
+
 include(${CMAKE_SOURCE_DIR}/cmake/CPM.cmake)
 
 CPMAddPackage(
@@ -13,9 +16,6 @@ CPMAddPackage(
         "ENABLE_COMPRESSION=OFF"
         "BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
 )
-
-cmake_minimum_required(VERSION 3.16)
-project(vex_example_object_pool)
 
 add_executable(example_object_pool example_object_pool.cpp)
 

@@ -1,0 +1,143 @@
+#include <pa/pinex.hpp>
+
+#include <fmt/core.h>
+
+auto sample_request_pdus()
+{
+    std::vector<pa::pinex::request> result;
+
+    result.emplace_back(pa::pinex::stream_request{.message_body = "JFD:JU9458349gd;lfjgdfljg'dfgs'd"});
+
+    return result;
+}
+
+auto sample_response_pdus()
+{
+    std::vector<pa::pinex::response> result;
+
+    result.emplace_back(pa::pinex::stream_response{ .message_body = "JSHDHSDA238904632" });
+
+    return result;
+}
+
+int main()
+{
+    boost::asio::io_context io_context;
+
+    auto sent_request_pdus = sample_request_pdus();
+    auto sent_response_pdus = sample_response_pdus();
+
+    std::vector<pa::pinex::request> received_request_pdus;
+    std::vector<pa::pinex::response> received_response_pdus;
+
+    // server
+    std::shared_ptr<pa::pinex::session> server_session;
+
+    auto server = std::make_shared<pa::pinex::server>(
+        &io_context,
+        "0.0.0.0",
+        57148,
+        "",
+        15,
+        [&](const auto&, auto session) -> bool{
+            server_session = session;
+            server_session->close_handler = [&](std::shared_ptr<pa::pinex::session>, auto error) {
+                if (error)
+                    exit(1);
+            };
+            server_session->request_handler = [&](auto&& request, auto) { received_request_pdus.push_back(request); };
+
+            for (const auto& response : sent_response_pdus)
+                std::visit(
+                    [&](auto pdu) {
+                        if constexpr (!std::is_same_v<decltype(pdu), std::monostate>)
+                            server_session->send_response(pdu, 1, pa::pinex::command_status::rok);
+                    },
+                    response);
+
+                    return true;
+        });
+    server->start();
+
+    // client
+    std::shared_ptr<pa::pinex::session> client_session;
+    auto client = std::make_shared<pa::pinex::client>(
+        &io_context,
+        "0.0.0.0",
+        57148,
+        15,
+        pa::pinex::bind_request{},
+        [&](auto, auto session) {
+            client_session = session;
+            client_session->close_handler = [&](std::shared_ptr<pa::pinex::session>, auto error) {
+                if (error)
+                    exit(1);
+            };
+            client_session->response_handler = [&](auto&& response, auto, auto) { received_response_pdus.push_back(response); };
+
+            for (const auto& request : sent_request_pdus)
+                std::visit(
+                    [&](auto pdu) {
+                        if constexpr (!std::is_same_v<decltype(pdu), std::monostate>)
+                            client_session->send_request(pdu);
+                    },
+                    request);
+        },
+        [](auto) { exit(1); });
+    client->start();
+
+    // timer
+    auto timer = boost::asio::steady_timer(io_context);
+    timer.expires_after(std::chrono::milliseconds{ 100 });
+    timer.async_wait([&](std::error_code) {
+        if (received_request_pdus.size() != sent_request_pdus.size())
+        {
+            fmt::print("received_request_pdus size isn't equal to sent_request_pdus size, {} vs {}\n", received_request_pdus.size(), sent_request_pdus.size());
+            exit(1);
+        }
+
+        for (size_t i = 0; i < received_request_pdus.size(); i++)
+        {
+            std::visit(
+                [&](auto pdu1, auto pdu2) {
+                    if constexpr (std::is_same_v<decltype(pdu1), decltype(pdu2)>)
+                    {
+                        if (pdu1 != pdu2)
+                        {
+                            fmt::print("received pdu isn't equal to sent, index:{}\n", i);
+                            exit(1);
+                        }
+                    }
+                },
+                received_request_pdus.at(i),
+                sent_request_pdus.at(i));
+        }
+
+        if (received_response_pdus.size() != sent_response_pdus.size())
+        {
+            fmt::print("received_response_pdus size isn't equal to sent_response_pdus size, {} vs {}\n", received_response_pdus.size(), sent_response_pdus.size());
+            exit(1);
+        }
+
+        for (size_t i = 0; i < received_response_pdus.size(); i++)
+        {
+            std::visit(
+                [&](auto pdu1, auto pdu2) {
+                    if constexpr (std::is_same_v<decltype(pdu1), decltype(pdu2)>)
+                    {
+                        if (pdu1 != pdu2)
+                        {
+                            fmt::print("received pdu isn't equal to sent, index:{}\n", i);
+                            exit(1);
+                        }
+                    }
+                },
+                received_response_pdus.at(i),
+                sent_response_pdus.at(i));
+        }
+
+        exit(0);
+    });
+
+    io_context.run();
+}
