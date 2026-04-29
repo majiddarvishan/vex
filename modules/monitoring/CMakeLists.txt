@@ -1,5 +1,5 @@
 # monitoring module (depends on prometheus-cpp)
-include(${PROJECT_SOURCE_DIR}/cmake/CPM.cmake)
+# include(${PROJECT_SOURCE_DIR}/cmake/CPM.cmake)
 
 if(NOT TARGET prometheus-cpp::core)
     CPMAddPackage(
@@ -17,17 +17,17 @@ if(NOT TARGET prometheus-cpp::core)
     )
 endif()
 
-file(GLOB MONITORING_SRC ${PROJECT_SOURCE_DIR}/src/monitoring/*.cpp)
+file(GLOB MONITORING_SRC ${CMAKE_SOURCE_DIR}/src/monitoring/*.cpp)
 file(GLOB MONITORING_HDR
-    ${PROJECT_SOURCE_DIR}/include/vex/monitoring/*.h
-    ${PROJECT_SOURCE_DIR}/include/vex/monitoring/*.hpp
+    ${CMAKE_SOURCE_DIR}/include/vex/monitoring/*.h
+    ${CMAKE_SOURCE_DIR}/include/vex/monitoring/*.hpp
     )
 
 add_library(monitoring ${MONITORING_SRC} ${MONITORING_HDR})
 add_library(Vex::monitoring ALIAS monitoring)
 
 target_include_directories(monitoring PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 target_compile_features(monitoring PUBLIC cxx_std_17)

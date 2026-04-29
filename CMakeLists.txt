@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
+
 project(vex LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -56,6 +57,9 @@ if(TARGET object_pool)
 endif()
 if(TARGET thread_pool)
     list(APPEND VEX_EXPORT_TARGETS thread_pool)
+endif()
+if(TARGET routing)
+    list(APPEND VEX_EXPORT_TARGETS routing)
 endif()
 
 # Install targets and headers
