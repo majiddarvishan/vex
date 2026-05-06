@@ -8,15 +8,25 @@ namespace routing
 {
 Pattern Pattern::parse(const std::string& s)
 {
-    if (s.empty())
+    // Wildcard matches everything.
+    // By convention: empty string or "*" represent a wildcard.
+    if (s.empty() || s == "*")
         return {PatternKind::Wildcard, "", 0};
 
-    if (s.back() == '*')
+    // Prefix patterns must end with a single '*' and contain no other '*'.
+    if (!s.empty() && s.back() == '*')
     {
-        std::string prefix = s.substr(0, s.size() - 1);
-        return {PatternKind::Prefix, prefix, static_cast<int>(prefix.size())};
+        const auto star_pos = s.find('*');
+        const bool single_star_at_end = (star_pos != std::string::npos) && (star_pos == s.size() - 1);
+
+        if (single_star_at_end)
+        {
+            std::string prefix = s.substr(0, s.size() - 1);
+            return {PatternKind::Prefix, prefix, static_cast<int>(prefix.size())};
+        }
     }
 
+    // Fallback: treat as an exact string (including any literal '*').
     return {PatternKind::Exact, s, static_cast<int>(s.size())};
 }
 

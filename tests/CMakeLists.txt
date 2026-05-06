@@ -17,9 +17,16 @@
 #     add_test(NAME NetworkTest COMMAND test_network)
 # endif()
 
+if(BUILD_ROUTING)
+    add_executable(routing_case_insensitive_test routing_case_insensitive_test.cpp)
+    target_link_libraries(routing_case_insensitive_test PRIVATE Vex::routing)
+    add_test(NAME routing_case_insensitive_test COMMAND routing_case_insensitive_test)
+endif()
+
 # -----------------------------
 # ObjectPool test
 # -----------------------------
+
 if(BUILD_OBJECT_POOL)
     # add_compile_options(-O1 -g -fsanitize=thread,address -fno-omit-frame-pointer)
     add_compile_options(-O1 -g -fsanitize=thread -fno-omit-frame-pointer)
@@ -34,7 +41,8 @@ if(BUILD_OBJECT_POOL)
         target_compile_definitions(pool_tsan_test PRIVATE ENABLE_PROMETHEUS_METRICS)
         target_link_libraries(pool_tsan_test
             PRIVATE
-            vex
+            Vex::object_pool
+
             prometheus-cpp::pull
             pthread
         )
@@ -42,7 +50,7 @@ if(BUILD_OBJECT_POOL)
         message(STATUS "ENABLE_PROMETHEUS_METRICS is OFF")
         target_link_libraries(pool_tsan_test
             PRIVATE
-            vex
+            Vex::object_pool
             pthread
         )
     endif()

@@ -18,10 +18,13 @@ CPMAddPackage(
 )
 if(TARGET Vex::object_pool)
     add_executable(example_object_pool example_object_pool.cpp)
-    target_link_libraries(example_object_pool PRIVATE Vex::object_pool
-     prometheus-cpp::core
-            prometheus-cpp::pull
-            )
+    target_link_libraries(example_object_pool
+            PRIVATE
+                Vex::object_pool
+
+                prometheus-cpp::core
+                prometheus-cpp::pull
+    )
     target_include_directories(example_object_pool PRIVATE ${CMAKE_SOURCE_DIR}/../../include)
 else()
     message(STATUS "Vex::object_pool target not found; skipping object_pool example")

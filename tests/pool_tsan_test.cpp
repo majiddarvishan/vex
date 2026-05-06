@@ -7,9 +7,11 @@
 #include <vector>
 
 // #include "object_pool.h"
-#include "vex/vex.h"
+// #include "vex/vex.h"
 
-using namespace vex::object_pool;
+#include <vex/object_pool/object_pool.hpp>
+
+using namespace vex;
 
 // A small test object
 struct TestObj

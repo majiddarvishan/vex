@@ -62,7 +62,12 @@ struct Route
         normalize_wildcard(target);
         normalize_wildcard(pdu_type);
 
+        // Case-insensitive routing across all matching fields.
         to_lower(from);
+        to_lower(source_address);
+        to_lower(destination_address);
+        to_lower(target);
+        to_lower(pdu_type);
     }
 };
 
