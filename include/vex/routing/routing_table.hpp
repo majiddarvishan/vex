@@ -1,11 +1,12 @@
 #pragma once
 
-#include <memory>
-#include <vector>
 
 #include "pattern.hpp"
 #include "route.hpp"
 #include "trie.hpp"
+
+#include <memory>
+#include <vector>
 
 namespace vex
 {

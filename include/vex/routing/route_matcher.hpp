@@ -1,12 +1,12 @@
 #pragma once
 
-#include <atomic>
-#include <memory>
-#include <mutex>
-#include <vector>
-
 #include "route.hpp"
 #include "routing_table.hpp"
+
+#include <mutex>
+#include <atomic>
+#include <memory>
+#include <vector>
 
 namespace vex
 {
@@ -44,7 +44,7 @@ class RouteMatcher
 
     /// Remove the route with the given id.
     /// Returns true if a route was found and removed, false otherwise.
-    bool remove(int id);
+    bool remove(uint32_t id);
 
     // ── Introspection ─────────────────────────────────────────────────────
 

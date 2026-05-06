@@ -40,7 +40,7 @@ void RouteMatcher::add(const Route& route)
     publish();
 }
 
-bool RouteMatcher::remove(int id)
+bool RouteMatcher::remove(uint32_t id)
 {
     std::lock_guard<std::mutex> lk(write_mutex_);
 

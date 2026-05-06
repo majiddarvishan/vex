@@ -1,10 +1,10 @@
 #pragma once
 
+#include "pattern.hpp"
+
 #include <array>
 #include <string>
 #include <vector>
-
-#include "pattern.hpp"
 
 namespace vex
 {
