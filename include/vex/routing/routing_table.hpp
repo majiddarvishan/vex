@@ -7,9 +7,10 @@
 #include "route.hpp"
 #include "trie.hpp"
 
+namespace vex
+{
 namespace routing
 {
-
 /// A compiled, immutable snapshot of the routing table.
 ///
 /// Built once from a list of raw Route entries; after construction it is
@@ -50,5 +51,5 @@ class RoutingTable
     Trie src_trie_;
     Trie dst_trie_;
 };
-
 }  // namespace routing
+}

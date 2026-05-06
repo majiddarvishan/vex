@@ -2,9 +2,10 @@
 
 #include <string>
 
+namespace vex
+{
 namespace routing
 {
-
 /// A raw route entry as provided by the user (e.g. loaded from JSON/config).
 struct Route
 {
@@ -25,5 +26,5 @@ struct MessageContext
     std::string destination_address;
     std::string pdu_type;
 };
-
 }  // namespace routing
+}

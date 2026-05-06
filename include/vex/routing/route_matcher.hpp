@@ -8,6 +8,8 @@
 #include "route.hpp"
 #include "routing_table.hpp"
 
+namespace vex
+{
 namespace routing
 {
 
@@ -61,5 +63,5 @@ class RouteMatcher
     // std::atomic<std::shared_ptr<RoutingTable>> table_;       // atomically published snapshot
     std::shared_ptr<RoutingTable> table_;
 };
-
 }  // namespace routing
+}

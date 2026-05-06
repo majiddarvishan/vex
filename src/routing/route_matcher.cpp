@@ -2,9 +2,10 @@
 
 #include <algorithm>
 
+namespace vex
+{
 namespace routing
 {
-
 RouteMatcher::RouteMatcher(const std::vector<Route>& initial)
     : raw_routes_(initial)
 {
@@ -75,5 +76,5 @@ void RouteMatcher::publish()
     // table_.store(RoutingTable::build(raw_routes_)); //update ed version
     std::atomic_store(&table_, RoutingTable::build(raw_routes_));
 }
-
 }  // namespace routing
+}

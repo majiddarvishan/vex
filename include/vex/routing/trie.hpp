@@ -6,9 +6,10 @@
 
 #include "pattern.hpp"
 
+namespace vex
+{
 namespace routing
 {
-
 /// A character trie used to efficiently match prefix and exact patterns
 /// against an input string.
 ///
@@ -41,5 +42,5 @@ class Trie
     std::vector<Node> nodes_;
     std::vector<int> wildcards_;
 };
-
 }  // namespace routing
+}

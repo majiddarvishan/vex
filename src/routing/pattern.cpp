@@ -2,9 +2,10 @@
 
 #include <cstring>
 
+namespace vex
+{
 namespace routing
 {
-
 Pattern Pattern::parse(const std::string& s)
 {
     if (s.empty())
@@ -36,5 +37,5 @@ int Pattern::match(const std::string& input) const
     }
     return -1;  // unreachable
 }
-
 }  // namespace routing
+}

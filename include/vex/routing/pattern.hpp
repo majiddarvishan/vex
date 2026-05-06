@@ -4,6 +4,8 @@
 #include <cstring>
 #include <string>
 
+namespace vex
+{
 namespace routing
 {
 enum class PatternKind : uint8_t
@@ -26,3 +28,4 @@ struct Pattern
     int match(const std::string& input) const;
 };
 }  // namespace routing
+}

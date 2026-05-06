@@ -7,7 +7,7 @@
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-static void check(const routing::RouteMatcher& matcher, const routing::MessageContext& ctx, const char* expected)
+static void check(const vex::routing::RouteMatcher& matcher, const vex::routing::MessageContext& ctx, const char* expected)
 {
     const auto* r = matcher.find(ctx);
     const char* got = r ? r->target.c_str() : nullptr;
@@ -34,7 +34,7 @@ static void section(const char* title)
 int main()
 {
     // ── Initial route table ───────────────────────────────────────────────
-    std::vector<routing::Route> initial = {
+    std::vector<vex::routing::Route> initial = {
         // id  pri  from        src              dst         pdu        target
         {1, 1, "", "", "982000*", "deliver", "smpp_client_0"},
         {2, 1, "", "", "983000*", "deliver", "smpp_client_1"},
@@ -45,7 +45,7 @@ int main()
         {7, 2, "", "98911*", "", "", "smpp_client_6"},
     };
 
-    routing::RouteMatcher matcher(initial);
+    vex::routing::RouteMatcher matcher(initial);
 
     section("Initial routes");
     check(matcher, {"", "", "9820001234", "deliver"}, "smpp_client_0");

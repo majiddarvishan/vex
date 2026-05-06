@@ -4,9 +4,10 @@
 #include <climits>
 #include <vector>
 
+namespace vex
+{
 namespace routing
 {
-
 // ── CompiledRoute ─────────────────────────────────────────────────────────────
 
 CompiledRoute CompiledRoute::compile(const Route& r)
@@ -102,5 +103,5 @@ const CompiledRoute* RoutingTable::find(const MessageContext& ctx) const
 
     return best;
 }
-
 }  // namespace routing
+}

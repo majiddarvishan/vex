@@ -1,8 +1,9 @@
 #include "vex/routing/trie.hpp"
 
+namespace vex
+{
 namespace routing
 {
-
 Trie::Trie()
 {
     nodes_.emplace_back();  // root node at index 0
@@ -59,5 +60,5 @@ void Trie::collect(const std::string& input, std::vector<int>& out) const
             out.insert(out.end(), nodes_[node].route_indices.begin(), nodes_[node].route_indices.end());
     }
 }
-
 }  // namespace routing
+}
