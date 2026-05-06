@@ -1,4 +1,4 @@
-#include "router/trie.hpp"
+#include "vex/routing/trie.hpp"
 
 namespace routing
 {

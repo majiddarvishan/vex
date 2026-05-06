@@ -7,15 +7,14 @@
 #include <string>
 #include <thread>
 #include <typeindex>
-
 #include <unordered_map>
 
-// Minimal shim for prometheus client usage
-// Replace with your project's includes when available.
+#ifdef VEX_WITH_PROMETHEUS
 #include <prometheus/counter.h>
 #include <prometheus/exposer.h>
 #include <prometheus/gauge.h>
 #include <prometheus/registry.h>
+#endif
 
 namespace vex::internal
 {
@@ -28,8 +27,7 @@ namespace vex::internal
             return singleton;
         }
 
-        // Optionally set registry from outside; by default we create one so
-        // code is safe.
+#ifdef VEX_WITH_PROMETHEUS
         void set_registry(std::shared_ptr<prometheus::Registry> r)
         {
             std::lock_guard<std::mutex> lg(mtx_);
@@ -44,22 +42,27 @@ namespace vex::internal
             prometheus::Counter* dropped {nullptr};
             prometheus::Gauge* in_pool {nullptr};
         };
+#else
+        struct Handles
+        {
+            void* created {nullptr};
+            void* returning {nullptr};
+            void* dropped {nullptr};
+            void* in_pool {nullptr};
+        };
+#endif
 
-        // Get handles for a (type, thread). This registers metrics lazily and
-        // caches them.
         Handles get_handles(std::type_index type, std::thread::id tid)
         {
+#ifdef VEX_WITH_PROMETHEUS
             std::lock_guard<std::mutex> lg(mtx_);
-            // key mix
             Key k {type, tid};
             auto it = handles_.find(k);
             if (it != handles_.end())
                 return it->second;
 
-            // lazy register
             if (!registry_)
             {
-                // create default registry to avoid nullptr deref
                 registry_ = std::make_shared<prometheus::Registry>();
             }
 
@@ -108,7 +111,6 @@ namespace vex::internal
                 std::cerr
                   << "PrometheusMetrics::get_handles() registration failed: "
                   << e.what() << "\n";
-                // return empty handles
                 return Handles {};
             }
             catch (...)
@@ -116,15 +118,20 @@ namespace vex::internal
                 std::cerr << "PrometheusMetrics::get_handles() unknown error\n";
                 return Handles {};
             }
+#else
+            return Handles {};
+#endif
         }
 
     private:
-        PrometheusMetrics(): registry_(std::make_shared<prometheus::Registry>())
+        PrometheusMetrics()
+#ifdef VEX_WITH_PROMETHEUS
+            : registry_(std::make_shared<prometheus::Registry>())
+#endif
         {
         }
         ~PrometheusMetrics() = default;
 
-        // Key for cache
         struct Key
         {
             std::type_index type;
@@ -141,7 +148,6 @@ namespace vex::internal
             {
                 size_t a = std::hash<std::type_index> {}(k.type);
                 size_t b = std::hash<std::thread::id> {}(k.tid);
-                // combine
                 return a ^ (b + 0x9e3779b97f4a7c15ULL + (a << 6) + (a >> 2));
             }
         };
@@ -154,8 +160,9 @@ namespace vex::internal
         }
 
         mutable std::mutex mtx_;
+#ifdef VEX_WITH_PROMETHEUS
         std::shared_ptr<prometheus::Registry> registry_;
-
         std::unordered_map<Key, Handles, KeyHash> handles_;
+#endif
     };
 } // namespace vex::internal

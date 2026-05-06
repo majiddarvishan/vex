@@ -1,5 +1,8 @@
+#ifdef VEX_WITH_PROMETHEUS
 #include <prometheus/exposer.h>
 #include <prometheus/registry.h>
+#endif
+
 #include <vex/object_pool/thread_local_object_pool.hpp>
 
 #include <chrono>
@@ -68,9 +71,11 @@ int main()
 {
     using namespace std::chrono_literals;
 
+#ifdef VEX_WITH_PROMETHEUS
     auto exposer  = std::make_unique<prometheus::Exposer>("0.0.0.0:9999");
     auto registry = std::make_shared<prometheus::Registry>();
     ThreadLocalObjectPool::set_registry(registry);
+#endif
 
     // Start the background reclaimer
     // ThreadLocalObjectPool::start_reclaimer(200ms);
@@ -96,5 +101,3 @@ int main()
 
     std::cout << "Program exiting cleanly.\n";
 }
-
-// #endif

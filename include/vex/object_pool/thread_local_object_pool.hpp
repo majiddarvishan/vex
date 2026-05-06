@@ -5,7 +5,6 @@
 #include <memory>
 #include <mutex>
 #include <thread>
-
 #include <unordered_map>
 
 // A convenience wrapper that gives each thread its own shared ObjectPool
@@ -47,9 +46,11 @@ namespace vex
             return instance()->create<T>(std::forward<Args>(args)...);
         }
 
+#ifdef VEX_WITH_PROMETHEUS
         static void set_registry(std::shared_ptr<prometheus::Registry> registry)
         {
             internal::PrometheusMetrics::instance().set_registry(registry);
         }
+#endif
     };
 } // namespace vex

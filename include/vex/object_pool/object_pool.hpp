@@ -150,6 +150,7 @@ namespace vex
                 {
                     // pool full: destroy object and update metrics
                     delete t;
+#ifdef VEX_WITH_PROMETHEUS
                     try
                     {
                         internal::PrometheusMetrics::instance()
@@ -163,6 +164,7 @@ namespace vex
                     {
                         // metric failures must not throw on the hot path
                     }
+#endif
                 }
             }
 
@@ -214,6 +216,7 @@ namespace vex
             {
                 info.subpool->release(obj);
                 // update metrics
+#ifdef VEX_WITH_PROMETHEUS
                 try
                 {
                     internal::PrometheusMetrics::instance()
@@ -223,6 +226,7 @@ namespace vex
                 catch (...)
                 {
                 }
+#endif
             }
             else
             {

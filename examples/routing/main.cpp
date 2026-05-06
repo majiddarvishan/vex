@@ -3,7 +3,7 @@
 #include <cstring>
 #include <iostream>
 
-using namespace vex;
+
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -23,6 +23,7 @@ else()
     endif()
 endif()
 
+find_package(Threads REQUIRED)
 
 include(GNUInstallDirs)
 

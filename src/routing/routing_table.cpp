@@ -1,4 +1,4 @@
-#include "router/routing_table.hpp"
+#include "vex/routing/routing_table.hpp"
 
 #include <algorithm>
 #include <climits>
