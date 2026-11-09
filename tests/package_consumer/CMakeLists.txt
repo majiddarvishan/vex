@@ -16,3 +16,6 @@ if(TARGET Vex::monitoring)
     target_link_libraries(vex_external_consumer PRIVATE Vex::monitoring)
     target_compile_definitions(vex_external_consumer PRIVATE VEX_HAS_MONITORING=1)
 endif()
+
+enable_testing()
+add_test(NAME vex.external.consumer COMMAND vex_external_consumer)

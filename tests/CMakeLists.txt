@@ -18,3 +18,16 @@ if(BUILD_MONITORING)
     target_link_libraries(vex_monitoring_smoke PRIVATE Vex::monitoring)
     add_test(NAME vex.monitoring.smoke COMMAND vex_monitoring_smoke)
 endif()
+
+# Ensure the installed CMake package can be consumed from outside this tree.
+# This test runs only after the normal build, and must not use source includes.
+if(VEX_EXPORT_TARGETS)
+    add_test(NAME vex.package.consumer
+        COMMAND ${CMAKE_COMMAND}
+            "-DVEX_SOURCE_DIR=${PROJECT_SOURCE_DIR}"
+            "-DVEX_BINARY_DIR=${PROJECT_BINARY_DIR}"
+            "-DVEX_GENERATOR=${CMAKE_GENERATOR}"
+            "-DVEX_CONFIG=$<CONFIG>"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/run_package_smoke.cmake"
+    )
+endif()
