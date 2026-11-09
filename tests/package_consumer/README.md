@@ -21,6 +21,8 @@ CPM to fetch it) before configuring, and repeat the consumer test against the
 full installed package. The installed Vex package discovers prometheus-cpp via
 `find_dependency` rather than relying on source-tree include paths.
 
+A CTest entry named `vex.package.consumer` performs this install/configure/build/run check automatically after the normal build. The manual commands above remain useful for diagnosis.
+
 The legacy `tests/pool_tsan_test.cpp` and
 `tests/prometheus_metrics_cpp/` are not part of this smoke test. Their
 known problems are tracked in `.codex/AUDIT.md` as VEX-018. A complete

@@ -16,6 +16,8 @@ Baseline `71e74d221f182f0567f43531f7f933104cb58c68`. This backlog is a proposal;
 | 4 — Maintenance/docs | P1 | VEX-019 and scripts | Accurate README and package examples, version authority, formatting/static analysis |
 | 5 — Performance | P2 | all affected | Repeatable benchmarks with allocation profile and metrics-cardinality budget; no correctness regressions |
 
+**Foundation status (2026-11-10):** CMake and CTest wiring has been implemented on `feature/cmake-ctest-foundation`, but full repository and Prometheus-dependent validation is outstanding. Do not mark Phase 0 complete until real checkout and consumer gates pass. Monitoring is the only next authorized implementation phase; do not begin other work packages without owner permission.
+
 ## Proposed work packages
 **WP01 (CMake)**: consolidate module feature flags; separate build examples from library; add BUILD_TESTING/CTest; make object_pool dependency design deliberate; package/export test and lint.
 

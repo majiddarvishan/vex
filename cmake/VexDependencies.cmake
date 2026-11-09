@@ -1,9 +1,6 @@
 # Find an installed dependency first; fetch only when expressly enabled.
 # ObjectPool's public headers currently include Prometheus unconditionally,
 # even if the compiled Monitoring module is disabled.
-option(VEX_ALLOW_DEPENDENCY_FETCH
-    "Allow CMake to fetch prometheus-cpp if no installed package is found" ON)
-
 find_package(prometheus-cpp 1.3 CONFIG QUIET)
 
 if(TARGET prometheus-cpp::core AND NOT TARGET prometheus-cpp::pull)

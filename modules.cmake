@@ -6,6 +6,8 @@ option(BUILD_THREADPOOL "Build ThreadPool module" ON)
 option(BUILD_OBJECT_POOL "Build ObjectPool module" ON)
 option(BUILD_MONITORING "Build Monitoring module" ON)
 option(ENABLE_METRICS_THREADING "Compile monitoring with internal mutex guards" OFF)
+option(VEX_ALLOW_DEPENDENCY_FETCH
+    "Allow CMake to fetch prometheus-cpp if no installed package is found" ON)
 
 if(BUILD_LOGGER)
     message(FATAL_ERROR

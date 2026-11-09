@@ -1,5 +1,15 @@
 # Audit handoff — 2026-11-10
 
+## Foundation implementation update (2026-11-10)
+
+- **Branch:** `feature/cmake-ctest-foundation` (stacked on the audit documentation branch).
+- **Scope implemented:** consolidated CMake flags; conditional modules/examples; explicit missing logger integration; optional system-first Prometheus dependency resolution; transitive includes/links; package export/import; CTest smoke targets for ThreadPool, ObjectPool, Monitoring; automatic CTest external-install consumer.
+- **Verification achieved:** GCC 14.2.0 + CMake 3.31.6 + Ninja 1.12.1, reconstructed **ThreadPool-only subset** assembled from reviewed source (not a clone of the GitHub repository): configure/build succeeded, 2/2 CTest smoke/package-consumer passed, package install and separate consumer compile/run passed. All-OFF configure succeeded (0 tests expected).
+- **NOT RUN / BLOCKED:** full original repository checkout, monitoring/object_pool builds and tests, ASan/UBSan/TSan, all external package modes and all-platform matrix; GitHub DNS unavailable in shell and no installed prometheus-cpp.
+- **Next:** verify the actual branch checkout in a network-capable runner, then proceed with Monitoring-only fixes and tests. **Other behavioral defects remain deferred.**
+- **Important:** test infrastructure is partially verified, not yet certified as reliable across full dependency configurations.
+
+
 ## Owner decision (2026-11-10)
 Implement CMake and trustworthy testing infrastructure first. Monitoring is the next explicitly prioritized subsystem after this gate. Keep all other audit findings in the backlog; do not implement them until owner authorizes. A foundational build/test PR may change CMake wiring for other modules without changing their implementation.
 

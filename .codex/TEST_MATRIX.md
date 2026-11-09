@@ -1,6 +1,6 @@
 # Build, tests, sanitizers and performance acceptance matrix
 
-**Status:** all rows `NOT RUN` for this review. No local checkout/environment capable of repository build was available. Re-run on pinned commits and capture tool versions.
+**Status update (2026-11-10):** The initial audit had no execution. Subsequently, a **manually reconstructed ThreadPool-only subset** (not the full GitHub checkout) passed configure/build, 2/2 CTest tests including installed consumer, on GCC 14.2.0 / CMake 3.31.6 / Ninja 1.12.1. An all-OFF configuration also succeeded (zero tests expected). **Full source-tree B01–B07 and T01–T09 remain NOT RUN/UNVERIFIED**; Prometheus-dependent builds, sanitizers and comprehensive tests are pending. Preserve this distinction.
 
 ## Build and install
 | ID | Configuration/command | Required assertion |
