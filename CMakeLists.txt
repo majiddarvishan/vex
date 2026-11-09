@@ -41,15 +41,18 @@ if(VEX_EXPORT_TARGETS)
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex)
     if(BUILD_THREADPOOL)
         install(DIRECTORY include/vex/thread/
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex/thread)
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex/thread
+            FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
     endif()
     if(BUILD_OBJECT_POOL)
         install(DIRECTORY include/vex/object_pool/
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex/object_pool)
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex/object_pool
+            FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
     endif()
     if(BUILD_MONITORING)
         install(DIRECTORY include/vex/monitoring/
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex/monitoring)
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex/monitoring
+            FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
     endif()
 
     install(

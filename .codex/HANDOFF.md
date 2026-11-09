@@ -3,6 +3,7 @@
 ## Foundation implementation update (2026-11-10)
 
 - **Branch:** `feature/cmake-ctest-foundation` (stacked on the audit documentation branch).
+- **Repeatable helper:** `tools/verify_foundation.sh thread` (offline CMake/CTest + package consumer); `tools/verify_foundation.sh full` (needs full Prometheus dependency resolution). Its thread-mode logic was verified on the reconstructed subset, but it was not executed on an actual repository clone.
 - **Scope implemented:** consolidated CMake flags; conditional modules/examples; explicit missing logger integration; optional system-first Prometheus dependency resolution; transitive includes/links; package export/import; CTest smoke targets for ThreadPool, ObjectPool, Monitoring; automatic CTest external-install consumer.
 - **Verification achieved:** GCC 14.2.0 + CMake 3.31.6 + Ninja 1.12.1, reconstructed **ThreadPool-only subset** assembled from reviewed source (not a clone of the GitHub repository): configure/build succeeded, 2/2 CTest smoke/package-consumer passed, package install and separate consumer compile/run passed. All-OFF configure succeeded (0 tests expected).
 - **NOT RUN / BLOCKED:** full original repository checkout, monitoring/object_pool builds and tests, ASan/UBSan/TSan, all external package modes and all-platform matrix; GitHub DNS unavailable in shell and no installed prometheus-cpp.

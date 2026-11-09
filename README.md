@@ -19,6 +19,11 @@ and `vex/vex.h` that do not exist.
 
 ## Build and test with no network access
 
+Use `./tools/verify_foundation.sh thread` for the repeatable offline
+foundation checks, or `./tools/verify_foundation.sh full` when
+Prometheus dependencies are available. These run CTest, including the
+external installed-package consumer. The equivalent commands follow.
+
 ThreadPool-only build (does not need prometheus-cpp):
 
 ```sh
