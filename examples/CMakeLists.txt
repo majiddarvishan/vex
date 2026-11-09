@@ -1,3 +1,10 @@
-add_subdirectory(monitoring)
-add_subdirectory(object_pool)
-add_subdirectory(thread)
+# Examples must never implicitly enable a disabled library module.
+if(BUILD_MONITORING)
+    add_subdirectory(monitoring)
+endif()
+if(BUILD_OBJECT_POOL)
+    add_subdirectory(object_pool)
+endif()
+if(BUILD_THREADPOOL)
+    add_subdirectory(thread)
+endif()

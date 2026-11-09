@@ -1,64 +1,31 @@
 cmake_minimum_required(VERSION 3.16)
-project(vex LANGUAGES CXX)
+project(vex VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Option to control building shared vs static libraries.
-# If ENABLE_SHARED is ON, we force BUILD_SHARED_LIBS to ON so add_library()
-# follow that default. If OFF, libraries will be static (unless BUILD_SHARED_LIBS
-# already set by user).
-option(ENABLE_SHARED "Build libraries as shared (sets BUILD_SHARED_LIBS)" OFF)
-
+option(ENABLE_SHARED "Build Vex compiled libraries as shared libraries" OFF)
 if(ENABLE_SHARED)
-    # Force BUILD_SHARED_LIBS on, as a cache variable so it propagates to subdirs
     set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
-else()
-    # If user explicitly turned ENABLE_SHARED off, ensure BUILD_SHARED_LIBS is off
-    # only if it wasn't set by user on the command line.
-    if(NOT DEFINED BUILD_SHARED_LIBS)
-        set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
-    endif()
+elseif(NOT DEFINED BUILD_SHARED_LIBS)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries")
 endif()
-
 
 include(GNUInstallDirs)
+include(CTest)
 
-
-# include(FetchContent)
-# FetchContent_Declare(
-#     CPM
-#     GIT_REPOSITORY https://github.com/cpm-cmake/CPM.cmake.git
-#     GIT_TAG origin/master
-# )
-# FetchContent_MakeAvailable(CPM)
-
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
-
-# Headers available to consumers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# Load module options and add_subdirectory calls
+# Declare options, resolve module dependencies, and create enabled targets.
 include(${CMAKE_CURRENT_SOURCE_DIR}/modules.cmake)
 
-# Collect targets for install/export
 set(VEX_EXPORT_TARGETS "")
+foreach(vex_target IN ITEMS logging monitoring object_pool thread_pool)
+    if(TARGET ${vex_target})
+        list(APPEND VEX_EXPORT_TARGETS ${vex_target})
+    endif()
+endforeach()
 
-if(TARGET logging)
-    list(APPEND VEX_EXPORT_TARGETS logging)
-endif()
-if(TARGET monitoring)
-    list(APPEND VEX_EXPORT_TARGETS monitoring)
-endif()
-if(TARGET object_pool)
-    list(APPEND VEX_EXPORT_TARGETS object_pool)
-endif()
-if(TARGET thread_pool)
-    list(APPEND VEX_EXPORT_TARGETS thread_pool)
-endif()
-
-# Install targets and headers
 if(VEX_EXPORT_TARGETS)
     install(
         TARGETS ${VEX_EXPORT_TARGETS}
@@ -68,31 +35,63 @@ if(VEX_EXPORT_TARGETS)
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
+
+    # Install only public headers for modules supported by this build.
+    install(FILES include/vex/version.hpp
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex)
+    if(BUILD_THREADPOOL)
+        install(DIRECTORY include/vex/thread/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex/thread)
+    endif()
+    if(BUILD_OBJECT_POOL)
+        install(DIRECTORY include/vex/object_pool/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex/object_pool)
+    endif()
+    if(BUILD_MONITORING)
+        install(DIRECTORY include/vex/monitoring/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vex/monitoring)
+    endif()
+
+    install(
+        EXPORT VexTargets
+        FILE VexTargets.cmake
+        NAMESPACE Vex::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Vex
+    )
+
+    set(VEX_NEEDS_THREADS OFF)
+    if(BUILD_THREADPOOL OR BUILD_OBJECT_POOL)
+        set(VEX_NEEDS_THREADS ON)
+    endif()
+    set(VEX_NEEDS_PROMETHEUS OFF)
+    if(BUILD_MONITORING OR BUILD_OBJECT_POOL)
+        set(VEX_NEEDS_PROMETHEUS ON)
+    endif()
+
+    include(CMakePackageConfigHelpers)
+    configure_package_config_file(
+        "${PROJECT_SOURCE_DIR}/cmake/VexConfig.cmake.in"
+        "${PROJECT_BINARY_DIR}/VexConfig.cmake"
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Vex
+    )
+    write_basic_package_version_file(
+        "${PROJECT_BINARY_DIR}/VexConfigVersion.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+    install(
+        FILES
+            "${PROJECT_BINARY_DIR}/VexConfig.cmake"
+            "${PROJECT_BINARY_DIR}/VexConfigVersion.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Vex
+    )
 endif()
-
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-# Export the targets for find_package
-install(
-    EXPORT VexTargets
-    FILE VexTargets.cmake
-    NAMESPACE Vex::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vex
-)
-
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    "${PROJECT_SOURCE_DIR}/cmake/VexConfig.cmake.in"
-    "${CMAKE_BINARY_DIR}/VexConfig.cmake"
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vex
-)
-
-install(
-    FILES "${CMAKE_BINARY_DIR}/VexConfig.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vex
-)
 
 option(BUILD_EXAMPLES "Build example programs" ON)
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
 endif()

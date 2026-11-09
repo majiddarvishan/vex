@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.16)
+project(vex_external_consumer LANGUAGES CXX)
+
+find_package(Vex CONFIG REQUIRED)
+
+add_executable(vex_external_consumer main.cpp)
+if(TARGET Vex::thread_pool)
+    target_link_libraries(vex_external_consumer PRIVATE Vex::thread_pool)
+    target_compile_definitions(vex_external_consumer PRIVATE VEX_HAS_THREAD_POOL=1)
+endif()
+if(TARGET Vex::object_pool)
+    target_link_libraries(vex_external_consumer PRIVATE Vex::object_pool)
+    target_compile_definitions(vex_external_consumer PRIVATE VEX_HAS_OBJECT_POOL=1)
+endif()
+if(TARGET Vex::monitoring)
+    target_link_libraries(vex_external_consumer PRIVATE Vex::monitoring)
+    target_compile_definitions(vex_external_consumer PRIVATE VEX_HAS_MONITORING=1)
+endif()
