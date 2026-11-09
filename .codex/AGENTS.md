@@ -1,5 +1,9 @@
 # Instructions for coding agents
 
+## Binding owner priority (2026-11-10)
+Only CMake/build/test infrastructure is approved now. Monitoring is next after foundation is proven. Logger, ObjectPool behavior, ThreadPool behavior, and other implementation improvements remain frozen until explicit owner direction. Do not opportunistically fix their behavior while touching CMake.
+
+
 ## Ground rules
 1. Start by comparing current HEAD to audit baseline `71e74d221f182f0567f43531f7f933104cb58c68`. Do not treat these reports as immutable truth.
 2. Separate confirmed source defects, potential bugs pending reproduction, and recommendations. Report file:line references with any code review.

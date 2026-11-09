@@ -1,5 +1,9 @@
 # Audit handoff — 2026-11-10
 
+## Owner decision (2026-11-10)
+Implement CMake and trustworthy testing infrastructure first. Monitoring is the next explicitly prioritized subsystem after this gate. Keep all other audit findings in the backlog; do not implement them until owner authorizes. A foundational build/test PR may change CMake wiring for other modules without changing their implementation.
+
+
 **Repository:** `majiddarvishan/vex`
 **Reviewed branch/commit:** `main` / `71e74d221f182f0567f43531f7f933104cb58c68`.
 **Audit documentation branch:** `audit/codex-review-2026-11-10`.

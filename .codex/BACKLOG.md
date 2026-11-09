@@ -1,5 +1,10 @@
 # Remediation backlog and gates
 
+## Owner-approved execution order (2026-11-10)
+
+**ACTIVE P0:** First restore CMake and reliable automated tests, including dependency resolution, install/consumer validation, and honest execution evidence. **NEXT P1:** Monitoring module reliability, API lifetime, reset, concurrency, semantics and tests. **DEFERRED / FROZEN:** All other changes, including critical logger, object pool, threadpool and performance work, are **record-only until the owner explicitly authorizes starting them**. The historical phases below are a risk ranking, **not** authorization to implement them.
+
+
 Baseline `71e74d221f182f0567f43531f7f933104cb58c68`. This backlog is a proposal; nothing here is claimed implemented.
 
 | Phase | Priority | Issues | Deliverable and exit gate |
