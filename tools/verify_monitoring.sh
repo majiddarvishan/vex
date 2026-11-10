@@ -53,9 +53,14 @@ if ! ctest --test-dir "${build_dir}" --output-on-failure -R '^vex[.]monitoring[.
     exit 1
 fi
 if [[ "$mode" == "stress" ]]; then
-    printf 'MONITORING STRESS: 100 repeated contract runs, fail fast\n'
+    printf 'MONITORING STRESS: 100 repeat runs per monitoring test, fail fast\n'
     ctest --test-dir "$build_dir" --output-on-failure \
-        --repeat until-fail:100 -R '^vex[.]monitoring[.]contract$'
+        --repeat until-fail:100 -R '^vex[.]monitoring[.](smoke|contract)
+    printf 'VEX MONITORING STRESS PASS repetitions=100 each_test=smoke,contract\n'
+else
+    printf 'VEX MONITORING PASS mode=%s\n' "$mode"
+fi
+
     printf 'VEX MONITORING STRESS PASS repeated=100\n'
 else
     printf 'VEX MONITORING PASS mode=%s\n' "$mode"
