@@ -1,3 +1,9 @@
+## Most recent full owner-run matrix — 2026-11-10
+
+After MON-OPEN-02/03/04 changes: baseline **10/10**, threaded **10/10**, ASan/UBSan **10/10**, Clang 20 TSan **10/10**, stress **9 × 100 = 900/900**, full foundation + installed consumer **13/13**. Final `VEX MONITORING ACCEPTANCE PASS all`. No local HEAD in pasted log. See [MONITORING_ACCEPTANCE_2026-11-10_HTTP.md](MONITORING_ACCEPTANCE_2026-11-10_HTTP.md). Earlier 9/9 and 'pending' statements below are superseded for this version.
+
+---
+
 ## Latest verified Monitoring acceptance — 2026-11-10
 
 All stages passed on owner checkout **after** RAII ownership fix: baseline 9/9, threaded 9/9, ASan/UBSan 9/9, Clang TSan 9/9, stress 800/800, full installed consumer 12/12. Performance baseline 3 repeated runs per 10/100/1000 shape also completed. See [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md). Remaining scenarios are tracked in [MONITORING_TASKS.md](MONITORING_TASKS.md).

@@ -1,85 +1,50 @@
-# Monitoring Task Register — 2026-11-10
+# Monitoring Tasks — Current Status (2026-11-10)
 
-Scope: Monitoring only, branch
-`feature/monitoring-correctness-tests`, stacked Draft PR #3.
-The latest expanded automated acceptance passed on the owner's actual
-checkout, and the Release benchmark baseline is recorded in
-[MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md).
-This task register separates confirmed completion from engineering
-follow-ups and formal release decisions.
+**Scope:** `feature/monitoring-correctness-tests`, stacked Draft
+[PR #3](https://github.com/majiddarvishan/vex/pull/3).
+Current evidence: [MONITORING_ACCEPTANCE_2026-11-10_HTTP.md](MONITORING_ACCEPTANCE_2026-11-10_HTTP.md).
+Original task ledger and interim notes:
+[MONITORING_TASKS_HISTORY.md](MONITORING_TASKS_HISTORY.md).
 
-## Completed and verified
+## Complete / verified in owner's acceptance output
 
-- [x] MON-DONE-01: CMake/CTest modules, install/package consumer tests.
-- [x] MON-DONE-02: Core manager metadata concurrency, HealthCheck
-  registry expiration, registration recovery tests.
-- [x] MON-DONE-03: Decorators and RAII, including rejection of
-  externally-owned series on guard creation.
-- [x] MON-DONE-04: Name/label/UTF-8 and histogram validation;
-  optional managed-series/subsystem quotas and legacy adapter.
-- [x] MON-DONE-05: Baseline, threaded, ASan/UBSan, Clang TSan
-  9/9 each; 800/800 stress repeat runs; full 12/12.
-- [x] MON-DONE-06: Optional Release benchmark built and run,
-  18 CSV samples across two series/family shapes.
+- [x] MON-OPEN-02 (**P1**) — Resolve scoped-series label-snapshot
+  ownership TOCTOU; concurrency regression passes. External raw
+  `Family::Add/Remove`, `Registry::Remove` and violation of
+  Registry/Family lifetime contracts are explicitly **not supported**.
+- [x] MON-OPEN-03 (**P1**) — Roll back provisional managed quota
+  metadata on registration failures, reject conflicting HELP,
+  recover from strict-registry errors. No quota promise for raw
+  third-party Family mutation bypassing the Vex manager.
+- [x] MON-OPEN-04 (**P2**) — Real loopback HTTP `/metrics`,
+  main/subsystem/expired Registry lifecycle, Counter/Gauge/Histogram
+  values, Exposer teardown. Test passed under all four modes and
+  100 repeated stress runs.
+- [x] Earlier Monitoring CMake/CTest, MetricsManager, HealthCheck,
+  Decorators, RAII, validation, Clang-version discovery, installed
+  package consumer and baseline Release benchmark.
 
-## Implementation in progress — latest code NOT YET owner-run
+**Verification:** Baseline 10/10, Threaded 10/10, ASan/UBSan 10/10,
+Clang 20 TSan 10/10, Stress 900/900 (9 C++ tests × 100),
+full foundation/package consumer 13/13, and final all-mode PASS.
+Exact local git SHA was not emitted in the attached terminal output.
 
-**MON-OPEN-04:** A real loopback HTTP integration CTest
-`vex.monitoring.http` was added using prometheus-cpp's documented
-ephemeral `127.0.0.1:0` Exposer with `GetListeningPorts()`.
-It checks a Counter, Gauge, Histogram, multiple Registries, a
-short-lived external Registry, expiration, manager Reset, and clean
-Exposer destruction. No fixed port or curl dependency. It only builds
-on UNIX. **Not yet run on the owner's checkout.**
+## Open work
 
-Expected next Linux matrix after this addition: **10/10 Monitoring
-CTest cases per direct mode, 9 C++ stress tests ×100,
-13/13 full foundation tests**. These are expected counts, NOT PASS
-claims. Historical 9/9 and 12/12 runs were for earlier commits.
-The next gate is `./tools/verify_monitoring.sh all`.
-
-## Implementation in progress — new candidate after last verified run
-
-- **MON-OPEN-02:** The `Has`/ `Add` label re-merge TOCTOU was
-  eliminated by using one validated immutable label snapshot, with a
-  concurrent default-label change regression and persistent external
-  metric collision. **Awaiting full owner test run.** Uncoordinated
-  concurrent raw `Family::Add/Remove` is unsupported; keeping a live
-  Registry/Family and not externally mutating its series during active
-  guards is a documented caller contract.
-- **MON-OPEN-03:** Failed registration no longer leaves empty provisional
-  ledger records; managed family HELP-text conflicts reject explicitly;
-  tests cover repeated registration failure, quota preservation and
-  HELP mismatch. **Awaiting full owner test run.** Direct raw
-  Prometheus `Registry::Remove` and `Family::Add/Remove` bypass
-  manager quota accounting; they are not supported while relying on
-  the manager's strict series limit.
-- Tasks `MON-OPEN-01,04,05,06,07` remain open unchanged.
-- The owner's earlier 9/9 ×4, 800/800 stress and 12/12 package PASS
-  are **historical** evidence before the new code, not a new PASS.
-
-
-## Remaining technical work
-
-| ID | Priority | Task | Definition of done |
+| ID | Priority | Task | Acceptance criteria |
 |---|---|---|---|
-| MON-OPEN-01 | P1 | Profile 1000-Family registration overhead (~17.268 ms median vs 2.812 ms for 1000 series) | Reproduce on controlled clean Release builds; profile code paths (manager tracking vs prometheus-cpp registration), instrument allocations / CPU, record root cause; only optimize if evidence justifies it; rerun acceptance plus benchmark before/after |
-| MON-OPEN-02 | P1 | Harden scoped-series ownership under live configuration changes and raw Prometheus mutation, or fully enforce a documented fail-closed contract | Validate Family::Has → Family::Add effective-label consistency with concurrent SetDefaultLabels and external Add/Remove; remove TOCTOU if supported by public API; write targeted TSan/ASan regressions; keep caller lifetime obligations explicit |
-| MON-OPEN-03 | P1 | Review quota metadata across series removal, family reuse, failed registration and external Registry operations | Test duplicate labels, raw Remove/Add, family type/help conflicts, weak Registry expiration and quota rollback; decide which external mutation cases remain expressly unsupported; enforce no unexpected managed-series quota drift |
-| MON-OPEN-04 | P2 | End-to-end HTTP /metrics verification — **implementation candidate, awaiting owner test** | Added loopback test with ephemeral port, Counter/Gauge/Histogram, main/subsystem/external registries, expiry and reset; obtain clean baseline/ASan/Clang TSan/Stress results on actual host before closing |
-| MON-OPEN-05 | P2 | Static/portability test matrix | GCC + Clang warnings/clang-tidy/format, clean static/shared CMake install consumer, supported OS targets only where available; record versions and failures explicitly |
-| MON-OPEN-06 | P2 | Extend performance/load baselines | Measure RSS, allocations, multi-thread registration/update/Collect, warm/cold startup and repeated scrape; report median plus variability and regressions by toolchain/config; avoid arbitrary production SLA claims |
-| MON-OPEN-07 | Process | Owner review and merge/release decision | Re-run tests on final reviewed SHA, resolve substantive PR comments, confirm foundation dependency PR order; owner explicitly approves merge/release. Never auto-merge. |
+| MON-OPEN-01 | P1 | Profile registration scaling for 1000 distinct Families (17.268 ms median vs 2.812 ms for 1000 series in 1 Family in previous Release baseline) | Isolate Vex vs prometheus-cpp overhead with controlled matched workloads; code-path attribution / profiling; measure before/after without assuming root cause or committing a speculative optimization |
+| MON-OPEN-05 | P2 | Portability and static review (GCC/Clang warnings, tidy, static/shared build/install) | Record actual compiler/OS versions, full clean build/consumer evidence; fix Monitoring-only issues |
+| MON-OPEN-06 | P2 | Expand performance/resource study | Measure RSS, allocation rates, multi-threaded register/update/Collect and scrape latency under controlled load; report distribution, hardware and uncertainty |
+| MON-OPEN-07 | Process | Owner review and merge/release decision | Confirm reviewed SHA, resolve PR comments, preserve stacked foundation dependency, obtain explicit owner merge approval |
 
-## Ordering and boundaries
+## Recommended next action
 
-Recommended sequence: **MON-OPEN-02 and 03 (correctness)**, then
-**MON-OPEN-04 (integration)**, **MON-OPEN-01 and 06 (profiling and
-performance)**, **MON-OPEN-05 (portability)** and finally
-**MON-OPEN-07 (owner decision)**. This order prevents optimizing
-unstable contracts. Performance findings do not, alone, establish bugs.
-The current 9/9, 800/800 and 12/12 results validate only the
-already-exercised paths, not the open scenarios.
+Investigate **MON-OPEN-01** with an opt-in isolated **Release
+benchmark** comparing the wrapper and direct upstream registration
+paths. Favor one family with bounded labels when semantically suitable;
+do not rewrite schemas or claim a defect solely from timing differences.
+Then MON-OPEN-06, MON-OPEN-05, and owner decision MON-OPEN-07.
 
-Logger, ObjectPool, ThreadPool and unrelated runtime behavior remain
-explicitly out of scope.
+Do not change Logger/ObjectPool/ThreadPool runtime code. Do not
+merge the Draft PR without owner consent.

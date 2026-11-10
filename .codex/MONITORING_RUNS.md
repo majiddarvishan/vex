@@ -1,3 +1,9 @@
+## Most recent owner acceptance — all 10/10 / 900/900 / 13/13 PASS (2026-11-10)
+
+Following the one-snapshot scoped RAII, quota rollback, HELP conflict fixes and added HTTP integration, owner-run full matrix passed. Detail and 100-per-test verified repeats: [MONITORING_ACCEPTANCE_2026-11-10_HTTP.md](MONITORING_ACCEPTANCE_2026-11-10_HTTP.md). MON-OPEN-02/03/04 completed within supported contracts; next MON-OPEN-01. Older 'NOT YET RUN' notices below refer to earlier checkpoints and are superseded.
+
+---
+
 ## Latest verified owner run (2026-11-10)
 
 The expanded Monitoring acceptance and Release benchmark both **PASS** after the scoped-ownership fix. Full provenance and median/raw measurements: [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md). Earlier historical notes below (including 'NOT YET RUN') are superseded for this specific revised code. Remaining work: [MONITORING_TASKS.md](MONITORING_TASKS.md).

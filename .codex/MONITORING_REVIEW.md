@@ -1,3 +1,9 @@
+## Latest verification of follow-up changes — 2026-11-10
+
+The owner supplied a complete `verify_monitoring.sh all` transcript **after** the label snapshot, ledger/HELP changes and `vex.monitoring.http` test. Baseline/threaded/ASan+UBSan/Clang TSan all **10/10**, stress **900/900**, foundation/consumer **13/13**. Prior 'not yet run' notes below are historical and superseded. Raw concurrent Family mutation remains unsupported. See [MONITORING_ACCEPTANCE_2026-11-10_HTTP.md](MONITORING_ACCEPTANCE_2026-11-10_HTTP.md).
+
+---
+
 ## MON-OPEN-04 HTTP integration test candidate (not yet run)
 
 A real loopback-only /metrics integration test has been added after
