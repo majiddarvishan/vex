@@ -1,8 +1,12 @@
 # Foundation validation status — 2026-11-10
 
+## Owner-run validation (2026-11-10)
+
+**Real checkout PASS:** `./tools/verify_foundation.sh thread` — **2/2** tests; `./tools/verify_foundation.sh full` — **4/4** tests with GCC 13.3.0, including the independently built package consumer in both modes. Detailed provenance and scope: [FOUNDATION_RUNS.md](FOUNDATION_RUNS.md). This clears the baseline prerequisite for moving to Monitoring; optional toolchain/configuration matrix remains open.
+
 ## Owner-approved sequence
-1. CMake/module/dependency/packaging/test infrastructure: **implementation drafted, full validation pending**.
-2. Monitoring correctness/concurrency/lifecycle: **NEXT**, not yet started.
+1. CMake/module/dependency/packaging/test infrastructure: **baseline verified by owner; extended matrix pending**.
+2. Monitoring correctness/concurrency/lifecycle: **NEXT**, authorized to begin.
 3. All other behavioral/performance fixes: **FROZEN**, log only until explicit owner approval.
 
 ## Branches and review

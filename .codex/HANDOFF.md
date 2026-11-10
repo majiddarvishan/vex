@@ -1,5 +1,9 @@
 # Audit handoff — 2026-11-10
 
+## Latest owner-run validation (2026-11-10)
+
+The owner executed both scripts on the real checkout: **thread 2/2 PASS**, **full 4/4 PASS** including package-consumer; full build on GNU 13.3.0. See [FOUNDATION_RUNS.md](FOUNDATION_RUNS.md). Baseline CMake/CTest gate met; extended build matrix not complete. **Next approved implementation: Monitoring only.** Other behavioral fixes remain deferred.
+
 ## Foundation implementation update (2026-11-10)
 
 - **Branch:** `feature/cmake-ctest-foundation` (stacked on the audit documentation branch).
@@ -34,9 +38,9 @@ Implement CMake and trustworthy testing infrastructure first. Monitoring is the 
 - No production behavior fix was made, and no claim of shipped reliability or full executable coverage is warranted.
 
 ## Recommended next change
-Implement **WP01 (reproducible CMake/CTest and dependency boundaries)** on a new implementation branch; then **VEX-002** and **VEX-001**, followed by lifecycle metrics and threadpool. Do not optimize the lock-free queue before it is proven correct.
+**Owner superseded this older recommendation:** CMake/CTest baseline has been implemented and owner-run smoke checks passed. Work on Monitoring next. Keep VEX-001, VEX-002, and all non-Monitoring behavior changes deferred until explicitly authorized.
 
 ## Continuation prompt for an AI coding agent
 ```text
-Open majiddarvishan/vex. Read root AGENTS.md and all .codex files. Rebase/compare audit baseline with HEAD. Build a reproducible CMake/CTest test harness first, preserving API compatibility. Turn critical audit findings VEX-001/002/003 into failing regression tests; fix them one issue at a time on reviewable branches, with ASan/UBSan/TSan runs. Do not claim tests without logs. Never merge or release automatically. Keep .codex/AUDIT.md and .codex/HANDOFF.md current with actual results and SHAs.
+Open majiddarvishan/vex. Read root AGENTS.md and all .codex files. Rebase/compare audit baseline with HEAD. Build a reproducible CMake/CTest test harness first, preserving API compatibility. Focus only on Monitoring regression tests and fixes (registry lifetime, reset, label validation, thread safety), with ASan/UBSan/TSan as applicable; do not implement deferred logger, ObjectPool or ThreadPool fixes until owner authorization. Do not claim tests without logs. Never merge or release automatically. Keep .codex/AUDIT.md and .codex/HANDOFF.md current with actual results and SHAs.
 ```
