@@ -2,7 +2,7 @@
 
 ## Owner-approved execution order (2026-11-10)
 
-**BASELINE PASSED (owner-run 2026-11-10):** CMake/CTest on real checkout, thread 2/2 and full 4/4 tests PASS. Extended build-matrix remains open. **ACTIVE NEXT P1:** Monitoring module reliability, API lifetime, reset, concurrency, semantics and tests. **DEFERRED / FROZEN:** All other changes, including critical logger, object pool, threadpool and performance work, are **record-only until the owner explicitly authorizes starting them**. The historical phases below are a risk ranking, **not** authorization to implement them.
+**FOUNDATION + MONITORING REGRESSIONS PASSED (owner-run 2026-11-10):** CMake/CTest full 6/6 PASS; Clang 20 TSan 3/3 PASS; baseline/threaded/ASan 2/2 each and 100x smoke+contract stress PASS. Wider Monitoring review remains active, not completed. Extended build-matrix remains open. **ACTIVE NEXT P1:** Monitoring module reliability, API lifetime, reset, concurrency, semantics and tests. **DEFERRED / FROZEN:** All other changes, including critical logger, object pool, threadpool and performance work, are **record-only until the owner explicitly authorizes starting them**. The historical phases below are a risk ranking, **not** authorization to implement them.
 
 
 Baseline `71e74d221f182f0567f43531f7f933104cb58c68`. This backlog is a proposal; nothing here is claimed implemented.

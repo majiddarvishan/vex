@@ -199,3 +199,56 @@ for these Clang runs. Do not attach an unverified exact commit SHA.
 of Monitoring API contracts/registry & family lifetime. No merge yet.
 All non-Monitoring behavioral changes remain deferred by owner order.
 
+
+## Post-warning-fix owner validation: PASS (2026-11-10)
+
+User-pasted terminal output on branch `feature/monitoring-correctness-tests`:
+`./tools/verify_monitoring.sh tsan-clang` and `./tools/verify_foundation.sh full`.
+
+**TSan with Clang 20** (using `/usr/bin/clang++-20`; previous independent
+probe 10/10 PASS, twice):
+- Configure/build: PASS; compiled Monitoring and contract test
+- `vex.monitoring.smoke`: PASS (0.01 s)
+- `vex.monitoring.contract`: PASS (0.13 s), including all three
+  `SAFE_CREATE_*` macros under `-Werror=unused-value`
+- `vex.monitoring.compiler-selection`: PASS (0.03 s)
+- **CTest 3/3 PASS, total 0.17 s; no sanitizer report in supplied output**
+- Prior `-Wunused-value` compiler warning: **not observed** after fix
+
+**Full CMake/CTest** (existing local GCC build):
+- Build: PASS for enabled compiled Monitoring, ObjectPool/ThreadPool
+  tests and examples; no compiler warning in supplied output
+- `vex.thread_pool.smoke`: PASS
+- `vex.object_pool.smoke`: PASS
+- `vex.monitoring.smoke`: PASS
+- `vex.monitoring.contract`: PASS
+- `vex.monitoring.compiler-selection`: PASS
+- `vex.package.consumer`: PASS
+- **CTest 6/6 PASS, total 1.30 s**
+
+These user-supplied commands verify the earlier Clang warning remediation
+in the local checkout. The output identifies the branch but not the
+exact `git rev-parse HEAD` commit SHA; **do not claim a cryptographically
+confirmed local commit ID**. The connected GitHub branch currently contains
+the remediation and is reviewed separately.
+
+**Current verified acceptance matrix for exercised configurations:**
+baseline Monitoring 2/2 PASS; threaded 2/2 PASS; ASan/UBSan 2/2 PASS;
+100 repeats per Monitoring smoke and contract PASS; Clang 20 TSan
+3/3 PASS; full CMake/CTest and installed package consumer 6/6 PASS.
+
+**Remaining Monitoring work (do not conflate with passed gates):**
+- RAII `ScopedCounter` semantics (counter deletion on scope exit), metric
+  lifetime and metric family ownership; no owner decision yet about
+  changing cumulative-counter semantics
+- adversarial concurrent reset/register/scrape and external registry
+  lifetimes, including post-reset user-held raw metric references
+- invalid Prometheus registration handling, series cardinality and
+  exception paths; negative tests and benchmarks
+- toolchain compatibility (shared libraries, clean dependency resolution,
+  compiler/platform matrix)
+
+GCC 13 TSan remains unstable on this host **independently of Vex**;
+Clang 20 has a passing TSan execution for the tests above. No proof of
+global race freedom, production certification, or merge approval.
+All non-Monitoring behavior changes remain deferred by owner instruction.

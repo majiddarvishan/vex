@@ -1,3 +1,19 @@
+## 2026-11-10 — warning fix validation complete
+
+Owner's actual Clang 20 TSan run after SAFE_* macro update:
+**3/3 CTest PASS**, no `-Wunused-value` warning, and
+`-Werror=unused-value` active on the contract test.
+Full CMake/CTest: **6/6 PASS** including installed-package consumer.
+The previous 100-repeat smoke/contract stress PASS is unchanged.
+Detailed evidence: [MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+Next Monitoring-only work: examine metric family/RAII counter lifetime,
+registration-failure and high-cardinality behavior, plus separate
+adversarial registry-reset and concurrent usage tests. Do not expand to
+Logger, ObjectPool or ThreadPool behavioral fixes without approval.
+
+---
+
 ## Owner-run Clang 20 TSan checkpoint (2026-11-10)
 
 The independent Clang TSan test passed **10/10 twice** (auto-detection

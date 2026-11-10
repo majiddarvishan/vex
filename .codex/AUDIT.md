@@ -1,5 +1,17 @@
 # Source-level engineering audit — Vex
 
+**Post-warning-fix Monitoring verification (owner, 2026-11-10):**
+Clang 20 TSan **3/3 PASS** (no reported races, prior unused-value
+compiler warning absent); full foundation CTest **6/6 PASS**
+including package consumer. Baseline/threaded/ASan and 100-repeat
+stress cases also passed earlier. This supports candidate VEX-008 and
+partial VEX-011 remediation for tested paths only. Wider Monitoring
+ownership, RAII counter semantics, concurrent lifecycle and
+registration/error/cardinality edge cases remain open. Source:
+[MONITORING_RUNS.md](MONITORING_RUNS.md). No non-Monitoring issue
+status or authorization changed.
+
+
 **Latest owner-run TSan evidence (2026-11-10):**
 Clang 20.1.2 TSan independent probe **10/10 PASS twice**; actual
 Monitoring TSan CTest **3/3 PASS**, with no data-race reports observed

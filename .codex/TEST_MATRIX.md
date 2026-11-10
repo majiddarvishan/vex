@@ -1,3 +1,16 @@
+## Latest owner-run regression, post-warning-fix (2026-11-10)
+
+- **Clang 20 TSan**: Monitoring build PASS; smoke, contract, compiler
+  selection **3/3 CTest PASS**; no TSan data-race reports observed.
+  The previously reported SAFE_CREATE_GAUGE warning is absent, with
+  `-Werror=unused-value` enabled for the contract test.
+- **Full foundation**: CMake/build/CTest **6/6 PASS**, including external
+  installed package consumer and all existing module smoke tests.
+- Earlier GCC baseline/threaded/ASan/UBSan/stress successes remain valid
+  for their exercised test suites. This completes the existing explicit
+  warning-fix regression gate, **not** the whole Monitoring audit.
+- Exact local SHA not provided. Source: [MONITORING_RUNS.md](MONITORING_RUNS.md).
+
 **Latest Monitoring TSan update (2026-11-10):** On Clang 20.1.2,
 the owner's independent TSan probe passed **10/10** both with automatic
 discovery and explicit `CXX=clang++-20`. The Monitoring TSan build

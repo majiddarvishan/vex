@@ -1,3 +1,26 @@
+# Monitoring latest owner validation — 2026-11-10
+
+Latest warning-fix owner checkout:
+- `./tools/verify_monitoring.sh tsan-clang`: **3/3 PASS**,
+  Clang 20; contract includes SAFE_CREATE_COUNTER/GAUGE/HISTOGRAM
+  under `-Werror=unused-value`. Previous warning **not observed**.
+- `./tools/verify_foundation.sh full`: **6/6 PASS**, including
+  installed-package consumer, monitoring, object pool, thread pool smoke,
+  compiler discovery.
+- Earlier: baseline/threaded/ASan 2/2 PASS; 100 repetitions of *each*
+  Monitoring smoke+contract PASS. Owner command output supplied; exact
+  local SHA not printed.
+- Clang TSan confirms current **exercised** test coverage; GCC 13 TSan
+  is independently unreliable on this host (historical).
+- **PR #3 remains Draft and unmerged.** Monitoring semantics and
+  adversarial registry teardown/recreation, cumulative counters,
+  registration failure, and high cardinality remain open.
+- Next: add focused Monitoring-only negative tests and review registry/
+  RAII API semantics; preserve non-Monitoring freeze.
+- Evidence: [MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+---
+
 ## Latest: Clang 20 TSan PASS, macro warning follow-up pending (2026-11-10)
 
 - Owner-run `diagnose_tsan.sh --clang 10`: **10/10 PASS**.
