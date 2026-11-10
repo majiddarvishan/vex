@@ -33,4 +33,9 @@ if(VEX_BUILD_MONITORING_BENCHMARK)
     add_executable(vex_monitoring_benchmark
         ${PROJECT_SOURCE_DIR}/tools/bench_monitoring.cpp)
     target_link_libraries(vex_monitoring_benchmark PRIVATE Vex::monitoring)
+    if(UNIX)
+        add_executable(vex_monitoring_load_benchmark
+            ${PROJECT_SOURCE_DIR}/tools/bench_monitoring_load.cpp)
+        target_link_libraries(vex_monitoring_load_benchmark PRIVATE Vex::monitoring)
+    endif()
 endif()
