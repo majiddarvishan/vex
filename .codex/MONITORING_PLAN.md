@@ -1,3 +1,16 @@
+## Latest checkpoint: Stress PASS; numbered Clang supported (2026-11-10)
+
+Owner-run GNU 13.3.0 stress test passed **100 consecutive smoke and
+100 consecutive contract checks** (after 2/2 initial tests).
+Clang binary is **`clang++-20`** on owner's machine rather than
+`clang++`; unversioned lookup failed. Added an automatic Clang resolver
+supporting numbered versions and `CXX` overrides, a deterministic CTest
+fixture, and independent `--clang` / `tsan-clang` verification modes.
+These new modes are **not executed yet**. GCC TSan still blocked and
+non-Monitoring behavioral work still deferred.
+
+---
+
 ## Environment diagnostic checkpoint (2026-11-10)
 
 Independent TSan runtime probe failed 7/10 launches (six mapping

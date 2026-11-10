@@ -1,3 +1,11 @@
+**Owner-run Monitoring Stress (2026-11-10):** Initial smoke/contract
+2/2 PASS and **100 repetitions of each** test passed on GNU 13.3.0,
+total repeat time 7.01s. New compiler-discovery CTest and `--clang` /
+`tsan-clang` support are pending execution. The owner's Clang executable
+is `clang++-20`, not `clang++`. GCC TSan remains blocked due to
+reproducible instability in an independent program; stress PASS is
+not a TSan substitute. See [MONITORING_RUNS.md](MONITORING_RUNS.md).
+
 **Latest owner TSan diagnosis, 2026-11-10:** 10 independent
 standalone GCC TSan trials: 3 PASS, 6 fatal unexpected memory mapping,
 1 SegFault; a single Monitoring smoke TSan rerun also SEGFAULT (0/1).

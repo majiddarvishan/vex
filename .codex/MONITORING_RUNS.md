@@ -98,3 +98,49 @@ Ubuntu ASLR security context:
 https://documentation.ubuntu.com/security/security-features/process-memory/aslr/
 
 Keep the Monitoring PR as Draft; non-Monitoring runtime fixes remain deferred.
+
+## Monitoring stress PASS and versioned Clang discovery (owner, 2026-11-10)
+
+Owner ran `git pull --ff-only origin feature/monitoring-correctness-tests`
+and the transcript showed fast-forward `f6c385e..65e4abc` followed by
+`./tools/verify_monitoring.sh stress` in the real local checkout.
+The run configured/built with **GNU 13.3.0**, passed the initial CTest
+Monitoring **2/2**, then repeated **both** `vex.monitoring.smoke`
+and `vex.monitoring.contract` **100 successful times each** with CTest
+`--repeat until-fail:100`. Total repeat CTest time **7.01 seconds**;
+summary printed `VEX MONITORING STRESS PASS repetitions=100
+each_test=smoke,contract`. This run passes **non-TSan stress only**;
+it does **not** establish absence of data races.
+
+The same pasted transcript executed `command -v clang++` (no
+executable resolved) followed by an attempted
+`CXX=clang++ ./tools/diagnose_tsan.sh 10` that **did not execute**:
+`clang++: command not found`. The owner confirmed their installation
+uses the name **`clang++-20`**. This is a portability issue in the
+verification instructions, **not a Monitoring source failure**.
+
+### Version-independent Clang verification (new code, NOT YET RUN)
+
+`tools/find_clangxx.sh` selects the explicit `CXX` first, otherwise
+the unversioned `clang++` executable if present, otherwise the highest
+numeric available `clang++-N` in `PATH` (e.g. 18 or 20).
+It fails explicitly when no compiler is available. CTest adds the
+independent `vex.monitoring.compiler-selection` fixture that verifies
+these selection rules without needing real Clang to be installed.
+
+- `./tools/diagnose_tsan.sh --clang 10`: auto-resolves Clang and
+  runs an independent TSan probe, with separate per-compiler probe logs.
+- `./tools/verify_monitoring.sh tsan-clang`: auto-resolves Clang,
+  validates its banner, configures a **separate compiler-specific
+  CMake build directory** and runs the Monitoring tests under TSan.
+  It refuses to reuse a build cache whose compiler differs.
+- `CXX=clang++-20 ...` is an explicit portable override mechanism
+  when the selected compiler must be pinned on this machine.
+
+The new Clang code/CTest compiler-discovery test was committed *after*
+the successful stress run. **Do not mark either Clang test PASS** until
+real logs from the new branch head are supplied. TSan remains **BLOCKED**
+pending a stable, independently verified toolchain; do not change ASLR
+or system-wide security configuration.
+
+Non-Monitoring behavior remains frozen per owner decision.

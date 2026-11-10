@@ -1,3 +1,24 @@
+## Latest owner verification and Clang portability (2026-11-10)
+
+- On the real checkout (fast-forward to `65e4abc` in the pasted log),
+  `./tools/verify_monitoring.sh stress` passed **100/100 smoke and
+  100/100 contract repetitions**, GNU 13.3.0. This is *not* TSan.
+- `clang++` was not found by the system, but the owner reports
+  `clang++-20` is installed. This is handled by new
+  `tools/find_clangxx.sh`, `diagnose_tsan.sh --clang`, and
+  `verify_monitoring.sh tsan-clang`. The resolver also honors explicit
+  `CXX` and checks a distinct CMake cache per compiler.
+- `vex.monitoring.compiler-selection` is a new CTest of discovery rules;
+  it, plus the Clang TSan commands, is **NOT YET RUN**.
+- Next check (no system modifications):
+  `./tools/diagnose_tsan.sh --clang 10`.
+  Only if stable: `./tools/verify_monitoring.sh tsan-clang`.
+- GCC TSan remains BLOCKED from independent memory-mapping/SegFault
+  evidence. Non-Monitoring runtime work is still unauthorized.
+- Full record: [MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+---
+
 ## New TSan diagnostic result (2026-11-10)
 
 Owner's independent race-free TSan probe on Ubuntu GCC 13.3.0 /
