@@ -11,6 +11,9 @@ case "${mode}" in
     threaded)
         flags=""
         ;;
+    stress)
+        flags=""
+        ;;
     asan)
         flags="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O1"
         ;;
@@ -18,7 +21,7 @@ case "${mode}" in
         flags="-fsanitize=thread -fno-omit-frame-pointer -g -O1"
         ;;
     *)
-        echo "Usage: tools/verify_monitoring.sh [baseline|threaded|asan|tsan]" >&2
+        echo "Usage: tools/verify_monitoring.sh [baseline|threaded|stress|asan|tsan]" >&2
         exit 2
         ;;
 esac
@@ -49,4 +52,11 @@ if ! ctest --test-dir "${build_dir}" --output-on-failure -R '^vex[.]monitoring[.
     fi
     exit 1
 fi
-printf 'VEX MONITORING PASS mode=%s\n' "${mode}"
+if [[ "$mode" == "stress" ]]; then
+    printf 'MONITORING STRESS: 100 repeated contract runs, fail fast\n'
+    ctest --test-dir "$build_dir" --output-on-failure \
+        --repeat until-fail:100 -R '^vex[.]monitoring[.]contract$'
+    printf 'VEX MONITORING STRESS PASS repeated=100\n'
+else
+    printf 'VEX MONITORING PASS mode=%s\n' "$mode"
+fi

@@ -61,3 +61,40 @@ This diagnostic **does not modify ASLR, sysctl or kernel settings**.
 
 **Owner-authorized scope remains Monitoring only.** Non-Monitoring behavioral
 findings are recorded and deferred.
+
+## Independent TSan investigation, owner-run 2026-11-10
+
+Environment: c++ Ubuntu 13.3.0-6ubuntu2~24.04.1; Linux 6.8.0-147-generic.
+The independent program used std::thread and std::atomic, with TSan
+instrumentation, and **does not import Vex or prometheus-cpp**.
+
+Result of 10 launches:
+- PASS: **3/10** (runs 3, 6, 8).
+- RUNTIME_MAPPING: **6/10** (runs 1, 4, 5, 7, 9, 10), each exit 66 and
+  ThreadSanitizer: unexpected memory mapping.
+- OTHER_FAILURE: **1/10** (run 2), exit 139, shell reports Segmentation
+  fault (core dumped). Full contents of probe-2.log were not provided.
+- Explicit TSan data-race reports: **0/10**.
+
+The single Monitoring TSan smoke rerun also **FAILED** with CTest
+SEGFAULT, 0/1 tests, without a stack trace. Therefore this host's
+GCC TSan runtime is unreliable **even without Vex**, but the origin of
+the Monitoring segfault is not proven. TSan is **BLOCKED/NOT PASS**.
+This does not certify Monitoring as race-free.
+
+Safe next gates:
+1. Run ./tools/verify_monitoring.sh stress (100 fail-fast repetitions of
+   the concurrent Monitoring contract; not a replacement for TSan).
+2. If clang++ is already installed, use an isolated clang runtime probe:
+   CXX=clang++ VEX_TSAN_DIAG_DIR="$PWD/build/tsan-probe-clang" ./tools/diagnose_tsan.sh 10
+3. Only after that independent Clang probe passes reliably, verify
+   Monitoring in a *fresh* CMake directory (compiler cache is sticky):
+   CXX=clang++ VEX_BUILD_DIR="$PWD/build/monitoring-tsan-clang" ./tools/verify_monitoring.sh tsan
+4. Otherwise run TSan on a compatible independent CI runner.
+   Do not disable ASLR or change kernel/system-wide sysctl settings.
+   
+LLVM TSan limitations: https://clang.llvm.org/docs/ThreadSanitizer.html
+Ubuntu ASLR security context:
+https://documentation.ubuntu.com/security/security-features/process-memory/aslr/
+
+Keep the Monitoring PR as Draft; non-Monitoring runtime fixes remain deferred.

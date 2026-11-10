@@ -1,3 +1,11 @@
+**Latest owner TSan diagnosis, 2026-11-10:** 10 independent
+standalone GCC TSan trials: 3 PASS, 6 fatal unexpected memory mapping,
+1 SegFault; a single Monitoring smoke TSan rerun also SEGFAULT (0/1).
+No actual code race report was supplied, but this host cannot certify
+TSan correctness. New 100-run repeat stress (non-TSan) is prepared;
+separate compatible TSan runtime still required. See
+[MONITORING_RUNS.md](MONITORING_RUNS.md).
+
 # Build, tests, sanitizers and performance acceptance matrix
 
 **Monitoring owner-run checkpoint (2026-11-10):** baseline **2/2 PASS**, threaded **2/2 PASS**, ASan/UBSan **2/2 PASS**, full CMake/CTest + package consumer **5/5 PASS**. **TSan NOT PASS**: monitoring smoke failed with `unexpected memory mapping` while contract passed; see [MONITORING_RUNS.md](MONITORING_RUNS.md). This is a runtime-mapping fatal, not a logged race finding, and still blocks a clean TSan verdict. Do not conflate this newer checkpoint with the earlier historical status below.

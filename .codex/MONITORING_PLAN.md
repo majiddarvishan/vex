@@ -1,3 +1,14 @@
+## Environment diagnostic checkpoint (2026-11-10)
+
+Independent TSan runtime probe failed 7/10 launches (six mapping
+fatalities, one SegFault), while three runs passed. Monitoring smoke
+TSan rerun also SegFault. Thus TSan is BLOCKED on the present host.
+An optional Clang probe or compatible CI host is the next TSan gate.
+A non-sanitizer 100-repeat Monitoring contract stress gate has been
+added, but it cannot replace TSan. Full evidence: MONITORING_RUNS.md.
+
+---
+
 # Monitoring reliability work plan
 
 **Branch:** `feature/monitoring-correctness-tests`, based on verified CMake/CTest foundation.

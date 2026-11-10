@@ -1,3 +1,19 @@
+## New TSan diagnostic result (2026-11-10)
+
+Owner's independent race-free TSan probe on Ubuntu GCC 13.3.0 /
+Linux 6.8.0-147-generic: **3/10 PASS, 6/10 memory mapping errors,
+1/10 SegFault**. Single Monitoring smoke TSan rerun: **SEGFAULT (0/1)**.
+GCC TSan is therefore unreliable on this host even without Vex, but
+the Monitoring segfault has no supplied stack trace and cannot be dismissed.
+No reliable race-free conclusion. Evidence and alternate runner guidance:
+[MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+Next: ./tools/verify_monitoring.sh stress (100 repeats, not TSan),
+and optionally Clang independent probe then fresh CMake TSan build.
+Do not lower ASLR or change system settings. Other modules are frozen.
+
+---
+
 # Current handoff — Monitoring priority (2026-11-10)
 
 ## Owner-supplied actual monitoring validation (2026-11-10)
