@@ -27,6 +27,14 @@ if(BUILD_MONITORING)
             -Werror=unused-value)
     endif()
     add_test(NAME vex.monitoring.contract COMMAND vex_monitoring_contract)
+
+    add_executable(vex_monitoring_decorators_contract
+        monitoring_decorators_contract.cpp)
+    target_link_libraries(vex_monitoring_decorators_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.decorators
+        COMMAND vex_monitoring_decorators_contract)
+
     if(UNIX)
         find_program(VEX_BASH_EXECUTABLE bash)
         if(VEX_BASH_EXECUTABLE)
