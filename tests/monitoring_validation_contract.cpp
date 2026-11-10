@@ -246,6 +246,70 @@ int main()
     if (!MetricsManager::GetSubsystemRegistry("second"))
         return 21;
 
+    // Owner-indexed ledger regression: expired external Registry
+    // control blocks must not retain metrics, quota or HELP identity.
+    // More than 256 distinct short-lived owners forces the amortized
+    // expired-entry collection path to run.
+    MetricsManager::SetMaxSeriesPerMetric(1);
+    auto persistent_owner = std::make_shared<prometheus::Registry>();
+    auto& persistent_series = MetricsManager::CreateCounter(
+      persistent_owner, "vex_owner_index_total", "Persistent owner",
+      {{"phase", "primary"}});
+    persistent_series.Increment();
+
+    for (int i = 0; i < 320; ++i)
+    {
+        std::weak_ptr<prometheus::Registry> weak_owner;
+        {
+            auto short_lived = std::make_shared<prometheus::Registry>();
+            weak_owner = short_lived;
+            auto& sample = MetricsManager::CreateCounter(
+              short_lived, "vex_owner_index_total", "Transient owner",
+              {{"phase", "primary"}});
+            sample.Increment();
+            if (sample.Value() != 1.0)
+                return 31;
+            if (i == 0 &&
+                !throws_as<std::length_error>([&]
+                    {
+                        (void) MetricsManager::CreateCounter(
+                          short_lived, "vex_owner_index_total",
+                          "Transient owner", {{"phase", "secondary"}});
+                    }))
+                return 32;
+        }
+        // Vex's bookkeeping must NOT hold a strong Registry reference.
+        if (!weak_owner.expired())
+            return 33;
+    }
+
+    // The original live owner must not lose its signature or HELP after
+    // the periodic sweep and the creation of hundreds of new owners.
+    if (persistent_series.Value() != 1.0 ||
+        !throws_as<std::length_error>([&]
+            {
+                (void) MetricsManager::CreateCounter(
+                  persistent_owner, "vex_owner_index_total",
+                  "Persistent owner", {{"phase", "secondary"}});
+            }))
+        return 34;
+
+    auto fresh_owner = std::make_shared<prometheus::Registry>();
+    // Different Registry owner with same name/labels but different HELP.
+    // It must not inherit metadata from any already-expired Registry.
+    (void) MetricsManager::CreateCounter(
+      fresh_owner, "vex_owner_index_total", "Fresh owner",
+      {{"phase", "primary"}});
+    if (!throws_as<std::length_error>([&]
+        {
+            (void) MetricsManager::CreateCounter(
+              fresh_owner, "vex_owner_index_total", "Fresh owner",
+              {{"phase", "secondary"}});
+        }))
+        return 35;
+    fresh_owner.reset();
+    persistent_owner.reset();
+
     MetricsManager::SetMaxSeriesPerMetric(0);
     (void) MetricsManager::CreateCounter(
       registry, name, "Bounded family", {{"status", "c"}});
