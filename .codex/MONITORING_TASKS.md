@@ -1,3 +1,22 @@
+## 2026-11-10 paired raw-vs-managed benchmark measured
+
+Owner supplied 36 CSV rows, valid 37-line file including header.
+Median (3 samples) registration at 1000:
+- one-family-many-series: Vex **3.070ms**, raw **0.930ms**
+- many-families: Vex **17.151ms**, raw **9.568ms**
+
+Both upstream Registry and Vex wrapper contribute. Vex's
+`tracked_metric_series_` vector is scanned for expired entries and
+matching Family on every registration; the upstream
+`Registry::Add` also performs linear scans of Family vectors.
+The former is an opportunity for indexed manager bookkeeping;
+any improvement must be verified, not assumed.
+
+Full analysis: [MONITORING_PROFILE_2026-11-10.md](MONITORING_PROFILE_2026-11-10.md).
+Raw CSV: [benchmarks/2026-11-10-monitoring-managed-vs-raw.csv](benchmarks/2026-11-10-monitoring-managed-vs-raw.csv).
+
+---
+
 # Monitoring Tasks — Current Status (2026-11-10)
 
 **Scope:** `feature/monitoring-correctness-tests`, stacked Draft
@@ -33,7 +52,7 @@ Exact local git SHA was not emitted in the attached terminal output.
 
 | ID | Priority | Task | Acceptance criteria |
 |---|---|---|---|
-| MON-OPEN-01 | P1 | Profile registration scaling for 1000 distinct Families; **new paired raw-vs-managed benchmark implemented, not run** | Collect matched Release CSV in four shapes across 10/100/1000 series, attribute Vex vs upstream Registry overhead, measure before/after and avoid speculative optimization |
+| MON-OPEN-01 | P1 | **Baseline measured.** At 1000: Vex/raw one-family 3.070/0.930 ms; many-families 17.151/9.568 ms. Vex vector metadata scans and upstream Registry linear scans identified as source-level candidates. | Implement safe indexed manager tracking; rerun acceptance and same benchmark to measure before/after; do not change upstream behavior or claim measured improvement before rerun |
 | MON-OPEN-05 | P2 | Portability and static review (GCC/Clang warnings, tidy, static/shared build/install) | Record actual compiler/OS versions, full clean build/consumer evidence; fix Monitoring-only issues |
 | MON-OPEN-06 | P2 | Expand performance/resource study | Measure RSS, allocation rates, multi-threaded register/update/Collect and scrape latency under controlled load; report distribution, hardware and uncertainty |
 | MON-OPEN-07 | Process | Owner review and merge/release decision | Confirm reviewed SHA, resolve PR comments, preserve stacked foundation dependency, obtain explicit owner merge approval |

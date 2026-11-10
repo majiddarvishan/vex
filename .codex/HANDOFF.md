@@ -1,3 +1,22 @@
+## 2026-11-10 paired raw-vs-managed benchmark measured
+
+Owner supplied 36 CSV rows, valid 37-line file including header.
+Median (3 samples) registration at 1000:
+- one-family-many-series: Vex **3.070ms**, raw **0.930ms**
+- many-families: Vex **17.151ms**, raw **9.568ms**
+
+Both upstream Registry and Vex wrapper contribute. Vex's
+`tracked_metric_series_` vector is scanned for expired entries and
+matching Family on every registration; the upstream
+`Registry::Add` also performs linear scans of Family vectors.
+The former is an opportunity for indexed manager bookkeeping;
+any improvement must be verified, not assumed.
+
+Full analysis: [MONITORING_PROFILE_2026-11-10.md](MONITORING_PROFILE_2026-11-10.md).
+Raw CSV: [benchmarks/2026-11-10-monitoring-managed-vs-raw.csv](benchmarks/2026-11-10-monitoring-managed-vs-raw.csv).
+
+---
+
 # Current Vex Monitoring Handoff — 2026-11-10
 
 **Branch:** `feature/monitoring-correctness-tests`  
