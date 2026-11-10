@@ -15,6 +15,7 @@ target_include_directories(monitoring PUBLIC
 )
 target_compile_features(monitoring PUBLIC cxx_std_17)
 target_link_libraries(monitoring PUBLIC
+    Threads::Threads
     prometheus-cpp::core
     prometheus-cpp::pull
 )
