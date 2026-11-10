@@ -16,7 +16,7 @@ recording this evidence. See
 **Current task ledger:** [MONITORING_TASKS.md](MONITORING_TASKS.md)
 02/03/04 closed for documented **supported Vex wrapper contracts**;
 external uncoordinated raw prometheus-cpp Family mutations remain
-unsupported. Next: MON-OPEN-01 (profiling registration), MON-OPEN-06
+unsupported. MON-OPEN-01 has a newly implemented optional paired raw-vs-managed Release benchmark, **NOT YET RUN**; command: `./tools/benchmark_monitoring.sh 3`. Next: MON-OPEN-01 (profiling registration), MON-OPEN-06
 (resource/concurrency performance), MON-OPEN-05 (portability), then
 MON-OPEN-07 (owner review and merge approval).
 

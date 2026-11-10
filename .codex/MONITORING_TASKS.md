@@ -33,7 +33,7 @@ Exact local git SHA was not emitted in the attached terminal output.
 
 | ID | Priority | Task | Acceptance criteria |
 |---|---|---|---|
-| MON-OPEN-01 | P1 | Profile registration scaling for 1000 distinct Families (17.268 ms median vs 2.812 ms for 1000 series in 1 Family in previous Release baseline) | Isolate Vex vs prometheus-cpp overhead with controlled matched workloads; code-path attribution / profiling; measure before/after without assuming root cause or committing a speculative optimization |
+| MON-OPEN-01 | P1 | Profile registration scaling for 1000 distinct Families; **new paired raw-vs-managed benchmark implemented, not run** | Collect matched Release CSV in four shapes across 10/100/1000 series, attribute Vex vs upstream Registry overhead, measure before/after and avoid speculative optimization |
 | MON-OPEN-05 | P2 | Portability and static review (GCC/Clang warnings, tidy, static/shared build/install) | Record actual compiler/OS versions, full clean build/consumer evidence; fix Monitoring-only issues |
 | MON-OPEN-06 | P2 | Expand performance/resource study | Measure RSS, allocation rates, multi-threaded register/update/Collect and scrape latency under controlled load; report distribution, hardware and uncertainty |
 | MON-OPEN-07 | Process | Owner review and merge/release decision | Confirm reviewed SHA, resolve PR comments, preserve stacked foundation dependency, obtain explicit owner merge approval |
@@ -48,3 +48,13 @@ Then MON-OPEN-06, MON-OPEN-05, and owner decision MON-OPEN-07.
 
 Do not change Logger/ObjectPool/ThreadPool runtime code. Do not
 merge the Draft PR without owner consent.
+
+## Next MON-OPEN-01 evidence collection
+
+The benchmark now compares matched **Vex managed** and **raw upstream** registration paths in the same Release build. Its output CSV has the same 8 columns but four shapes (new `raw_*` rows), 36 rows with three repeats. Run:
+
+```sh
+./tools/benchmark_monitoring.sh 3 > build/monitoring-profile.csv
+```
+
+Release runner build/config messages go to stderr; CSV to stdout. Do not invent results or claim the new benchmark is validated until the owner reports actual output.

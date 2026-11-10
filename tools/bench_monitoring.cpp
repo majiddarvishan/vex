@@ -7,6 +7,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -20,7 +21,7 @@ double milliseconds(Clock::time_point begin)
       Clock::now() - begin).count();
 }
 
-void measure(std::size_t series, bool many_families)
+void measure(std::size_t series, bool many_families, bool managed)
 {
     using vex::MetricsManager;
 
@@ -40,10 +41,24 @@ void measure(std::size_t series, bool many_families)
               {"status", std::to_string(i)}
             };
 
-        auto& counter = MetricsManager::CreateCounter(
-          registry, name, "Synthetic benchmark counter", labels
-        );
-        counters.push_back(&counter);
+        prometheus::Counter* counter = nullptr;
+        if (managed)
+        {
+            counter = &MetricsManager::CreateCounter(
+              registry, name, "Synthetic benchmark counter", labels
+            );
+        }
+        else
+        {
+            // Same Registry, HELP, labels and Counter type, but bypass
+            // MetricsManager's registry/series tracking. This isolates
+            // Vex wrapper overhead from upstream Registry::Add.
+            auto& family = prometheus::BuildCounter()
+              .Name(name).Help("Synthetic benchmark counter")
+              .Register(*registry);
+            counter = &family.Add(labels);
+        }
+        counters.push_back(counter);
     }
     const double registration_ms = milliseconds(begin);
 
@@ -62,7 +77,14 @@ void measure(std::size_t series, bool many_families)
     for (const auto& family: families)
         samples += family.metric.size();
 
-    std::cout << (many_families ? "many_families" : "many_series")
+    const std::size_t expected_families = many_families ? series : 1;
+    if (families.size() != expected_families || samples != series)
+        throw std::runtime_error(
+          "Benchmark shapes are not equivalent across implementations"
+        );
+
+    std::cout << (managed ? "" : "raw_")
+              << (many_families ? "many_families" : "many_series")
               << "," << series << ","
               << std::fixed << std::setprecision(3)
               << registration_ms << ","
@@ -98,8 +120,12 @@ int main(int argc, char** argv)
     {
         for (std::size_t series : {10U, 100U, 1000U})
         {
-            measure(series, false);
-            measure(series, true);
+            // Paired workloads share the exact same metric schemas.
+            // Both paths use fresh Registry objects in each measurement.
+            measure(series, false, true);
+            measure(series, false, false);
+            measure(series, true, true);
+            measure(series, true, false);
         }
     }
     vex::MetricsManager::Reset();

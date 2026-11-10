@@ -72,3 +72,23 @@ labels are resolved to a single validated snapshot per new guard;
 they do not migrate existing series. Do not mutate/remove the Family
 directly while guards are active. Details:
 [API.md](API.md).
+
+
+### Direct prometheus-cpp comparison for MON-OPEN-01
+
+The optional `./tools/benchmark_monitoring.sh 3` now emits **four**
+`shape` values (preserving the existing CSV column names):
+
+- `many_series` — Vex manager, one family with N labeled series
+- `raw_many_series` — direct prometheus-cpp, identical schema
+- `many_families` — Vex manager, N families with one series each
+- `raw_many_families` — direct prometheus-cpp, identical schema
+
+Each scenario uses a **fresh Registry**, 100 Counter increments per
+series, and `Registry::Collect()`. The benchmark checks that each
+shape produces the expected family/sample counts and fails if it does
+not. Runs for N=10,100,1000, three repeats by default (36 CSV rows).
+This provides a controlled comparison of Vex-tracking overhead vs
+upstream registration cost; it does not prove bottleneck location
+without profiling and does not replace ASan/TSan/CTest. **Not yet
+compiled/run on the owner's checkout.**
