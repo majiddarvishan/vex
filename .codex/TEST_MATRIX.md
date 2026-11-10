@@ -2,7 +2,7 @@
 standalone GCC TSan trials: 3 PASS, 6 fatal unexpected memory mapping,
 1 SegFault; a single Monitoring smoke TSan rerun also SEGFAULT (0/1).
 No actual code race report was supplied, but this host cannot certify
-TSan correctness. New 100-run repeat stress (non-TSan) is prepared;
+TSan correctness. New 100-run repeats of smoke and contract (non-TSan) is prepared;
 separate compatible TSan runtime still required. See
 [MONITORING_RUNS.md](MONITORING_RUNS.md).
 

@@ -8,7 +8,7 @@ the Monitoring segfault has no supplied stack trace and cannot be dismissed.
 No reliable race-free conclusion. Evidence and alternate runner guidance:
 [MONITORING_RUNS.md](MONITORING_RUNS.md).
 
-Next: ./tools/verify_monitoring.sh stress (100 repeats, not TSan),
+Next: ./tools/verify_monitoring.sh stress (100 repeats per smoke and contract test, not TSan),
 and optionally Clang independent probe then fresh CMake TSan build.
 Do not lower ASLR or change system settings. Other modules are frozen.
 

@@ -83,8 +83,8 @@ the Monitoring segfault is not proven. TSan is **BLOCKED/NOT PASS**.
 This does not certify Monitoring as race-free.
 
 Safe next gates:
-1. Run ./tools/verify_monitoring.sh stress (100 fail-fast repetitions of
-   the concurrent Monitoring contract; not a replacement for TSan).
+1. Run ./tools/verify_monitoring.sh stress (100 fail-fast repetitions each of the Monitoring smoke and
+   concurrent contract tests; not a replacement for TSan).
 2. If clang++ is already installed, use an isolated clang runtime probe:
    CXX=clang++ VEX_TSAN_DIAG_DIR="$PWD/build/tsan-probe-clang" ./tools/diagnose_tsan.sh 10
 3. Only after that independent Clang probe passes reliably, verify
