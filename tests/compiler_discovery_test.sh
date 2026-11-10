@@ -11,10 +11,11 @@ ln -s "$(type -P bash)" "$temp/bash"
 ln -s "$(type -P dirname)" "$temp/dirname"
 ln -s "$(type -P basename)" "$temp/basename"
 run() {
-    # -i clears the environment, so pass a test's explicit CXX override
-    # through deliberately rather than losing it in the test harness.
-    if [[ -n "${CXX:-}" ]]; then
-        env -i PATH="$temp" CXX="$CXX" "$(type -P bash)" "$finder"
+    # Do not inherit CXX from the caller: tests of *automatic* selection
+    # must remain hermetic, including when CTest is launched with CXX set.
+    local override="${1:-}"
+    if [[ -n "$override" ]]; then
+        env -i PATH="$temp" CXX="$override" "$(type -P bash)" "$finder"
     else
         env -i PATH="$temp" "$(type -P bash)" "$finder"
     fi
@@ -33,14 +34,14 @@ printf '#!/bin/sh\nexit 0\n' > "$temp/clang++-18"
 printf '#!/bin/sh\nexit 0\n' > "$temp/clang++-20"
 chmod +x "$temp/clang++-18" "$temp/clang++-20"
 assert_eq "$(run)" "$temp/clang++-20"
-assert_eq "$(CXX=clang++-18 run)" "$temp/clang++-18"
-assert_eq "$(CXX="$temp/clang++-20" run)" "$temp/clang++-20"
+assert_eq "$(run clang++-18)" "$temp/clang++-18"
+assert_eq "$(run "$temp/clang++-20")" "$temp/clang++-20"
 
 printf '#!/bin/sh\nexit 0\n' > "$temp/clang++"
 chmod +x "$temp/clang++"
 assert_eq "$(run)" "$temp/clang++"
-assert_eq "$(CXX=clang++-20 run)" "$temp/clang++-20"
-if CXX=clang++-42 run >/dev/null 2>&1; then
+assert_eq "$(run clang++-20)" "$temp/clang++-20"
+if run clang++-42 >/dev/null 2>&1; then
     echo 'Unexpected success for a missing explicit Clang version' >&2
     exit 1
 fi
