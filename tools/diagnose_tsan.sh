@@ -4,14 +4,25 @@
 set -Eeuo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+use_clang=false
+if [[ "${1:-}" == "--clang" ]]; then
+    use_clang=true
+    shift
+fi
 repeats="${1:-10}"
 if [[ ! "${repeats}" =~ ^[1-9][0-9]*$ ]] || (( repeats > 100 )); then
-    echo "Usage: tools/diagnose_tsan.sh [runs:1..100]" >&2
+    echo "Usage: tools/diagnose_tsan.sh [--clang] [runs:1..100]" >&2
     exit 2
 fi
 
-build_dir="${VEX_TSAN_DIAG_DIR:-${root}/build/tsan-runtime-probe}"
-compiler="${CXX:-c++}"
+if [[ "$use_clang" == true ]]; then
+    compiler="$("${root}/tools/find_clangxx.sh")"
+    default_dir="${root}/build/tsan-runtime-probe-$(basename -- "$compiler")"
+else
+    compiler="${CXX:-c++}"
+    default_dir="${root}/build/tsan-runtime-probe"
+fi
+build_dir="${VEX_TSAN_DIAG_DIR:-${default_dir}}"
 mkdir -p "${build_dir}"
 
 printf 'TSAN PROBE compiler=%s repeats=%s\n' "${compiler}" "${repeats}"
