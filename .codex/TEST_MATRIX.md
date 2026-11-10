@@ -1,3 +1,16 @@
+## Performance-follow-up acceptance pending (2026-11-10)
+
+The latest Monitoring source changes Vex tracked-series metadata
+from vector to owner-aware ordered map, and adds a 320 Registry churn
+regression. Previous full 10/10 per mode, 900/900 stress and
+13/13 foundation PASS are for pre-change source.
+**Required rerun:** `./tools/verify_monitoring.sh all`, then
+`./tools/benchmark_monitoring.sh 3` on owner checkout. No
+post-optimization measurement yet. Historical baseline CSV:
+[benchmarks/2026-11-10-monitoring-managed-vs-raw.csv](benchmarks/2026-11-10-monitoring-managed-vs-raw.csv).
+
+---
+
 ## Most recent full owner-run matrix — 2026-11-10
 
 After MON-OPEN-02/03/04 changes: baseline **10/10**, threaded **10/10**, ASan/UBSan **10/10**, Clang 20 TSan **10/10**, stress **9 × 100 = 900/900**, full foundation + installed consumer **13/13**. Final `VEX MONITORING ACCEPTANCE PASS all`. No local HEAD in pasted log. See [MONITORING_ACCEPTANCE_2026-11-10_HTTP.md](MONITORING_ACCEPTANCE_2026-11-10_HTTP.md). Earlier 9/9 and 'pending' statements below are superseded for this version.

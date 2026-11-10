@@ -1,3 +1,19 @@
+## 2026-11-10 MON-OPEN-01 matched benchmark received and indexed-ledger candidate committed
+
+Owner supplied 37-line CSV: 36 Release measurements comparing Vex
+vs direct prometheus-cpp at 10/100/1000 in one-Family and
+many-Family scenarios. See
+[MONITORING_PROFILE_2026-11-10.md](MONITORING_PROFILE_2026-11-10.md).
+At 1000, manager/raw registration medians were 3.070/0.930ms
+(one family) and 17.151/9.568ms (many families).
+A weak-Registry-owner ordered-map lookup plus periodic cleanup
+was subsequently committed, with a 320-owner quota/lifetime test.
+**Neither the new source nor the benchmark after optimization has
+been owner-run.** Earlier 10/10 + 900/900 + 13/13 PASS applies to
+the prior commit. No measured speedup is established.
+
+---
+
 ## Most recent owner acceptance — all 10/10 / 900/900 / 13/13 PASS (2026-11-10)
 
 Following the one-snapshot scoped RAII, quota rollback, HELP conflict fixes and added HTTP integration, owner-run full matrix passed. Detail and 100-per-test verified repeats: [MONITORING_ACCEPTANCE_2026-11-10_HTTP.md](MONITORING_ACCEPTANCE_2026-11-10_HTTP.md). MON-OPEN-02/03/04 completed within supported contracts; next MON-OPEN-01. Older 'NOT YET RUN' notices below refer to earlier checkpoints and are superseded.

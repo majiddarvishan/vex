@@ -65,3 +65,55 @@ series quotas and rollback of failed registrations.
 **Current task:** MON-OPEN-01 evidence collected; optimization
 candidate needs a fresh real-host build/TSan and before/after
 benchmark. Do not mark MON-OPEN-01 complete yet.
+
+
+## Follow-up indexed-ledger optimization candidate (not yet benchmarked)
+
+The measured raw CSV above is the **before** baseline. After the owner
+submitted it, Vex Monitoring-only changes were committed:
+
+- Replace `tracked_metric_series_`'s vector of Registry/family records
+  and repeated `remove_if` / `find_if` full scans with a
+  `std::map<TrackedMetricKey, TrackedMetricSeries, TrackedMetricKeyLess>`.
+  A key consists of weak Registry ownership identity, metric name
+  and type. `std::owner_less<weak_ptr<Registry>>` handles different
+  owners even when the underlying allocation address is recycled.
+  Ordered lookup is logarithmic in the number of tracked Families,
+  rather than scanning all of them per registration.
+- Amortize removal of expired Registry ledger entries by sweeping
+  after every 256 registration calls, under the existing manager mutex.
+  Weak ownership continues to ensure Registry lifetime is never
+  extended by bookkeeping. Reset clears the ledger and the sweep
+  counter.
+- Preserve per-Family HELP and histogram signatures, quotas and
+  exception rollback. Failed first registration erases its provisional
+  `std::map` entry by iterator instead of the old vector pop_back.
+- Add a validation regression that constructs 320 short-lived Registry
+  owners, confirms the manager does not extend their lifetimes, checks
+  that the long-lived owner's quota persists, and ensures a later
+  Registry with a distinct owner can use the same metric name and
+  different HELP without inheriting old metadata.
+
+**Verification state:** A small standalone C++17 owner-less comparator
+and map insertion/sweep fixture compiled and passed locally with GCC
+14.2.0. This is not a Vex build. **The full Vex baseline,
+ASan/UBSan, Clang TSan, stress and package consumer have NOT been
+run for these changes.** The user's earlier 10/10 and 900/900
+test results and the CSV median values all belong to the pre-index
+code. No after-change performance results exist, so **do not claim
+any measured speedup or close MON-OPEN-01**.
+
+Next test commands on the latest branch:
+
+```sh
+git pull --ff-only origin feature/monitoring-correctness-tests
+git rev-parse HEAD
+git status --short
+./tools/verify_monitoring.sh all
+./tools/benchmark_monitoring.sh 3 > build/monitoring-profile-after.csv
+```
+
+Compare before/after results on the same machine and with identical
+Release toolchain and shape definitions. If CTest or sanitizer fails,
+fix the regression first; report both improvement and any tradeoffs
+(e.g. quota registry cleanup behavior, RSS allocations).

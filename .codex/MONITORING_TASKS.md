@@ -52,7 +52,7 @@ Exact local git SHA was not emitted in the attached terminal output.
 
 | ID | Priority | Task | Acceptance criteria |
 |---|---|---|---|
-| MON-OPEN-01 | P1 | **Baseline measured.** At 1000: Vex/raw one-family 3.070/0.930 ms; many-families 17.151/9.568 ms. Vex vector metadata scans and upstream Registry linear scans identified as source-level candidates. | Implement safe indexed manager tracking; rerun acceptance and same benchmark to measure before/after; do not change upstream behavior or claim measured improvement before rerun |
+| MON-OPEN-01 | P1 | **Indexed ledger implementation committed, unverified.** Owner's pre-change raw-vs-Vex medians at 1000: one family 0.930/3.070 ms, many families 9.568/17.151 ms. Tracked-series lookup now uses owner-aware std::map and amortized weak-registry expiry, plus 320-Registry churn regression. | Re-run complete 10/10, 900/900, 13/13 acceptance and the exact Release benchmark; document measured before/after and memory tradeoffs before closing |
 | MON-OPEN-05 | P2 | Portability and static review (GCC/Clang warnings, tidy, static/shared build/install) | Record actual compiler/OS versions, full clean build/consumer evidence; fix Monitoring-only issues |
 | MON-OPEN-06 | P2 | Expand performance/resource study | Measure RSS, allocation rates, multi-threaded register/update/Collect and scrape latency under controlled load; report distribution, hardware and uncertainty |
 | MON-OPEN-07 | Process | Owner review and merge/release decision | Confirm reviewed SHA, resolve PR comments, preserve stacked foundation dependency, obtain explicit owner merge approval |
@@ -77,3 +77,5 @@ The benchmark now compares matched **Vex managed** and **raw upstream** registra
 ```
 
 Release runner build/config messages go to stderr; CSV to stdout. Do not invent results or claim the new benchmark is validated until the owner reports actual output.
+
+**Latest unverified source change:** indexed weak-owner ledger with periodic expiry sweep, plus 320-Registry churn test. The previous paired CSV is the **before** baseline. Do not claim any speedup or tests passed on this latest commit without fresh owner logs. See [MONITORING_PROFILE_2026-11-10.md](MONITORING_PROFILE_2026-11-10.md).
