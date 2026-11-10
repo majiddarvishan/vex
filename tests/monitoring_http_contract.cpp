@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -111,6 +112,42 @@ bool contains(const std::string& body, const std::string& text)
 {
     return body.find(text) != std::string::npos;
 }
+
+bool has_sample_value(const std::string& body,
+                      const std::string& name, double expected)
+{
+    std::size_t start = 0;
+    while (start < body.size())
+    {
+        const auto end = body.find('\n', start);
+        const auto line = body.substr(
+          start, end == std::string::npos ? std::string::npos : end - start
+        );
+        if (line.compare(0, name.size(), name) == 0 &&
+            line.size() > name.size() &&
+            (line[name.size()] == ' ' || line[name.size()] == '{'))
+        {
+            const auto split = line.rfind(' ');
+            if (split != std::string::npos)
+            {
+                try
+                {
+                    const double actual = std::stod(line.substr(split + 1));
+                    if (std::isfinite(actual) &&
+                        std::abs(actual - expected) < 0.000001)
+                        return true;
+                }
+                catch (const std::exception&)
+                {
+                }
+            }
+        }
+        if (end == std::string::npos)
+            break;
+        start = end + 1;
+    }
+    return false;
+}
 } // namespace
 
 int main()
@@ -145,8 +182,11 @@ int main()
         if (!contains(first, "vex_http_requests_total") ||
             !contains(first, "vex_http_inflight") ||
             !contains(first, "vex_http_duration_seconds_bucket") ||
-            !contains(first, "vex_http_duration_seconds_count") ||
-            !contains(first, "method=\"GET\""))
+            !contains(first, "method=\"GET\"") ||
+            !has_sample_value(first, "vex_http_requests_total", 3.0) ||
+            !has_sample_value(first, "vex_http_inflight", 2.0) ||
+            !has_sample_value(first, "vex_http_duration_seconds_count", 1.0) ||
+            !has_sample_value(first, "vex_http_duration_seconds_sum", 0.2))
             return 3;
 
         auto transient = std::make_shared<prometheus::Registry>();
