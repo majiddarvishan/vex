@@ -16,12 +16,7 @@
 
 #include <unordered_map>
 
-#ifdef METRICS_MULTI_THREADED
 #include <mutex>
-#define METRICS_LOCK_GUARD std::lock_guard<std::mutex> lock(mutex_)
-#else
-#define METRICS_LOCK_GUARD
-#endif
 
 namespace vex
 {
@@ -30,9 +25,9 @@ namespace vex
     {
     public:
         /// Initialize the metrics manager. Must be called before any other
-        /// methods. Thread-safe only if compiled with METRICS_MULTI_THREADED.
+        /// methods. Manager control state is synchronized in all builds.
         /// Idempotent (safe to call multiple times).
-        /// @param enable_threading Enable runtime thread safety (only works if
+        /// @param enable_threading Retained compile-time capability flag (only works if
         /// compiled with METRICS_MULTI_THREADED)
         /// @return true if initialization succeeded, false if already
         /// initialized
@@ -48,7 +43,9 @@ namespace vex
           GetSubsystemRegistry(const std::string& ns);
 
         /// Reset the metrics manager (primarily for testing).
-        /// Warning: Invalidates all existing metric references.
+        /// Call only when metric users are quiescent. Previously returned raw
+        /// metric references become invalid when their Registry is destroyed;
+        /// caller-owned shared Registries can outlive this manager.
         static void Reset();
 
         /// Register all registries (main + subsystems) with a Prometheus
@@ -136,9 +133,6 @@ namespace vex
         [[nodiscard]] static double GetUptimeSeconds();
 
     private:
-        /// Ensure the manager has been initialized, throw if not.
-        static void EnsureInitialized();
-
         /// Validate metric name according to Prometheus naming conventions.
         /// Must match [a-zA-Z_:][a-zA-Z0-9_:]* and not start with __
         static void ValidateMetricName(const std::string& name);
@@ -160,9 +154,9 @@ namespace vex
         inline static bool threading_enabled_ = false;
         inline static std::chrono::steady_clock::time_point start_time_ {};
 
-#ifdef METRICS_MULTI_THREADED
+        // Always protect manager metadata; the optional build flag remains
+        // for compatibility with the existing IsThreadingEnabled API.
         inline static std::mutex mutex_;
-#endif
     };
 
 } // namespace vex

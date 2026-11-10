@@ -1,11 +1,14 @@
 #include <vex/monitoring/metrics_manager.hpp>
 
+#include <cstdlib>
+#include <vector>
+
 namespace vex
 {
 
     bool MetricsManager::Init(bool enable_threading)
     {
-        METRICS_LOCK_GUARD;
+        std::lock_guard<std::mutex> guard(mutex_);
         if (!registry_)
         {
 #ifdef METRICS_MULTI_THREADED
@@ -45,31 +48,39 @@ namespace vex
 
     std::shared_ptr<prometheus::Registry> MetricsManager::GetRegistry()
     {
-        EnsureInitialized();
+        std::lock_guard<std::mutex> guard(mutex_);
+        if (!initialized_ || !registry_)
+        {
+            throw std::runtime_error(
+              "MetricsManager not initialized. Call MetricsManager::Init() first."
+            );
+        }
         return registry_;
     }
 
     void MetricsManager::Reset()
     {
-        METRICS_LOCK_GUARD;
+        std::lock_guard<std::mutex> guard(mutex_);
         registry_.reset();
         subsystems_.clear();
         default_labels_.clear();
         dynamic_labels_.clear();
         initialized_       = false;
         threading_enabled_ = false;
+        start_time_ = {};
     }
 
     std::shared_ptr<prometheus::Registry>
       MetricsManager::GetSubsystemRegistry(const std::string& ns)
     {
-        EnsureInitialized();
         if (ns.empty())
         {
             throw std::invalid_argument("Subsystem namespace cannot be empty");
         }
 
-        METRICS_LOCK_GUARD;
+        std::lock_guard<std::mutex> guard(mutex_);
+        if (!initialized_ || !registry_)
+            throw std::runtime_error("MetricsManager not initialized");
         auto it = subsystems_.find(ns);
         if (it != subsystems_.end())
             return it->second;
@@ -81,13 +92,20 @@ namespace vex
 
     void MetricsManager::RegisterAllWithExposer(prometheus::Exposer& exposer)
     {
-        EnsureInitialized();
-        METRICS_LOCK_GUARD;
-        exposer.RegisterCollectable(registry_);
-        for (auto& kv: subsystems_)
+        // Snapshot shared ownership under lock, then invoke the external
+        // Exposer API without holding the manager mutex.
+        std::vector<std::shared_ptr<prometheus::Registry>> snapshots;
         {
-            exposer.RegisterCollectable(kv.second);
+            std::lock_guard<std::mutex> guard(mutex_);
+            if (!initialized_ || !registry_)
+                throw std::runtime_error("MetricsManager not initialized");
+            snapshots.reserve(subsystems_.size() + 1);
+            snapshots.push_back(registry_);
+            for (const auto& kv: subsystems_)
+                snapshots.push_back(kv.second);
         }
+        for (const auto& registry: snapshots)
+            exposer.RegisterCollectable(registry);
     }
 
     void MetricsManager::SetDefaultLabels(
@@ -95,19 +113,19 @@ namespace vex
     )
     {
         ValidateLabels(labels);
-        METRICS_LOCK_GUARD;
+        std::lock_guard<std::mutex> guard(mutex_);
         default_labels_ = labels;
     }
 
     std::map<std::string, std::string> MetricsManager::GetDefaultLabels()
     {
-        METRICS_LOCK_GUARD;
+        std::lock_guard<std::mutex> guard(mutex_);
         return default_labels_;
     }
 
     std::map<std::string, std::string> MetricsManager::GetDynamicLabels()
     {
-        METRICS_LOCK_GUARD;
+        std::lock_guard<std::mutex> guard(mutex_);
         return dynamic_labels_;
     }
 
@@ -115,21 +133,13 @@ namespace vex
       const std::map<std::string, std::string>& labels
     )
     {
-        auto merged  = GetDefaultLabels();
-        auto dynamic = GetDynamicLabels();
+        std::lock_guard<std::mutex> guard(mutex_);
+        auto merged = default_labels_;
+        merged.insert(dynamic_labels_.begin(), dynamic_labels_.end());
 
-        // Add dynamic labels first
-        merged.insert(dynamic.begin(), dynamic.end());
-
-        // User labels override both default and dynamic
+        // Explicit per-metric labels override the defaults.
         for (const auto& [key, value]: labels)
-        {
-            if (merged.count(key) && merged[key] != value)
-            {
-                // LOG_WARNING("Label '{}' overriding default value", key);
-            }
             merged[key] = value;
-        }
         return merged;
     }
 
@@ -238,36 +248,25 @@ namespace vex
 
     bool MetricsManager::IsInitialized()
     {
-        METRICS_LOCK_GUARD;
+        std::lock_guard<std::mutex> guard(mutex_);
         return initialized_;
     }
 
     bool MetricsManager::IsThreadingEnabled()
     {
-        METRICS_LOCK_GUARD;
+        std::lock_guard<std::mutex> guard(mutex_);
         return threading_enabled_;
     }
 
     double MetricsManager::GetUptimeSeconds()
     {
+        std::lock_guard<std::mutex> guard(mutex_);
         if (start_time_ == std::chrono::steady_clock::time_point {})
         {
             start_time_ = std::chrono::steady_clock::now();
         }
         auto now = std::chrono::steady_clock::now();
         return std::chrono::duration<double>(now - start_time_).count();
-    }
-
-    void MetricsManager::EnsureInitialized()
-    {
-        METRICS_LOCK_GUARD;
-        if (!initialized_ || !registry_)
-        {
-            throw std::runtime_error(
-              "MetricsManager not initialized. Call MetricsManager::Init() "
-              "first."
-            );
-        }
     }
 
     void MetricsManager::ValidateMetricName(const std::string& name)

@@ -18,4 +18,4 @@
 - `METRICS_MULTI_THREADED` and runtime `Init(enable_threading)` remain API-compatible but may still select compatibility/reporting semantics; manager's own state access is synchronized regardless of flag.
 
 ## Evidence
-Initial tests are added before implementation. The existing `full` smoke PASS was from the owner's original checkout before this branch. The new contract test and fixes are **NOT RUN** at creation time. Run `./tools/verify_foundation.sh full`, and independently ASan/UBSan + TSan after implementation.
+Implementation (manager synchronization, weak-registry HealthCheck access and namespace-qualified type-safe macros) is prepared as a separate commit after the contract-test commit. These changes need execution on the owner's real checkout. The existing `full` smoke PASS was from the owner's original checkout before this branch. The new contract test and fixes are **NOT RUN** at creation time. Run `./tools/verify_foundation.sh full`, and independently ASan/UBSan + TSan after implementation.

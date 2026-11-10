@@ -48,14 +48,14 @@ namespace vex
 /// Macro for compile-time validated metric creation
 /// Note: These macros perform compile-time validation of metric names
 #define SAFE_CREATE_COUNTER(registry, name, help, ...)                         \
-    (detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
+    (vex::detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
      vex::MetricsManager::CreateCounter(registry, name, help, ##__VA_ARGS__))
 
 #define SAFE_CREATE_GAUGE(registry, name, help, ...)                           \
-    (detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
+    (vex::detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
      vex::MetricsManager::CreateGauge(registry, name, help, ##__VA_ARGS__))
 
 #define SAFE_CREATE_HISTOGRAM(registry, name, help, ...)                       \
-    (detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
+    (vex::detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
      vex::MetricsManager::CreateHistogram(registry, name, help, ##__VA_ARGS__) \
     )

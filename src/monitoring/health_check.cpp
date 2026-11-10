@@ -2,46 +2,53 @@
 
 namespace vex
 {
-
     void HealthCheck::RegisterHealthMetrics(
       std::shared_ptr<prometheus::Registry> registry
     )
     {
         if (!registry)
-        {
             throw std::invalid_argument("Registry cannot be null");
+
+        std::lock_guard<std::mutex> guard(mutex_);
+        if (auto existing = registry_.lock())
+        {
+            if (existing == registry && health_status_ && uptime_gauge_ &&
+                memory_usage_)
+            {
+                return; // Already registered against this Registry.
+            }
         }
 
-        // Create health status gauge
-        health_status_ = &MetricsManager::CreateGauge(
-          registry,
-          "health_status",
+        // Publish new metric handles only after all registration steps succeed.
+        auto* health = &MetricsManager::CreateGauge(
+          registry, "health_status",
           "Service health status (1=healthy, 0=unhealthy)"
         );
-
-        // Create uptime gauge
-        uptime_gauge_ = &MetricsManager::CreateGauge(
+        auto* uptime = &MetricsManager::CreateGauge(
           registry, "uptime_seconds", "Service uptime in seconds"
         );
-
-        // Create memory usage gauge
-        memory_usage_ = &MetricsManager::CreateGauge(
+        auto* memory = &MetricsManager::CreateGauge(
           registry, "memory_usage_bytes", "Current memory usage in bytes"
         );
 
-        // Initialize with default values
-        health_status_->Set(1.0); // Healthy by default
-        uptime_gauge_->Set(0.0);
-        memory_usage_->Set(0.0);
+        health->Set(1.0);
+        uptime->Set(0.0);
+        memory->Set(0.0);
+
+        registry_ = registry; // Weak: do not prevent the Registry from closing.
+        health_status_ = health;
+        uptime_gauge_ = uptime;
+        memory_usage_ = memory;
     }
 
     void HealthCheck::SetHealthy(bool healthy)
     {
-        if (!health_status_)
+        std::lock_guard<std::mutex> guard(mutex_);
+        auto registry = registry_.lock();
+        if (!registry || !health_status_)
         {
             throw std::runtime_error(
-              "Health metrics not registered. Call RegisterHealthMetrics() "
-              "first."
+              "Health metrics not registered or Registry expired"
             );
         }
         health_status_->Set(healthy ? 1.0 : 0.0);
@@ -49,32 +56,26 @@ namespace vex
 
     void HealthCheck::UpdateUptime()
     {
-        if (!uptime_gauge_)
-        {
-            throw std::runtime_error(
-              "Health metrics not registered. Call RegisterHealthMetrics() "
-              "first."
-            );
-        }
+        std::lock_guard<std::mutex> guard(mutex_);
+        auto registry = registry_.lock();
+        if (!registry || !uptime_gauge_)
+            throw std::runtime_error("Health metrics not registered or Registry expired");
         uptime_gauge_->Set(MetricsManager::GetUptimeSeconds());
     }
 
     void HealthCheck::UpdateMemoryUsage(size_t bytes)
     {
-        if (!memory_usage_)
-        {
-            throw std::runtime_error(
-              "Health metrics not registered. Call RegisterHealthMetrics() "
-              "first."
-            );
-        }
+        std::lock_guard<std::mutex> guard(mutex_);
+        auto registry = registry_.lock();
+        if (!registry || !memory_usage_)
+            throw std::runtime_error("Health metrics not registered or Registry expired");
         memory_usage_->Set(static_cast<double>(bytes));
     }
 
     bool HealthCheck::IsRegistered()
     {
-        return health_status_ != nullptr && uptime_gauge_ != nullptr &&
-               memory_usage_ != nullptr;
+        std::lock_guard<std::mutex> guard(mutex_);
+        return !registry_.expired() && health_status_ && uptime_gauge_ &&
+               memory_usage_;
     }
-
 } // namespace vex
