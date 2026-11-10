@@ -45,6 +45,14 @@ namespace
     )
     {
         std::lock_guard<std::mutex> guard(scoped_guard_mutex);
+
+        // Family::Add can return an existing metric when labels match.
+        // Do not claim ownership of a series created outside the RAII
+        // helpers: removing it at guard exit would erase somebody else's
+        // persistent counters/gauges.
+        const auto effective_labels = MetricsManager::MergeLabels(labels);
+        const bool existed = family.Has(effective_labels);
+
         Metric* metric;
         if constexpr (std::is_same_v<Metric, prometheus::Counter>)
         {
@@ -54,7 +62,37 @@ namespace
         {
             metric = &MetricsManager::add_gauge(family, labels);
         }
-        ++active_guards<Metric>()[{&family, metric}];
+        auto& refs = active_guards<Metric>();
+        const GuardKey key{&family, metric};
+        const auto current = refs.find(key);
+        if (existed && current == refs.end())
+        {
+            throw std::invalid_argument(
+              "Scoped metric labels already belong to an external series"
+            );
+        }
+
+        try
+        {
+            if (current == refs.end())
+                refs.emplace(key, 1);
+            else
+                ++current->second;
+        }
+        catch (...)
+        {
+            // If bookkeeping fails after a fresh Family::Add, clean up
+            // our newly added series. Do not remove externally owned ones.
+            if (!existed)
+            {
+                try
+                {
+                    family.Remove(metric);
+                }
+                catch (...) {}
+            }
+            throw;
+        }
         return metric;
     }
 

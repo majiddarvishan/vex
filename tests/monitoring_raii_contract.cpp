@@ -39,6 +39,39 @@ int main()
     if (counters.Has(common))
         return 5;
 
+    // Guard creation must never adopt a pre-existing, externally
+    // managed series: the guard's destructor would otherwise remove it.
+    const prometheus::Labels external_labels{{"case", "persistent"}};
+    auto& external_counter = counters.Add(external_labels);
+    external_counter.Increment();
+    bool counter_rejected = false;
+    try
+    {
+        ScopedCounter wrong_owner(counters, external_labels);
+    }
+    catch (const std::invalid_argument&)
+    {
+        counter_rejected = true;
+    }
+    if (!counter_rejected || !counters.Has(external_labels) ||
+        external_counter.Value() != 1.0)
+        return 14;
+
+    auto& external_gauge = gauges.Add(external_labels);
+    external_gauge.Set(7.0);
+    bool gauge_rejected = false;
+    try
+    {
+        ScopedGauge wrong_owner(gauges, external_labels);
+    }
+    catch (const std::invalid_argument&)
+    {
+        gauge_rejected = true;
+    }
+    if (!gauge_rejected || !gauges.Has(external_labels) ||
+        external_gauge.Value() != 7.0)
+        return 15;
+
     const prometheus::Labels first_labels{{"case", "first"}};
     const prometheus::Labels second_labels{{"case", "second"}};
     {

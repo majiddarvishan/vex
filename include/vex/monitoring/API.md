@@ -32,7 +32,7 @@ CMake installed target: `Vex::monitoring`; dependency: prometheus-cpp 1.3+.
 
 ## RAII and cumulative semantics
 
-- `ScopedCounter` and `ScopedGauge` are EPHEMERAL metric-series owners. Overlapping identical Family/label guards are reference-counted; the last destructor removes that series.
+- `ScopedCounter` and `ScopedGauge` are EPHEMERAL metric-series owners. Overlapping identical Family/label guards are reference-counted; the last destructor removes that series. An existing metric with the same effective labels that was created outside the RAII guards is rejected with std::invalid_argument rather than adopted and deleted.
 - Never use ScopedCounter for a persistent `*_total` counter. Use `MetricsManager::CreateCounter` and retain its Registry.
 - `ScopedInFlightGauge` increments a persistent Gauge in the constructor and decrements on destruction (also supports move). It does not remove that metric.
 - All guard classes require their Family/Gauge and Registry to outlive the guard. Do not mix external removal with active guards.

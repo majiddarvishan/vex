@@ -9,6 +9,8 @@ namespace vex
     // with identical family/labels share the series, which is removed when
     // the final guard expires. Do not use for *_total counters: use a
     // persistent CreateCounter() reference instead.
+    // Existing non-guard-owned series with the same effective labels are
+    // rejected (std::invalid_argument), never adopted or deleted.
     // The owning Family/Registry MUST outlive every guard.
     class ScopedCounter
     {
@@ -44,6 +46,8 @@ namespace vex
     };
 
     // Ephemeral series; overlapping guards for identical labels share it.
+    // Existing non-guard-owned series with the same effective labels are
+    // rejected (std::invalid_argument), never adopted or deleted.
     // The owning Family/Registry MUST outlive every guard.
     class ScopedGauge
     {
