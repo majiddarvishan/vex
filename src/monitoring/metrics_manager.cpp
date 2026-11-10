@@ -1,6 +1,9 @@
 #include <vex/monitoring/metrics_manager.hpp>
 
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
+#include <limits>
 #include <vector>
 
 namespace vex
@@ -63,6 +66,8 @@ namespace vex
         std::lock_guard<std::mutex> guard(mutex_);
         registry_.reset();
         subsystems_.clear();
+        tracked_metric_series_.clear();
+        max_series_per_metric_ = 0;
         default_labels_.clear();
         dynamic_labels_.clear();
         initialized_       = false;
@@ -184,6 +189,96 @@ namespace vex
         family.Remove(metric);
     }
 
+    template <typename Fn>
+    auto MetricsManager::RegisterTracked(
+      const std::shared_ptr<prometheus::Registry>& registry,
+      const std::string& name, const std::string& kind,
+      const Labels& labels,
+      const std::vector<double>& bucket_signature,
+      Fn&& create
+    ) -> decltype(create())
+    {
+        // Registration is not on the hot path; serialize count/update with
+        // the same mutex protecting the manager's other metadata.
+        std::lock_guard<std::mutex> guard(mutex_);
+
+        // Expired external registries must not retain label history.
+        tracked_metric_series_.erase(
+          std::remove_if(tracked_metric_series_.begin(),
+                         tracked_metric_series_.end(),
+            [](const TrackedMetricSeries& entry)
+            {
+                return entry.registry.expired();
+            }),
+          tracked_metric_series_.end()
+        );
+
+        auto found = std::find_if(
+          tracked_metric_series_.begin(), tracked_metric_series_.end(),
+          [&](const TrackedMetricSeries& entry)
+          {
+              auto stored = entry.registry.lock();
+              return stored == registry &&
+                     entry.name == name && entry.kind == kind;
+          }
+        );
+
+        if (found == tracked_metric_series_.end())
+        {
+            tracked_metric_series_.push_back(
+              {registry, name, kind, {}}
+            );
+            found = std::prev(tracked_metric_series_.end());
+        }
+
+        auto known = found->signatures.find(labels);
+        if (known != found->signatures.end() &&
+            known->second != bucket_signature)
+        {
+            throw std::invalid_argument(
+              "Conflicting histogram bucket boundaries for existing metric"
+            );
+        }
+
+        if (known == found->signatures.end() &&
+            max_series_per_metric_ != 0 &&
+            found->signatures.size() >= max_series_per_metric_)
+        {
+            throw std::length_error(
+              "Metric series limit exceeded for '" + name + "'"
+            );
+        }
+
+        // Reserve quota before adding, and roll back if Prometheus rejects
+        // the family, label set, or metric configuration.
+        const bool inserted = known == found->signatures.end();
+        if (inserted)
+            found->signatures.emplace(labels, bucket_signature);
+
+        try
+        {
+            return create();
+        }
+        catch (...)
+        {
+            if (inserted)
+                found->signatures.erase(labels);
+            throw;
+        }
+    }
+
+    void MetricsManager::SetMaxSeriesPerMetric(std::size_t maximum)
+    {
+        std::lock_guard<std::mutex> guard(mutex_);
+        max_series_per_metric_ = maximum;
+    }
+
+    std::size_t MetricsManager::GetMaxSeriesPerMetric()
+    {
+        std::lock_guard<std::mutex> guard(mutex_);
+        return max_series_per_metric_;
+    }
+
     prometheus::Counter& MetricsManager::CreateCounter(
       const std::shared_ptr<prometheus::Registry>& registry,
       const std::string& name, const std::string& help,
@@ -191,17 +286,21 @@ namespace vex
     )
     {
         if (!registry)
-        {
             throw std::invalid_argument("Registry cannot be null");
-        }
         ValidateMetricName(name);
         ValidateLabels(labels);
+        const auto merged = MergeLabels(labels);
+        ValidateLabels(merged);
 
-        auto& family = prometheus::BuildCounter().Name(name).Help(help).Register(
-          *registry
+        return RegisterTracked(
+          registry, name, "counter", merged, {},
+          [&]() -> prometheus::Counter&
+          {
+              auto& family = prometheus::BuildCounter()
+                               .Name(name).Help(help).Register(*registry);
+              return family.Add(merged);
+          }
         );
-
-        return family.Add(MergeLabels(labels));
     }
 
     prometheus::Gauge& MetricsManager::CreateGauge(
@@ -211,17 +310,21 @@ namespace vex
     )
     {
         if (!registry)
-        {
             throw std::invalid_argument("Registry cannot be null");
-        }
         ValidateMetricName(name);
         ValidateLabels(labels);
+        const auto merged = MergeLabels(labels);
+        ValidateLabels(merged);
 
-        auto& family = prometheus::BuildGauge().Name(name).Help(help).Register(
-          *registry
+        return RegisterTracked(
+          registry, name, "gauge", merged, {},
+          [&]() -> prometheus::Gauge&
+          {
+              auto& family = prometheus::BuildGauge()
+                               .Name(name).Help(help).Register(*registry);
+              return family.Add(merged);
+          }
         );
-
-        return family.Add(MergeLabels(labels));
     }
 
     prometheus::Histogram& MetricsManager::CreateHistogram(
@@ -232,18 +335,42 @@ namespace vex
     )
     {
         if (!registry)
-        {
             throw std::invalid_argument("Registry cannot be null");
-        }
         ValidateMetricName(name);
         ValidateLabels(labels);
+        const auto merged = MergeLabels(labels);
+        ValidateLabels(merged);
 
-        auto&
-          family = prometheus::BuildHistogram().Name(name).Help(help).Register(
-            *registry
-          );
+        // 'le' is reserved for histogram bucket boundaries.
+        if (merged.count("le"))
+            throw std::invalid_argument(
+              "Histogram label 'le' is reserved"
+            );
 
-        return family.Add(MergeLabels(labels), buckets);
+        // Prometheus conventional defaults, as documented in the public API.
+        const std::vector<double> defaults{
+          0.005, 0.01, 0.025, 0.05, 0.1, 0.25,
+          0.5, 1.0, 2.5, 5.0, 10.0
+        };
+        const auto& bounds = buckets.empty() ? defaults : buckets;
+        for (std::size_t i = 0; i < bounds.size(); ++i)
+        {
+            if (!std::isfinite(bounds[i]) ||
+                (i > 0 && bounds[i] <= bounds[i - 1]))
+                throw std::invalid_argument(
+                  "Histogram bucket boundaries must be finite and increasing"
+                );
+        }
+
+        return RegisterTracked(
+          registry, name, "histogram", merged, bounds,
+          [&]() -> prometheus::Histogram&
+          {
+              auto& family = prometheus::BuildHistogram()
+                               .Name(name).Help(help).Register(*registry);
+              return family.Add(merged, bounds);
+          }
+        );
     }
 
     bool MetricsManager::IsInitialized()

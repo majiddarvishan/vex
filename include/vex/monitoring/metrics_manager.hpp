@@ -8,6 +8,7 @@
 #include <prometheus/registry.h>
 
 #include <chrono>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <regex>
@@ -127,6 +128,14 @@ namespace vex
           const std::vector<double>& buckets               = {}
         );
 
+        /// Optional cap on series created through CreateCounter/Gauge/
+        /// Histogram, per Registry + family name + metric type.
+        /// 0 means unlimited (the default). Existing series and duplicate
+        /// label sets do not consume additional quota.
+        /// Raw prometheus-cpp Family::Add calls bypass this cap.
+        static void SetMaxSeriesPerMetric(std::size_t maximum);
+        [[nodiscard]] static std::size_t GetMaxSeriesPerMetric();
+
         /// Check if the manager has been initialized.
         [[nodiscard]] static bool IsInitialized();
 
@@ -145,6 +154,29 @@ namespace vex
 
         /// Validate label value (basic check for printable characters).
         [[nodiscard]] static bool ValidateLabelValue(const std::string& value);
+
+        using Labels = std::map<std::string, std::string>;
+
+        struct TrackedMetricSeries
+        {
+            std::weak_ptr<prometheus::Registry> registry;
+            std::string name;
+            std::string kind;
+            std::map<Labels, std::vector<double>> signatures;
+        };
+
+        template <typename Fn>
+        static auto RegisterTracked(
+          const std::shared_ptr<prometheus::Registry>& registry,
+          const std::string& name,
+          const std::string& kind,
+          const Labels& labels,
+          const std::vector<double>& bucket_signature,
+          Fn&& create
+        ) -> decltype(create());
+
+        inline static std::size_t max_series_per_metric_ = 0;
+        inline static std::vector<TrackedMetricSeries> tracked_metric_series_;
 
         inline static std::shared_ptr<prometheus::Registry> registry_;
         inline static std::unordered_map<

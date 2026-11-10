@@ -39,6 +39,13 @@ if(BUILD_MONITORING)
     target_link_libraries(vex_monitoring_raii_contract PRIVATE Vex::monitoring)
     add_test(NAME vex.monitoring.raii COMMAND vex_monitoring_raii_contract)
 
+    add_executable(vex_monitoring_validation_contract
+        monitoring_validation_contract.cpp)
+    target_link_libraries(vex_monitoring_validation_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.validation
+        COMMAND vex_monitoring_validation_contract)
+
     if(UNIX)
         find_program(VEX_BASH_EXECUTABLE bash)
         if(VEX_BASH_EXECUTABLE)
