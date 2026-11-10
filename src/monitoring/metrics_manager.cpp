@@ -68,6 +68,7 @@ namespace vex
         registry_.reset();
         subsystems_.clear();
         tracked_metric_series_.clear();
+        tracked_registration_calls_ = 0;
         max_series_per_metric_ = 0;
         max_subsystem_registries_ = 0;
         default_labels_.clear();
@@ -218,53 +219,44 @@ namespace vex
         // the same mutex protecting the manager's other metadata.
         std::lock_guard<std::mutex> guard(mutex_);
 
-        // Expired external registries must not retain label history.
-        tracked_metric_series_.erase(
-          std::remove_if(tracked_metric_series_.begin(),
-                         tracked_metric_series_.end(),
-            [](const TrackedMetricSeries& entry)
-            {
-                return entry.registry.expired();
-            }),
-          tracked_metric_series_.end()
-        );
-
-        auto found = std::find_if(
-          tracked_metric_series_.begin(), tracked_metric_series_.end(),
-          [&](const TrackedMetricSeries& entry)
-          {
-              auto stored = entry.registry.lock();
-              return stored == registry &&
-                     entry.name == name && entry.kind == kind;
-          }
-        );
-
-        const bool new_family_tracking =
-          found == tracked_metric_series_.end();
-        if (new_family_tracking)
+        // Expired external Registries release their weak-ownership
+        // metadata periodically, without doing a full O(N) scan at
+        // EVERY registration. Sweep cost is amortized over 256 calls.
+        if ((++tracked_registration_calls_ % 256) == 0)
         {
-            tracked_metric_series_.push_back(
-              {registry, name, kind, help, {}}
-            );
-            found = std::prev(tracked_metric_series_.end());
+            for (auto it = tracked_metric_series_.begin();
+                 it != tracked_metric_series_.end();)
+            {
+                if (it->first.registry.expired())
+                    it = tracked_metric_series_.erase(it);
+                else
+                    ++it;
+            }
         }
 
-        // A new ledger record is provisional until registration succeeds.
-        // Every failure path, including quota rejection or allocation
-        // failure, must remove an unused record. Otherwise repeated failed
-        // names accumulate empty families in the manager's metadata.
+        // owner_less distinguishes Registry control blocks even if
+        // their object addresses are later reused. The same Registry,
+        // metric name and kind share their ledger and quota.
+        auto [found, new_family_tracking] =
+          tracked_metric_series_.try_emplace(
+            TrackedMetricKey{registry, name, kind},
+            TrackedMetricSeries{help, {}}
+          );
+
+        // A new ledger entry remains provisional until the underlying
+        // Prometheus registration succeeds.
         try
         {
             // Registry::InsertBehavior::Merge reuses the first
             // Family even when a later caller supplies different HELP.
             // Enforce metadata consistency for manager-created metrics.
-            if (found->help != help)
+            if (found->second.help != help)
                 throw std::invalid_argument(
                   "Conflicting HELP text for metric '" + name + "'"
                 );
 
-            const auto known = found->signatures.find(labels);
-            if (known != found->signatures.end() &&
+            const auto known = found->second.signatures.find(labels);
+            if (known != found->second.signatures.end() &&
                 known->second != bucket_signature)
             {
                 throw std::invalid_argument(
@@ -272,9 +264,9 @@ namespace vex
                 );
             }
 
-            if (known == found->signatures.end() &&
+            if (known == found->second.signatures.end() &&
                 max_series_per_metric_ != 0 &&
-                found->signatures.size() >= max_series_per_metric_)
+                found->second.signatures.size() >= max_series_per_metric_)
             {
                 throw std::length_error(
                   "Metric series limit exceeded for '" + name + "'"
@@ -283,9 +275,9 @@ namespace vex
 
             // Reserve quota before touching prometheus-cpp and roll back
             // if it rejects the family, labels or metric configuration.
-            const bool inserted = known == found->signatures.end();
+            const bool inserted = known == found->second.signatures.end();
             if (inserted)
-                found->signatures.emplace(labels, bucket_signature);
+                found->second.signatures.emplace(labels, bucket_signature);
 
             try
             {
@@ -294,16 +286,16 @@ namespace vex
             catch (...)
             {
                 if (inserted)
-                    found->signatures.erase(labels);
+                    found->second.signatures.erase(labels);
                 throw;
             }
         }
         catch (...)
         {
-            // Under mutex_, new records are appended at the vector end,
-            // so cleanup cannot invalidate any other tracked family.
+            // The iterator remains stable for std::map; failed first
+            // registration must leave no provisional ledger entry.
             if (new_family_tracking)
-                tracked_metric_series_.pop_back();
+                tracked_metric_series_.erase(found);
             throw;
         }
     }

@@ -162,11 +162,35 @@ namespace vex
 
         using Labels = std::map<std::string, std::string>;
 
-        struct TrackedMetricSeries
+        // The Registry identity must be based on shared ownership,
+        // never raw address: allocator reuse after expiration must not
+        // make a new Registry inherit old quotas/HELP/bucket signatures.
+        struct TrackedMetricKey
         {
             std::weak_ptr<prometheus::Registry> registry;
             std::string name;
             std::string kind;
+        };
+
+        struct TrackedMetricKeyLess
+        {
+            bool operator()(const TrackedMetricKey& lhs,
+                            const TrackedMetricKey& rhs) const
+            {
+                const std::owner_less<
+                  std::weak_ptr<prometheus::Registry>> less{};
+                if (less(lhs.registry, rhs.registry))
+                    return true;
+                if (less(rhs.registry, lhs.registry))
+                    return false;
+                if (lhs.name != rhs.name)
+                    return lhs.name < rhs.name;
+                return lhs.kind < rhs.kind;
+            }
+        };
+
+        struct TrackedMetricSeries
+        {
             std::string help;
             std::map<Labels, std::vector<double>> signatures;
         };
@@ -184,7 +208,12 @@ namespace vex
 
         inline static std::size_t max_series_per_metric_ = 0;
         inline static std::size_t max_subsystem_registries_ = 0;
-        inline static std::vector<TrackedMetricSeries> tracked_metric_series_;
+        // Ordered owner-aware lookup: avoids O(N) name scans for every
+        // registration when a Registry contains many metric families.
+        inline static std::map<
+          TrackedMetricKey, TrackedMetricSeries,
+          TrackedMetricKeyLess> tracked_metric_series_;
+        inline static std::size_t tracked_registration_calls_ = 0;
 
         inline static std::shared_ptr<prometheus::Registry> registry_;
         inline static std::unordered_map<
