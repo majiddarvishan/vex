@@ -24,3 +24,13 @@ if(ENABLE_METRICS_THREADING)
 endif()
 
 set_target_properties(monitoring PROPERTIES OUTPUT_NAME vex_monitoring)
+
+# Optional executable benchmark, not a correctness gate or CI assertion.
+# Enable with -DVEX_BUILD_MONITORING_BENCHMARK=ON.
+option(VEX_BUILD_MONITORING_BENCHMARK
+    "Build repeatable Monitoring registration/scrape microbenchmark" OFF)
+if(VEX_BUILD_MONITORING_BENCHMARK)
+    add_executable(vex_monitoring_benchmark
+        ${PROJECT_SOURCE_DIR}/tools/bench_monitoring.cpp)
+    target_link_libraries(vex_monitoring_benchmark PRIVATE Vex::monitoring)
+endif()

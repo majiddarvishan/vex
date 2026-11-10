@@ -1,6 +1,7 @@
 #include <vex/monitoring/raii_guards.hpp>
 
 #include <cstddef>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <utility>
@@ -11,15 +12,29 @@ namespace vex
 namespace
 {
     using GuardKey = std::pair<const void*, const void*>;
+
+    struct GuardKeyLess
+    {
+        bool operator()(const GuardKey& a, const GuardKey& b) const
+        {
+            const auto less = std::less<const void*> {};
+            if (less(a.first, b.first))
+                return true;
+            if (less(b.first, a.first))
+                return false;
+            return less(a.second, b.second);
+        }
+    };
+
     std::mutex scoped_guard_mutex;
 
     // Separate reference counts for each Prometheus metric type.
     // A Family::Add call may return an existing series when labels match;
     // never remove that series while another guard still uses it.
     template <typename Metric>
-    std::map<GuardKey, std::size_t>& active_guards()
+    std::map<GuardKey, std::size_t, GuardKeyLess>& active_guards()
     {
-        static std::map<GuardKey, std::size_t> refs;
+        static std::map<GuardKey, std::size_t, GuardKeyLess> refs;
         return refs;
     }
 
