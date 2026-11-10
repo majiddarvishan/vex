@@ -25,6 +25,8 @@ int main()
         {
             while (!stop.load(std::memory_order_acquire))
             {
+                // Avoid hot-spinning on transient expected exceptions.
+                std::this_thread::yield();
                 try
                 {
                     HealthCheck::SetHealthy(i % 2 == 0);

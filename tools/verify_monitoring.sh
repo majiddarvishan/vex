@@ -4,6 +4,18 @@ set -Eeuo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 mode="${1:-threaded}"
+
+# The one-command, fail-fast acceptance suite. Never suppress failed tests.
+if [[ "${mode}" == "all" ]]; then
+    for check in baseline threaded asan tsan-clang stress; do
+        printf '\n===== VEX MONITORING ACCEPTANCE: %s =====\n' "${check}"
+        "${BASH_SOURCE[0]}" "${check}"
+    done
+    printf '\n===== VEX MONITORING ACCEPTANCE: full package =====\n'
+    "${root}/tools/verify_foundation.sh" full
+    printf '\nVEX MONITORING ACCEPTANCE PASS all\n'
+    exit 0
+fi
 case "${mode}" in
     baseline)
         flags=""
@@ -21,7 +33,7 @@ case "${mode}" in
         flags="-fsanitize=thread -fno-omit-frame-pointer -g -O1"
         ;;
     *)
-        echo "Usage: tools/verify_monitoring.sh [baseline|threaded|stress|asan|tsan|tsan-clang]" >&2
+        echo "Usage: tools/verify_monitoring.sh [all|baseline|threaded|stress|asan|tsan|tsan-clang]" >&2
         exit 2
         ;;
 esac
