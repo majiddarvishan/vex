@@ -68,6 +68,29 @@ int main()
         }))
         return 7;
 
+    // Invalid UTF-8 must be rejected, not silently accepted as a label.
+    const std::string invalid_utf8{static_cast<char>(0xC3), '('};
+    if (!throws_as<std::invalid_argument>([&]
+        {
+            MetricsManager::SetDefaultLabels({{"bad", invalid_utf8}});
+        }))
+        return 22;
+    const std::string surrogate{static_cast<char>(0xED),
+                                static_cast<char>(0xA0),
+                                static_cast<char>(0x80)};
+    if (!throws_as<std::invalid_argument>([&]
+        {
+            MetricsManager::SetDefaultLabels({{"bad", surrogate}});
+        }))
+        return 23;
+    const std::string del_character(1, static_cast<char>(0x7F));
+    if (!throws_as<std::invalid_argument>([&]
+        {
+            MetricsManager::SetDefaultLabels({{"bad", del_character}});
+        }))
+        return 24;
+    MetricsManager::SetDefaultLabels({{"city", u8"تهران"}});
+
     // The default is unlimited for full backward compatibility.
     if (MetricsManager::GetMaxSeriesPerMetric() != 0)
         return 8;

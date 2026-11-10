@@ -43,7 +43,7 @@ int main() {
 - HealthCheck safely refuses to access metrics after its weak Registry expires, but external deletion of a still-live Family is not supported.
 - Avoid unbounded labels (raw user IDs, request IDs, subscriber numbers).
 
-Full contracts and exceptions: [API.md](API.md).
+The historical `vex::monitoring::record_metric(name, value)` is now a real persistent Gauge adapter (not a no-op) and requires prior MetricsManager initialization. Full contracts and exceptions: [API.md](API.md).
 
 ## Test and benchmark commands
 

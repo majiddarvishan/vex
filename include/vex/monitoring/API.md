@@ -16,7 +16,7 @@ CMake installed target: `Vex::monitoring`; dependency: prometheus-cpp 1.3+.
 
 - `CreateCounter`, `CreateGauge`, and `CreateHistogram` take a Registry shared_ptr, a name, HELP and optional labels.
 - Names use `[a-zA-Z_:][a-zA-Z0-9_:]*`, labels use `[a-zA-Z_][a-zA-Z0-9_]*`; leading `__` is rejected.
-- Label values support UTF-8 bytes; ASCII controls other than tab and DEL are rejected. This is NOT a full UTF-8 decoder; validate untrusted text upstream.
+- Label values must be well-formed UTF-8: invalid continuation bytes, overlong encodings, surrogate sequences and codepoints above U+10FFFF are rejected. ASCII controls other than TAB and DEL are rejected. As always, bound untrusted input sizes upstream.
 - Default labels are merged first and explicit labels override them. Histograms reject the reserved `le` label.
 - Histogram buckets must be finite and strictly increasing. Empty buckets use default boundaries: 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10.
 - Conflicting buckets when re-registering an existing managed histogram series throw invalid_argument.
@@ -63,6 +63,6 @@ CMake installed target: `Vex::monitoring`; dependency: prometheus-cpp 1.3+.
 ./tools/verify_foundation.sh full
 ```
 
-The Clang TSan mode automatically detects unversioned or versioned clang++ and uses a compiler-specific build directory. A passing suite is scoped to the exercised paths, not a proof of all possible races.
+The Clang TSan mode automatically detects unversioned or versioned clang++ and uses a compiler-specific build directory. A passing suite is scoped to the exercised paths, not a proof of all possible races. The legacy record_metric(name,value) helper now publishes a persistent Gauge instead of silently doing nothing; call MetricsManager::Init first.
 
 Optional benchmarking: enable `VEX_BUILD_MONITORING_BENCHMARK=ON`; results are measured CSV, not fixed claims.
