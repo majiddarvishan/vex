@@ -1,3 +1,19 @@
+## Owner-run Clang 20 TSan checkpoint (2026-11-10)
+
+The independent Clang TSan test passed **10/10 twice** (auto-detection
+and explicit `CXX=clang++-20`); Monitoring TSan build/CTest passed
+**3/3** (smoke, contract, compiler selection). This validates TSan
+for the exercised tests on Clang 20.1.2; GCC TSan still has separate
+runtime instability. Clang exposed a `-Wunused-value` warning in the
+SAFE_CREATE_GAUGE macro. A code fix now applies void-casts to all SAFE_*
+validation expressions, with all three macros exercised and
+`-Werror=unused-value` on the contract-test target. **Owner rerun on
+this new commit is still pending.** See [MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+Other module implementations remain excluded by owner instruction.
+
+---
+
 ## Latest checkpoint: Stress PASS; numbered Clang supported (2026-11-10)
 
 Owner-run GNU 13.3.0 stress test passed **100 consecutive smoke and

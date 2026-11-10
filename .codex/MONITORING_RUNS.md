@@ -144,3 +144,58 @@ pending a stable, independently verified toolchain; do not change ASLR
 or system-wide security configuration.
 
 Non-Monitoring behavior remains frozen per owner decision.
+
+## Clang 20 ThreadSanitizer PASS — owner-provided logs (2026-11-10)
+
+Host: Ubuntu 24.04 series, Linux `6.8.0-147-generic`.
+Compiler: `/usr/bin/clang++-20`, Ubuntu Clang `20.1.2 (0ubuntu1~24.04.3)`.
+
+The owner executed on `feature/monitoring-correctness-tests`:
+
+| Command | Result |
+|---|---|
+| `./tools/diagnose_tsan.sh --clang 10` | **10/10 PASS**, mapping=0, sanitizer_report=0, other=0 |
+| `./tools/verify_monitoring.sh tsan-clang` | **3/3 CTest PASS**, including `smoke`, concurrent `contract`, and compiler resolver fixture |
+| `CXX=clang++-20 ./tools/diagnose_tsan.sh --clang 10` | **10/10 PASS**, mapping=0, sanitizer_report=0, other=0 |
+
+Clang compiled the Monitoring target and test binaries successfully using
+`-fsanitize=thread`. No data-race report appeared in the supplied
+test output. Therefore **the TSan gate for these exercised tests is PASS
+with Clang 20**. This does not prove all possible interleavings, registry
+teardown races, metric-family ownership, or unrelated modules are safe.
+
+The original GCC 13.3.0 TSan runtime remains intermittently unusable,
+as independently demonstrated by a standalone probe (3/10 PASS, 6/10
+mapping fatal, 1/10 SegFault). **Do not reinterpret GCC TSan as PASS.**
+The independent Clang TSan outcome supersedes the earlier
+host-wide inability to run a reliable TSan check.
+
+### Clang warning follow-up
+
+The Clang 20 build emitted a non-fatal compiler warning:
+`-Wunused-value` in `SAFE_CREATE_GAUGE`,
+from the left operand of the validation expression's comma operator,
+`include/vex/monitoring/type_safety.hpp` line 55.
+
+Remediation committed *after* these successful logs:
+- Cast the `MetricNameChecker<ValidateName(...)>` expression to
+  `void` in **all three SAFE_CREATE macros** so the compile-time
+  `static_assert` still occurs without an unused-expression warning.
+- Exercise `SAFE_CREATE_COUNTER`, `SAFE_CREATE_GAUGE`,
+  `SAFE_CREATE_HISTOGRAM` in the Monitoring contract test.
+- Enable `-Werror=unused-value` for the Monitoring contract test with
+  GNU/Clang, preventing regression of this exact warning.
+
+**Status of the warning fix:** Code committed; **not yet rebuilt by
+the owner**. The previous Clang TSan PASS belongs to the earlier
+checkout code. Re-run full Clang TSan to validate the new commit.
+A tiny equivalent standalone C++17 expression was syntax-tested under
+Clang and GCC with `-Werror=unused-value`; this is not an actual Vex build.
+
+Owner-provided terminal output did not contain `git rev-parse HEAD`
+for these Clang runs. Do not attach an unverified exact commit SHA.
+
+**Still open:** broader coverage, build matrix/portability, and review
+of Monitoring API contracts/registry & family lifetime. No merge yet.
+All non-Monitoring behavioral changes remain deferred by owner order.
+

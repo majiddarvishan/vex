@@ -1,3 +1,31 @@
+## Latest: Clang 20 TSan PASS, macro warning follow-up pending (2026-11-10)
+
+- Owner-run `diagnose_tsan.sh --clang 10`: **10/10 PASS**.
+- Owner-run `verify_monitoring.sh tsan-clang`: **3/3 PASS**
+  (`smoke`, `contract`, `compiler-selection`).
+- Owner-run explicit `CXX=clang++-20` independent probe:
+  **10/10 PASS**. Clang version 20.1.2, kernel 6.8.0-147-generic.
+- Clang reported a single nonfatal `-Wunused-value` warning in
+  `SAFE_CREATE_GAUGE`. Fixed the expression in *all three* SAFE_*
+  macros and added `-Werror=unused-value` to the contract test,
+  which now exercises counter/gauge/histogram.
+- **The new warning fix has NOT been built/tested on the owner's checkout.**
+  Prior Clang TSan PASS applies to the previous commit; current PR
+  remains Draft pending rerun and additional Monitoring coverage.
+- GCC 13.3.0 TSan on the same host remains unstable; Clang TSan is a
+  validated alternate runner for the tested cases. No general race-free
+  proof and no permission for non-Monitoring work.
+- Full record: [MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+Next commands on latest branch:
+```sh
+git pull --ff-only origin feature/monitoring-correctness-tests
+./tools/verify_monitoring.sh tsan-clang
+./tools/verify_foundation.sh full
+```
+
+---
+
 ## Latest owner verification and Clang portability (2026-11-10)
 
 - On the real checkout (fast-forward to `65e4abc` in the pasted log),

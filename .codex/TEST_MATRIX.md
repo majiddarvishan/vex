@@ -1,3 +1,15 @@
+**Latest Monitoring TSan update (2026-11-10):** On Clang 20.1.2,
+the owner's independent TSan probe passed **10/10** both with automatic
+discovery and explicit `CXX=clang++-20`. The Monitoring TSan build
+and CTest completed **3/3 PASS** (2 C++ tests + compiler discovery);
+no TSan races were reported in this exercised test coverage. Previous
+GCC 13.3.0 TSan remains unstable (independent repro). One Clang
+`-Wunused-value` warning in the SAFE_CREATE_GAUGE macro was
+subsequently corrected in all three SAFE_* macros and guarded by
+`-Werror=unused-value`; **the fix is not yet owner-run**. See
+[MONITORING_RUNS.md](MONITORING_RUNS.md). Further lifetime and
+adversarial race coverage is open.
+
 **Owner-run Monitoring Stress (2026-11-10):** Initial smoke/contract
 2/2 PASS and **100 repetitions of each** test passed on GNU 13.3.0,
 total repeat time 7.01s. New compiler-discovery CTest and `--clang` /

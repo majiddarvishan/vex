@@ -1,5 +1,18 @@
 # Source-level engineering audit — Vex
 
+**Latest owner-run TSan evidence (2026-11-10):**
+Clang 20.1.2 TSan independent probe **10/10 PASS twice**; actual
+Monitoring TSan CTest **3/3 PASS**, with no data-race reports observed
+on exercised paths. Existing GCC 13.3.0 TSan instability is **toolchain-
+specific**, not a clean GCC result. This gives positive Clang TSan
+evidence for the candidate fixes to VEX-008 and portions of VEX-011,
+but does not close broader registry/metric lifetime or concurrent
+reset concerns. One SAFE_CREATE_GAUGE unused-value warning was fixed
+after these test logs; new commit not yet compiled on owner's checkout.
+All non-Monitoring findings remain deferred. See
+[MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+
 **Baseline:** `71e74d221f182f0567f43531f7f933104cb58c68` (`main`). **Date:** 2026-11-10.
 
 **Monitoring remediation candidate (PARTIALLY VERIFIED):** Branch `feature/monitoring-correctness-tests` addresses VEX-008 and portions of VEX-011 (metadata synchronization and registry lifetime), and SAFE_* namespace qualification and UTF-8 value validation. Owner-run baseline/threaded/ASan tests passed (2/2 each), and full foundation CTest passed (5/5); **TSan NOT PASS** due to `unexpected memory mapping` on the smoke executable (contract passed). See [MONITORING_RUNS.md](MONITORING_RUNS.md). Do not mark Monitoring concurrency completely fixed without clean TSan plus broader stress coverage. Non-Monitoring findings remain frozen.
