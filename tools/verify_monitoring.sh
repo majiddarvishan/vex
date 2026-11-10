@@ -41,5 +41,12 @@ cmake -S "${root}" -B "${build_dir}" \
 cmake --build "${build_dir}" --parallel "${VEX_JOBS:-2}"
 # The external package consumer has intentionally no sanitizer link flags.
 # Its install/package gate is covered by verify_foundation.sh full.
-ctest --test-dir "${build_dir}" --output-on-failure -R '^vex[.]monitoring[.]'
+if ! ctest --test-dir "${build_dir}" --output-on-failure -R '^vex[.]monitoring[.]'; then
+    if [[ "${mode}" == "tsan" ]]; then
+        printf 'TSan failed. If the log says "unexpected memory mapping",\n' >&2
+        printf 'run ./tools/diagnose_tsan.sh 10 to test TSan runtime without Vex.\n' >&2
+        printf 'Do not ignore actual ThreadSanitizer data-race reports.\n' >&2
+    fi
+    exit 1
+fi
 printf 'VEX MONITORING PASS mode=%s\n' "${mode}"

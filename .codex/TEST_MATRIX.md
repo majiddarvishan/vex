@@ -1,5 +1,7 @@
 # Build, tests, sanitizers and performance acceptance matrix
 
+**Monitoring owner-run checkpoint (2026-11-10):** baseline **2/2 PASS**, threaded **2/2 PASS**, ASan/UBSan **2/2 PASS**, full CMake/CTest + package consumer **5/5 PASS**. **TSan NOT PASS**: monitoring smoke failed with `unexpected memory mapping` while contract passed; see [MONITORING_RUNS.md](MONITORING_RUNS.md). This is a runtime-mapping fatal, not a logged race finding, and still blocks a clean TSan verdict. Do not conflate this newer checkpoint with the earlier historical status below.
+
 **New verified owner-run baseline, 2026-11-10:** On the actual checkout the `thread` verification script passed **2/2** and `full` passed **4/4** CTest tests with GCC 13.3.0 (including external installed-package consumer in both runs). See [FOUNDATION_RUNS.md](FOUNDATION_RUNS.md). Legacy text below describes earlier unverified status and should be read as **historical** for those specific baseline runs; other matrix combinations remain unverified.
 
 **Status update (2026-11-10):** The initial audit had no execution. Subsequently, a **manually reconstructed ThreadPool-only subset** (not the full GitHub checkout) passed configure/build, 2/2 CTest tests including installed consumer, on GCC 14.2.0 / CMake 3.31.6 / Ninja 1.12.1. An all-OFF configuration also succeeded (zero tests expected). **Full source-tree B01–B07 and T01–T09 remain NOT RUN/UNVERIFIED**; Prometheus-dependent builds, sanitizers and comprehensive tests are pending. Preserve this distinction.

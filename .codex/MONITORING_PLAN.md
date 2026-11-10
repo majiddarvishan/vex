@@ -17,7 +17,11 @@
 - Do **not** modify ObjectPool, ThreadPool, Logger or other tracked runtime modules.
 - `METRICS_MULTI_THREADED` and runtime `Init(enable_threading)` remain API-compatible but may still select compatibility/reporting semantics; manager's own state access is synchronized regardless of flag.
 
-## Evidence
+## Actual checkout evidence (2026-11-10)
+
+Owner's reported results: baseline **2/2 PASS**, threaded **2/2 PASS**, ASan/UBSan **2/2 PASS**, full integration **5/5 PASS**. TSan compiled, `contract` PASSED but `smoke` FAILED with `ThreadSanitizer: unexpected memory mapping`. Record: [MONITORING_RUNS.md](MONITORING_RUNS.md). TSan is **NOT PASSED** and cannot be used to certify race freedom. The next diagnostic is `./tools/diagnose_tsan.sh 10` (no privileged machine changes).
+
+## Historical pre-run plan
 Implementation (manager synchronization, weak-registry HealthCheck access and namespace-qualified type-safe macros) is prepared as a separate commit after the contract-test commit. These changes need execution on the owner's real checkout. The existing `full` smoke PASS was from the owner's original checkout before this branch. The new contract test and fixes are **NOT RUN** at creation time. Run `./tools/verify_foundation.sh full`, and independently ASan/UBSan + TSan after implementation.
 
 ## Verification helper

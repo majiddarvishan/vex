@@ -1,5 +1,15 @@
 # Current handoff — Monitoring priority (2026-11-10)
 
+## Owner-supplied actual monitoring validation (2026-11-10)
+
+- Real checkout branch `feature/monitoring-correctness-tests` with GNU C++ 13.3.0: baseline **2/2 PASS**, threaded **2/2 PASS**, ASan/UBSan **2/2 PASS**, full foundation **5/5 PASS**, including package consumer.
+- TSan: compiled, contract **PASS**, smoke **FAIL** with `FATAL: ThreadSanitizer: unexpected memory mapping`; **TSan gate BLOCKED/NOT PASS**, not proven clean.
+- Complete evidence and environment limitations: [MONITORING_RUNS.md](MONITORING_RUNS.md).
+- Safe next diagnostic: `./tools/diagnose_tsan.sh 10`, independently of Vex; do not change sysctl/ASLR or mask sanitizer failures.
+- This is owner-pasted log evidence; exact local HEAD SHA not supplied. **No merge**, no non-Monitoring implementation authorized.
+
+
+
 - Foundation owner-run checkout: `thread` **2/2 PASS**, `full` **4/4 PASS**, full build GCC 13.3.0. Evidence: [FOUNDATION_RUNS.md](FOUNDATION_RUNS.md).
 - Active branch: `feature/monitoring-correctness-tests`, stacked on `feature/cmake-ctest-foundation`.
 - New test: `vex.monitoring.contract` exercises registry identity, label merging, UTF-8 values, macro qualification, repeated health registration, concurrent reads/updates and expired-registry/Reset/reinit behavior.
