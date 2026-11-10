@@ -12,6 +12,9 @@ int main()
     if (!MetricsManager::Init())
         return 1;
     const auto registry = MetricsManager::GetRegistry();
+    // Includes both defaults and any dynamic container labels. Guard
+    // collision checks must work in real CI/container environments too.
+    MetricsManager::SetDefaultLabels({{"service", "vex_scoped_test"}});
     auto& counters = prometheus::BuildCounter()
         .Name("vex_scoped_ephemeral_counter_total")
         .Help("Ephemeral counters")
@@ -22,6 +25,7 @@ int main()
         .Register(*registry);
 
     const prometheus::Labels common{{"case", "shared"}};
+    const auto merged_common = MetricsManager::MergeLabels(common);
     {
         ScopedCounter first(counters, common);
         {
@@ -30,19 +34,20 @@ int main()
                 return 2;
             second->Increment();
         }
-        if (!counters.Has(common))
+        if (!counters.Has(merged_common))
             return 3;
         first->Increment();
         if (first->Value() != 2.0)
             return 4;
     }
-    if (counters.Has(common))
+    if (counters.Has(merged_common))
         return 5;
 
     // Guard creation must never adopt a pre-existing, externally
     // managed series: the guard's destructor would otherwise remove it.
     const prometheus::Labels external_labels{{"case", "persistent"}};
-    auto& external_counter = counters.Add(external_labels);
+    const auto merged_external = MetricsManager::MergeLabels(external_labels);
+    auto& external_counter = counters.Add(merged_external);
     external_counter.Increment();
     bool counter_rejected = false;
     try
@@ -53,11 +58,11 @@ int main()
     {
         counter_rejected = true;
     }
-    if (!counter_rejected || !counters.Has(external_labels) ||
+    if (!counter_rejected || !counters.Has(merged_external) ||
         external_counter.Value() != 1.0)
         return 14;
 
-    auto& external_gauge = gauges.Add(external_labels);
+    auto& external_gauge = gauges.Add(merged_external);
     external_gauge.Set(7.0);
     bool gauge_rejected = false;
     try
@@ -68,22 +73,24 @@ int main()
     {
         gauge_rejected = true;
     }
-    if (!gauge_rejected || !gauges.Has(external_labels) ||
+    if (!gauge_rejected || !gauges.Has(merged_external) ||
         external_gauge.Value() != 7.0)
         return 15;
 
     const prometheus::Labels first_labels{{"case", "first"}};
     const prometheus::Labels second_labels{{"case", "second"}};
+    const auto merged_first = MetricsManager::MergeLabels(first_labels);
+    const auto merged_second = MetricsManager::MergeLabels(second_labels);
     {
         ScopedGauge first(gauges, first_labels);
         ScopedGauge second(gauges, second_labels);
         first = std::move(second);
-        if (gauges.Has(first_labels) || !gauges.Has(second_labels))
+        if (gauges.Has(merged_first) || !gauges.Has(merged_second))
             return 6;
         if (second.get() || !first.get())
             return 7;
     }
-    if (gauges.Has(second_labels))
+    if (gauges.Has(merged_second))
         return 8;
 
     // Concurrency: N guards on the same family/labels are all live
@@ -93,6 +100,7 @@ int main()
     std::atomic<int> failures{0};
     std::vector<std::thread> workers;
     const prometheus::Labels labels{{"case", "parallel"}};
+    const auto merged_parallel = MetricsManager::MergeLabels(labels);
     for (int i = 0; i < threads; ++i)
     {
         workers.emplace_back([&]
@@ -103,13 +111,13 @@ int main()
                 std::this_thread::yield();
             for (int j = 0; j < 500; ++j)
                 g->Increment();
-            if (!gauges.Has(labels))
+            if (!gauges.Has(merged_parallel))
                 ++failures;
         });
     }
     for (auto& worker : workers)
         worker.join();
-    if (failures.load() || gauges.Has(labels))
+    if (failures.load() || gauges.Has(merged_parallel))
         return 9;
 
     auto& live = MetricsManager::CreateGauge(
