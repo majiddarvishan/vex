@@ -1,3 +1,24 @@
+## MON-OPEN-04 HTTP integration test candidate (not yet run)
+
+A real loopback-only /metrics integration test has been added after
+the last owner-run acceptance. It uses `prometheus::Exposer("127.0.0.1:0")`
+and `GetListeningPorts()` as provided by prometheus-cpp v1.3.0.
+No fixed port, external Prometheus instance, curl dependency, or
+outbound network request is needed. Assertions cover:
+1. HTTP 200 and counter, gauge, histogram names/labels/samples
+   from both main and subsystem registries.
+2. Registration and expiration of an independent transient Registry.
+3. Owner release, manager Reset and a subsequent scrape with no
+   expired Registry metrics.
+4. Clean Exposer teardown.
+
+The test is UNIX-only and has a 30-second CTest timeout. **No owner-run
+evidence yet**, so MON-OPEN-04 is an implementation candidate,
+not closed. Main acceptance matrix after this addition is expected
+to have 10 Monitoring CTests and 13 full foundation CTests on Linux.
+
+---
+
 ## Additional MON-OPEN-02/03 correctness review — candidate, not run
 
 - **Confirmed bug:** Scoped guard acquisition computed effective labels

@@ -22,6 +22,22 @@ follow-ups and formal release decisions.
 - [x] MON-DONE-06: Optional Release benchmark built and run,
   18 CSV samples across two series/family shapes.
 
+## Implementation in progress — latest code NOT YET owner-run
+
+**MON-OPEN-04:** A real loopback HTTP integration CTest
+`vex.monitoring.http` was added using prometheus-cpp's documented
+ephemeral `127.0.0.1:0` Exposer with `GetListeningPorts()`.
+It checks a Counter, Gauge, Histogram, multiple Registries, a
+short-lived external Registry, expiration, manager Reset, and clean
+Exposer destruction. No fixed port or curl dependency. It only builds
+on UNIX. **Not yet run on the owner's checkout.**
+
+Expected next Linux matrix after this addition: **10/10 Monitoring
+CTest cases per direct mode, 9 C++ stress tests ×100,
+13/13 full foundation tests**. These are expected counts, NOT PASS
+claims. Historical 9/9 and 12/12 runs were for earlier commits.
+The next gate is `./tools/verify_monitoring.sh all`.
+
 ## Implementation in progress — new candidate after last verified run
 
 - **MON-OPEN-02:** The `Has`/ `Add` label re-merge TOCTOU was
@@ -50,7 +66,7 @@ follow-ups and formal release decisions.
 | MON-OPEN-01 | P1 | Profile 1000-Family registration overhead (~17.268 ms median vs 2.812 ms for 1000 series) | Reproduce on controlled clean Release builds; profile code paths (manager tracking vs prometheus-cpp registration), instrument allocations / CPU, record root cause; only optimize if evidence justifies it; rerun acceptance plus benchmark before/after |
 | MON-OPEN-02 | P1 | Harden scoped-series ownership under live configuration changes and raw Prometheus mutation, or fully enforce a documented fail-closed contract | Validate Family::Has → Family::Add effective-label consistency with concurrent SetDefaultLabels and external Add/Remove; remove TOCTOU if supported by public API; write targeted TSan/ASan regressions; keep caller lifetime obligations explicit |
 | MON-OPEN-03 | P1 | Review quota metadata across series removal, family reuse, failed registration and external Registry operations | Test duplicate labels, raw Remove/Add, family type/help conflicts, weak Registry expiration and quota rollback; decide which external mutation cases remain expressly unsupported; enforce no unexpected managed-series quota drift |
-| MON-OPEN-04 | P2 | End-to-end HTTP /metrics verification with Exposer and real scrape lifecycle | Add loopback integration test for scrape format, histogram/counter/gauge values, multiple subsystems, stopped/expired Registry and clean Exposer teardown; ensure no test port conflicts or external service dependencies |
+| MON-OPEN-04 | P2 | End-to-end HTTP /metrics verification — **implementation candidate, awaiting owner test** | Added loopback test with ephemeral port, Counter/Gauge/Histogram, main/subsystem/external registries, expiry and reset; obtain clean baseline/ASan/Clang TSan/Stress results on actual host before closing |
 | MON-OPEN-05 | P2 | Static/portability test matrix | GCC + Clang warnings/clang-tidy/format, clean static/shared CMake install consumer, supported OS targets only where available; record versions and failures explicitly |
 | MON-OPEN-06 | P2 | Extend performance/load baselines | Measure RSS, allocations, multi-thread registration/update/Collect, warm/cold startup and repeated scrape; report median plus variability and regressions by toolchain/config; avoid arbitrary production SLA claims |
 | MON-OPEN-07 | Process | Owner review and merge/release decision | Re-run tests on final reviewed SHA, resolve substantive PR comments, confirm foundation dependency PR order; owner explicitly approves merge/release. Never auto-merge. |

@@ -85,3 +85,13 @@ Doing so can still produce a TOCTOU or dangling raw pointer, which Vex
 cannot prevent through the public prometheus-cpp APIs. Keep the
 Registry/Family alive and use `ScopedInFlightGauge` on persistent
 metrics when appropriate.
+
+### HTTP Exposer integration
+
+On UNIX, the `vex.monitoring.http` CTest opens a real local-only
+`/metrics` endpoint via Exposer on an OS-chosen ephemeral port,
+validates main/subsystem Registry samples and verifies expired
+Registry collectables do not reappear after Reset. It needs no
+installed curl command and no external Prometheus service. It is
+included in `./tools/verify_monitoring.sh all`. This recently added
+integration test is awaiting owner-run verification.

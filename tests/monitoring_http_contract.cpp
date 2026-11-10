@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <stdexcept>
@@ -38,7 +39,7 @@ std::string http_get(int port)
 {
     struct sockaddr_in address {};
     address.sin_family = AF_INET;
-    address.sin_port = htons(static_cast<uint16_t>(port));
+    address.sin_port = htons(static_cast<std::uint16_t>(port));
     if (::inet_pton(AF_INET, "127.0.0.1", &address.sin_addr) != 1)
         throw std::runtime_error("failed to build loopback address");
 

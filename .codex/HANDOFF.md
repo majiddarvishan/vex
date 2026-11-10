@@ -31,6 +31,16 @@ The real Release benchmark passed. Full report:
 New code is a review candidate. **Never claim tests passed after these
 changes until a new owner-run transcript confirms them.**
 
+## HTTP integration candidate added after last verified run
+
+`vex.monitoring.http` is a new UNIX-only CTest. It creates an
+Exposer bound to `127.0.0.1:0`, reads its actual listening port
+and scrapes /metrics via a small standard POSIX socket client. It
+covers main/subsystem/external Registries, metric serialization,
+Registry expiry and Exposer cleanup. It has NOT been run yet.
+Expected Linux CTest counts are now Monitoring 10, 9 C++ stress
+tests, full package 13. Do not report these as PASS.
+
 ## Next test gate
 
 ```sh
