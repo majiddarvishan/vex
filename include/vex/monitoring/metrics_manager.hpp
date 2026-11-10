@@ -136,6 +136,11 @@ namespace vex
         static void SetMaxSeriesPerMetric(std::size_t maximum);
         [[nodiscard]] static std::size_t GetMaxSeriesPerMetric();
 
+        /// Optional cap on the number of subsystem registries created by
+        /// this manager. 0 = unlimited (default). Reuse does not count twice.
+        static void SetMaxSubsystemRegistries(std::size_t maximum);
+        [[nodiscard]] static std::size_t GetMaxSubsystemRegistries();
+
         /// Check if the manager has been initialized.
         [[nodiscard]] static bool IsInitialized();
 
@@ -176,6 +181,7 @@ namespace vex
         ) -> decltype(create());
 
         inline static std::size_t max_series_per_metric_ = 0;
+        inline static std::size_t max_subsystem_registries_ = 0;
         inline static std::vector<TrackedMetricSeries> tracked_metric_series_;
 
         inline static std::shared_ptr<prometheus::Registry> registry_;

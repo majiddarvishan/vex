@@ -89,9 +89,8 @@ int main()
         return 10;
     // Each Registry has an independent limit.
     auto second_registry = std::make_shared<prometheus::Registry>();
-    if (!&MetricsManager::CreateCounter(
-          second_registry, name, "Bounded family", {{"status", "c"}}))
-        return 11;
+    (void) MetricsManager::CreateCounter(
+      second_registry, name, "Bounded family", {{"status", "c"}});
 
     const auto& default_hist = MetricsManager::CreateHistogram(
       registry, "vex_default_histogram", "Default histogram");
@@ -140,6 +139,23 @@ int main()
     if (admitted != 2 || rejected != 6 || other != 0)
         return 14;
 
+    if (MetricsManager::GetMaxSubsystemRegistries() != 0)
+        return 17;
+    MetricsManager::SetMaxSubsystemRegistries(1);
+    if (!MetricsManager::GetSubsystemRegistry("first"))
+        return 18;
+    if (MetricsManager::GetSubsystemRegistry("first") !=
+        MetricsManager::GetSubsystemRegistry("first"))
+        return 19;
+    if (!throws_as<std::length_error>([]
+        {
+            (void) MetricsManager::GetSubsystemRegistry("second");
+        }))
+        return 20;
+    MetricsManager::SetMaxSubsystemRegistries(0);
+    if (!MetricsManager::GetSubsystemRegistry("second"))
+        return 21;
+
     MetricsManager::SetMaxSeriesPerMetric(0);
     (void) MetricsManager::CreateCounter(
       registry, name, "Bounded family", {{"status", "c"}});
@@ -149,7 +165,8 @@ int main()
     registry.reset();
     second_registry.reset();
     MetricsManager::Reset();
-    if (MetricsManager::GetMaxSeriesPerMetric() != 0)
+    if (MetricsManager::GetMaxSeriesPerMetric() != 0 ||
+        MetricsManager::GetMaxSubsystemRegistries() != 0)
         return 16;
     return 0;
 }

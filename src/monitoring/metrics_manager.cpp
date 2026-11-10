@@ -68,6 +68,7 @@ namespace vex
         subsystems_.clear();
         tracked_metric_series_.clear();
         max_series_per_metric_ = 0;
+        max_subsystem_registries_ = 0;
         default_labels_.clear();
         dynamic_labels_.clear();
         initialized_       = false;
@@ -89,6 +90,14 @@ namespace vex
         auto it = subsystems_.find(ns);
         if (it != subsystems_.end())
             return it->second;
+
+        if (max_subsystem_registries_ != 0 &&
+            subsystems_.size() >= max_subsystem_registries_)
+        {
+            throw std::length_error(
+              "Subsystem registry limit exceeded"
+            );
+        }
 
         auto sub_registry = std::make_shared<prometheus::Registry>();
         subsystems_[ns]   = sub_registry;
@@ -371,6 +380,18 @@ namespace vex
               return family.Add(merged, bounds);
           }
         );
+    }
+
+    void MetricsManager::SetMaxSubsystemRegistries(std::size_t maximum)
+    {
+        std::lock_guard<std::mutex> guard(mutex_);
+        max_subsystem_registries_ = maximum;
+    }
+
+    std::size_t MetricsManager::GetMaxSubsystemRegistries()
+    {
+        std::lock_guard<std::mutex> guard(mutex_);
+        return max_subsystem_registries_;
     }
 
     bool MetricsManager::IsInitialized()
