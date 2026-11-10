@@ -17,6 +17,10 @@ if(BUILD_MONITORING)
     add_executable(vex_monitoring_smoke monitoring_smoke.cpp)
     target_link_libraries(vex_monitoring_smoke PRIVATE Vex::monitoring)
     add_test(NAME vex.monitoring.smoke COMMAND vex_monitoring_smoke)
+
+    add_executable(vex_monitoring_contract monitoring_contract.cpp)
+    target_link_libraries(vex_monitoring_contract PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.contract COMMAND vex_monitoring_contract)
 endif()
 
 # Ensure the installed CMake package can be consumed from outside this tree.
