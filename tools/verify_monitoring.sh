@@ -31,7 +31,7 @@ if [[ "${mode}" == "tsan-clang" ]]; then
     clang_compiler="$("${root}/tools/find_clangxx.sh")"
     # Require a real Clang toolchain, even if CXX was explicitly specified.
     compiler_banner="$("$clang_compiler" --version)"
-    if [[ "${compiler_banner,,}" != *clang* ]]; then
+    if [[ "$compiler_banner" != *clang* && "$compiler_banner" != *Clang* ]]; then
         printf 'Requested compiler is not Clang: %s\n' "$clang_compiler" >&2
         exit 2
     fi

@@ -21,6 +21,15 @@ if(BUILD_MONITORING)
     add_executable(vex_monitoring_contract monitoring_contract.cpp)
     target_link_libraries(vex_monitoring_contract PRIVATE Vex::monitoring)
     add_test(NAME vex.monitoring.contract COMMAND vex_monitoring_contract)
+    if(UNIX)
+        find_program(VEX_BASH_EXECUTABLE bash)
+        if(VEX_BASH_EXECUTABLE)
+            add_test(NAME vex.monitoring.compiler-selection
+                COMMAND "${VEX_BASH_EXECUTABLE}"
+                    "${PROJECT_SOURCE_DIR}/tests/compiler_discovery_test.sh"
+            )
+        endif()
+    endif()
 endif()
 
 # Ensure the installed CMake package can be consumed from outside this tree.
