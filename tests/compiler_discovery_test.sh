@@ -11,7 +11,13 @@ ln -s "$(type -P bash)" "$temp/bash"
 ln -s "$(type -P dirname)" "$temp/dirname"
 ln -s "$(type -P basename)" "$temp/basename"
 run() {
-    env -i PATH="$temp" "$(type -P bash)" "$finder"
+    # -i clears the environment, so pass a test's explicit CXX override
+    # through deliberately rather than losing it in the test harness.
+    if [[ -n "${CXX:-}" ]]; then
+        env -i PATH="$temp" CXX="$CXX" "$(type -P bash)" "$finder"
+    else
+        env -i PATH="$temp" "$(type -P bash)" "$finder"
+    fi
 }
 assert_eq() {
     if [[ "$1" != "$2" ]]; then
