@@ -1,3 +1,21 @@
+# Monitoring handoff: expanded implementation, validation pending
+
+Latest owner direction: complete Monitoring. Scope is only Monitoring.
+PR #3 contains additional Decorator/RAII/Cardinality/HealthCheck
+and legacy adapter fixes, plus expanded tests and benchmarks.
+
+Current 8 C++ tests and one shell resolver test have NOT BEEN RUN
+on user's checkout. Older Clang TSan 3/3 and foundation 6/6 passes
+are from before this expanded implementation.
+
+Read MONITORING_RUNS.md, TEST_MATRIX.md and public monitoring/API.md.
+Run baseline, threaded, asan, tsan-clang, stress and foundation full
+on newest feature/monitoring-correctness-tests branch, then fix any
+real failures and only afterwards consider review readiness.
+Do NOT merge or touch Logger/ObjectPool/ThreadPool runtime behavior.
+
+---
+
 # Monitoring latest owner validation — 2026-11-10
 
 Latest warning-fix owner checkout:

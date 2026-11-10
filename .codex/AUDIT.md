@@ -1,5 +1,8 @@
 # Source-level engineering audit — Vex
 
+**New Monitoring completion candidate (2026-11-10):** Decorators, scoped metrics, UTF-8, histogram validation, opt-in cardinality, registry lifetime and legacy adapter receive fixes and new regression tests. They have NOT been executed on the owner checkout. Historical Clang TSan PASS applies to earlier commits. Do not mark Monitoring complete until new tests pass. All non-Monitoring findings remain frozen.
+
+
 **Post-warning-fix Monitoring verification (owner, 2026-11-10):**
 Clang 20 TSan **3/3 PASS** (no reported races, prior unused-value
 compiler warning absent); full foundation CTest **6/6 PASS**

@@ -1,3 +1,15 @@
+## Completion implementation checkpoint; validation open
+
+Monitoring now has candidate fixes for Decorators, RAII lifetime,
+health registration, cardinality quotas, histogram shape, Unicode
+label validation, and the previously no-op record_metric helper.
+8 C++ test executables plus one compiler-discovery test are wired;
+100-repeat stress now covers all 8 C++ tests.
+These changes are NOT YET RUN; prior Clang and GCC results apply to
+older code only. See MONITORING_RUNS.md.
+
+---
+
 ## 2026-11-10 — warning fix validation complete
 
 Owner's actual Clang 20 TSan run after SAFE_* macro update:

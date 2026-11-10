@@ -1,3 +1,15 @@
+## Expanded Monitoring acceptance gate (2026-11-10)
+
+Current CTest: smoke, contract, decorators, raii, validation,
+lifecycle, registration, legacy, compiler-selection.
+Stress repeats the eight C++ tests 100 times each.
+Run baseline/threaded/ASan/Clang TSan/stress and full installed
+package consumer before acceptance. Current new tests NOT RUN.
+Older 3/3 TSan + 6/6 foundation PASS were for earlier commits.
+Optional benchmark is not executed; no numbers are asserted.
+
+---
+
 ## Latest owner-run regression, post-warning-fix (2026-11-10)
 
 - **Clang 20 TSan**: Monitoring build PASS; smoke, contract, compiler

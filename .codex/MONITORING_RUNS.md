@@ -252,3 +252,52 @@ GCC 13 TSan remains unstable on this host **independently of Vex**;
 Clang 20 has a passing TSan execution for the tests above. No proof of
 global race freedom, production certification, or merge approval.
 All non-Monitoring behavior changes remain deferred by owner instruction.
+
+## Latest Monitoring completion candidate (2026-11-10)
+
+Owner explicitly asked to complete all Monitoring work. On
+`feature/monitoring-correctness-tests`, subsequent commits added:
+
+- Safe Decorator template behavior for void, references, move-only
+  results and exception paths; ScopedTimer is non-copyable.
+- RAII guard shared-series refcounts and ScopedInFlightGauge.
+- Persistent request counter semantics in the RAII example.
+- Optional synchronized per-family series and subsystem-registry caps
+  (defaults 0/unlimited) with rejection on quota exhaustion.
+- Histogram finite/strictly increasing boundaries, default buckets,
+  reserved `le` checks and conflicting boundary detection.
+- HealthCheck conflict/partial registration recovery and concurrent
+  registry handoff/Reset tests.
+- UTF-8 validity checks, including overlong/surrogate/range protection.
+- Previously silent `record_metric` now records a Gauge.
+- CTest: 8 Monitoring C++ tests and 1 compiler-discovery shell test.
+- Stress script runs 100 repetitions of all 8 Monitoring C++ tests.
+- Optional CSV benchmark at 10, 100 and 1000 series.
+- Monitoring public README and API documentation corrected.
+
+CURRENT STATUS: All these new changes are committed but NOT RUN
+on the user's real checkout. Previous Clang 20 TSan 3/3 PASS, full
+foundation 6/6 PASS, ASan and 100x smoke/contract PASS correspond
+to older commits. They do not validate the expanded suite.
+
+Safe new-owner acceptance commands:
+```sh
+git pull --ff-only origin feature/monitoring-correctness-tests
+./tools/verify_monitoring.sh baseline
+./tools/verify_monitoring.sh threaded
+./tools/verify_monitoring.sh asan
+./tools/verify_monitoring.sh tsan-clang
+./tools/verify_monitoring.sh stress
+./tools/verify_foundation.sh full
+```
+
+Test and sanitizer failures must be resolved before the Monitoring
+PR can leave Draft. No merge or production certification performed.
+GCC 13 TSan remained unreliable on the host independently of Vex;
+Clang 20 had clean results for the earlier tests.
+
+Ownership/limitations: raw Prometheus Metric references cannot outlive
+their Registry or externally removed Family. Reset is quiescent-only.
+Opt-in series limits cover manager-created series, not direct raw
+Family::Add calls. No benchmark measurements have been made.
+Other module behavioral changes remain deferred.
