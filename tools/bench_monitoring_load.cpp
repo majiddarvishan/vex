@@ -266,7 +266,20 @@ void http_scrape() {
     if (ports.size() != 1 || ports[0] <= 0)
         throw std::runtime_error("invalid ephemeral Exposer port");
     exposer.RegisterCollectable(registry);
-    http_get(ports.front()); // warm-up
+    // Exposer may start accepting asynchronously. Bounded warm-up
+    // retries avoid confusing startup scheduling with scrape latency.
+    bool ready = false;
+    for (int attempt = 0; attempt < 30; ++attempt) {
+        try {
+            http_get(ports.front());
+            ready = true;
+            break;
+        } catch (const std::runtime_error&) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+    }
+    if (!ready)
+        throw std::runtime_error("Exposer failed loopback startup");
     std::vector<double> latencies;
     latencies.reserve(requests);
     const auto before = rss_kib();
