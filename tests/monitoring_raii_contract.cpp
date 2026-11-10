@@ -120,6 +120,83 @@ int main()
     if (failures.load() || gauges.Has(merged_parallel))
         return 9;
 
+    // Live default-label reconfiguration must never change a guard's
+    // ownership between Family::Has and Family::Add. Pre-create the
+    // "west" series outside the guard domain: workers may use the
+    // transient "east" series, but must NEVER adopt/delete "west".
+    MetricsManager::SetDefaultLabels({
+      {"service", "vex_scoped_test"}, {"zone", "west"}
+    });
+    const prometheus::Labels changing{{"case", "label_switch"}};
+    const auto persistent_label_set = MetricsManager::MergeLabels(changing);
+    auto& persistent = gauges.Add(persistent_label_set);
+    persistent.Set(23.0);
+
+    std::atomic<int> unexpected_label_errors{0};
+    std::atomic<int> accepted_guards{0};
+    std::atomic<bool> begin_label_race{false};
+    std::vector<std::thread> reconfig_workers;
+    std::thread reconfigure([&]
+    {
+        while (!begin_label_race.load(std::memory_order_acquire))
+            std::this_thread::yield();
+        for (int i = 0; i < 1200; ++i)
+        {
+            MetricsManager::SetDefaultLabels({
+              {"service", "vex_scoped_test"},
+              {"zone", (i % 2 == 0) ? "east" : "west"}
+            });
+        }
+    });
+    for (int i = 0; i < 4; ++i)
+    {
+        reconfig_workers.emplace_back([&]
+        {
+            while (!begin_label_race.load(std::memory_order_acquire))
+                std::this_thread::yield();
+            for (int j = 0; j < 300; ++j)
+            {
+                try
+                {
+                    ScopedGauge scoped(gauges, changing);
+                    scoped->Increment();
+                    ++accepted_guards;
+                }
+                catch (const std::invalid_argument&)
+                {
+                    // The west series is externally owned: rejecting an
+                    // attempted scoped adoption is correct and expected.
+                }
+                catch (...)
+                {
+                    ++unexpected_label_errors;
+                }
+            }
+        });
+    }
+    begin_label_race.store(true, std::memory_order_release);
+    reconfigure.join();
+    for (auto& worker : reconfig_workers)
+        worker.join();
+    if (unexpected_label_errors != 0 || accepted_guards == 0 ||
+        !gauges.Has(persistent_label_set) || persistent.Value() != 23.0)
+        return 16;
+    MetricsManager::SetDefaultLabels({{"service", "vex_scoped_test"}});
+
+    // The snapshot helper rejects invalid labels instead of passing them
+    // directly through prometheus-cpp Family::Add.
+    bool invalid_label_rejected = false;
+    try
+    {
+        ScopedGauge invalid(gauges, {{"invalid-label", "value"}});
+    }
+    catch (const std::invalid_argument&)
+    {
+        invalid_label_rejected = true;
+    }
+    if (!invalid_label_rejected)
+        return 17;
+
     auto& live = MetricsManager::CreateGauge(
       registry, "vex_inflight_requests", "In-flight requests"
     );

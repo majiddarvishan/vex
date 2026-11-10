@@ -50,18 +50,13 @@ namespace
         // Do not claim ownership of a series created outside the RAII
         // helpers: removing it at guard exit would erase somebody else's
         // persistent counters/gauges.
+        // Resolve and validate a single immutable label snapshot before
+        // both Has and Add. Calling add_counter/add_gauge here used to
+        // MERGE AGAIN, allowing SetDefaultLabels to change identity between
+        // our ownership check and actual Family::Add.
         const auto effective_labels = MetricsManager::MergeLabels(labels);
         const bool existed = family.Has(effective_labels);
-
-        Metric* metric;
-        if constexpr (std::is_same_v<Metric, prometheus::Counter>)
-        {
-            metric = &MetricsManager::add_counter(family, labels);
-        }
-        else
-        {
-            metric = &MetricsManager::add_gauge(family, labels);
-        }
+        Metric* metric = &family.Add(effective_labels);
         auto& refs = active_guards<Metric>();
         const GuardKey key{&family, metric};
         const auto current = refs.find(key);

@@ -148,13 +148,19 @@ namespace vex
       const std::map<std::string, std::string>& labels
     )
     {
-        std::lock_guard<std::mutex> guard(mutex_);
-        auto merged = default_labels_;
-        merged.insert(dynamic_labels_.begin(), dynamic_labels_.end());
-
-        // Explicit per-metric labels override the defaults.
-        for (const auto& [key, value]: labels)
-            merged[key] = value;
+        // Public MergeLabels and the scoped RAII helper must never let
+        // invalid label names/values bypass Create* validation.
+        ValidateLabels(labels);
+        std::map<std::string, std::string> merged;
+        {
+            std::lock_guard<std::mutex> guard(mutex_);
+            merged = default_labels_;
+            merged.insert(dynamic_labels_.begin(), dynamic_labels_.end());
+            // Explicit labels override default and dynamic values.
+            for (const auto& [key, value]: labels)
+                merged[key] = value;
+        }
+        ValidateLabels(merged);
         return merged;
     }
 
