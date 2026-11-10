@@ -2,6 +2,8 @@
 // externally hosted services, no hardcoded performance conclusions.
 #include <vex/monitoring/monitoring.hpp>
 
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -21,7 +23,8 @@ double milliseconds(Clock::time_point begin)
       Clock::now() - begin).count();
 }
 
-void measure(std::size_t series, bool many_families, bool managed)
+void measure(std::size_t series, bool many_families, bool managed,
+             bool publish = true)
 {
     using vex::MetricsManager;
 
@@ -83,6 +86,8 @@ void measure(std::size_t series, bool many_families, bool managed)
           "Benchmark shapes are not equivalent across implementations"
         );
 
+    if (!publish)
+        return;
     std::cout << (managed ? "" : "raw_")
               << (many_families ? "many_families" : "many_series")
               << "," << series << ","
@@ -97,36 +102,80 @@ void measure(std::size_t series, bool many_families, bool managed)
 int main(int argc, char** argv)
 {
     std::size_t repeats = 3;
-    if (argc > 2)
+    bool controlled = false;
+    if (argc == 3 && std::string(argv[1]) == "--controlled")
     {
-        std::cerr << "Usage: vex_monitoring_benchmark [1|3|5]\n";
-        return 2;
-    }
-    if (argc == 2)
-    {
-        const std::string argument = argv[1];
-        if (argument != "1" && argument != "3" && argument != "5")
+        const std::string count(argv[2]);
+        if (count != "9" && count != "15" && count != "21")
         {
-            std::cerr << "Usage: vex_monitoring_benchmark [1|3|5]\n";
+            std::cerr << "Usage: vex_monitoring_benchmark [1|3|5]"
+                      << " or --controlled [9|15|21]\n";
             return 2;
         }
-        repeats = static_cast<std::size_t>(std::stoi(argument));
+        controlled = true;
+        repeats = static_cast<std::size_t>(std::stoi(count));
+    }
+    else if (argc == 2)
+    {
+        const std::string count(argv[1]);
+        if (count != "1" && count != "3" && count != "5")
+        {
+            std::cerr << "Usage: vex_monitoring_benchmark [1|3|5]"
+                      << " or --controlled [9|15|21]\n";
+            return 2;
+        }
+        repeats = static_cast<std::size_t>(std::stoi(count));
+    }
+    else if (argc != 1)
+    {
+        std::cerr << "Usage: vex_monitoring_benchmark [1|3|5]"
+                  << " or --controlled [9|15|21]\n";
+        return 2;
     }
 
-    (void) vex::MetricsManager::Init(true);
+    (void)vex::MetricsManager::Init(true);
     std::cout << "shape,series,registration_ms,update_operations,"
               << "update_ms,collect_ms,families,samples\n";
-    for (std::size_t run = 0; run < repeats; ++run)
+    if (controlled)
     {
-        for (std::size_t series : {10U, 100U, 1000U})
+        // Both variants use identical schemas. Pre-run warmup separately
+        // from the emitted CSV and rotate workload order on every round.
+        for (const auto n : {10U, 100U, 1000U})
+            for (const auto combination : std::array<std::pair<bool, bool>, 4>{
+                   std::make_pair(false, true), std::make_pair(false, false),
+                   std::make_pair(true, true), std::make_pair(true, false)})
+                measure(n, combination.first, combination.second, false);
+
+        for (std::size_t run = 0; run < repeats; ++run)
         {
-            // Paired workloads share the exact same metric schemas.
-            // Both paths use fresh Registry objects in each measurement.
-            measure(series, false, true);
-            measure(series, false, false);
-            measure(series, true, true);
-            measure(series, true, false);
+            std::array<std::size_t, 3> sizes{{10, 100, 1000}};
+            std::rotate(sizes.begin(), sizes.begin() + (run % 3),
+                        sizes.end());
+            for (const auto n : sizes)
+            {
+                std::array<std::pair<bool, bool>, 4> shapes{{
+                    {false, true}, {false, false},
+                    {true, true}, {true, false}
+                }};
+                std::rotate(shapes.begin(), shapes.begin() + (run % 4),
+                            shapes.end());
+                for (const auto variant : shapes)
+                    measure(n, variant.first, variant.second);
+            }
         }
+    }
+    else
+    {
+        // Preserve the original benchmark ordering and CSV for earlier
+        // apples-to-apples before/after comparisons.
+        for (std::size_t run = 0; run < repeats; ++run)
+            for (std::size_t series : {10U, 100U, 1000U})
+            {
+                measure(series, false, true);
+                measure(series, false, false);
+                measure(series, true, true);
+                measure(series, true, false);
+            }
     }
     vex::MetricsManager::Reset();
     return 0;
