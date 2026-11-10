@@ -121,3 +121,7 @@ fix the regression first; report both improvement and any tradeoffs
 ## 2026-11-10 owner post-index test receipt
 
 The owner supplied a complete new `verify_monitoring.sh all` test log for the indexed owner-aware map. All correctness tests PASS: 10/10 per mode, 900/900 stress, 13/13 foundation. The optimized benchmark built and executed, but its measurements were redirected to `build/monitoring-profile-after.csv` and **were not provided**. This profile therefore remains only the *before* baseline. See [MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md](MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md).
+
+## Addendum: measured after optimization
+
+Owner later provided the full 36-row after-change benchmark CSV. The 1000-family Vex median decreased from 17.151 to 11.169 ms (**34.9% reduction**) while the direct upstream median remained essentially steady (9.568→9.575 ms). The earlier “unverified optimization” paragraphs in this historical report are superseded for this benchmark. See [MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md) and [raw after CSV](benchmarks/2026-11-10-monitoring-managed-vs-raw-after.csv).

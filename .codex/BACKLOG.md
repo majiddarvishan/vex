@@ -1,3 +1,9 @@
+## 2026-11-10 monitoring optimization result
+
+MON-OPEN-01's targeted 1000-Family registration overhead is materially reduced in the measured Release comparison (Vex median 17.151→11.169ms; 34.9%). All owner-run post-index correctness/sanitizer/package gates passed. Wider resource/variance benchmarking is **MON-OPEN-06**, portability/static is **MON-OPEN-05**, and explicit owner review/merge decision is **MON-OPEN-07**. See [MONITORING_TASKS.md](MONITORING_TASKS.md) and [MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md).
+
+---
+
 ## Monitoring outstanding tasks (as of 2026-11-10)
 
 Owner verified the expanded Monitoring suite including post-review RAII ownership: 9/9 baseline/threaded/ASan/Clang TSan each; 800/800 stress; 12/12 foundation. Release benchmark ran successfully. Current Monitoring **open** tasks, priorities and acceptance criteria are maintained in [MONITORING_TASKS.md](MONITORING_TASKS.md), with measured data in [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md). Other runtime modules remain deferred.

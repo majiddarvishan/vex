@@ -84,3 +84,7 @@ cat build/monitoring-profile-after.csv
 Expect 37 lines, 1 header and 36 data rows, if all benchmark
 measurements were emitted. Do not assume content from a successful
 executable exit alone.
+
+## Addendum: after CSV received later on 2026-11-10
+
+The owner's `build/monitoring-profile-after.csv` was subsequently pasted in full: 37 lines, all 36 matched measurements. The earlier “CSV not provided” statement above is historical, **superseded by this addendum**. Median 1000-family Vex registration improved from **17.151 to 11.169 ms** (−34.9%); upstream raw remained **9.568 vs 9.575 ms**. The related 1000-series median increased from 3.070 to 3.257 ms (+6.1%), with overlapping measurement ranges and only three repeats. Full computed table and raw data: [MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md). Remaining resource/variation checks are MON-OPEN-06.

@@ -1,100 +1,28 @@
-## Indexed-ledger follow-up: all automated tests PASS; after CSV pending (2026-11-10)
+# Vex Monitoring — current task register (2026-11-10)
 
-Owner uploaded full `verify_monitoring.sh all` output after the
-weak-Registry-owner indexed-ledger change: baseline/threaded/ASan+UBSan/
-Clang TSan **10/10 each**, stress initial **10/10** and 9 C++ tests
-×100 = **900/900**, full foundation/package **13/13**.
-Final `VEX MONITORING ACCEPTANCE PASS all`.
+**Branch:** `feature/monitoring-correctness-tests` · [Draft PR #3](https://github.com/majiddarvishan/vex/pull/3), stacked on foundation PR #2. Only Monitoring behavior is within the approved remediation scope.
 
-The Release benchmark binary also rebuilt and the command completed,
-but its stdout was redirected to
-`build/monitoring-profile-after.csv`, which was **not included**
-in the owner-provided file. No measured after-change medians are
-available yet. **MON-OPEN-01 remains open until before/after
-performance analysis is possible**. Details:
-[MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md](MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md).
+## Verified completed work
 
+- [x] **MON-OPEN-01 — indexed-ledger registration improvement (P1).** Full post-change automated acceptance: baseline/threaded/ASan+UBSan/Clang 20 TSan **10/10 each**, stress **900/900**, foundation/package **13/13**. Paired Release CSV shows 1000 managed-Family registration median **17.151 → 11.169 ms (34.9% lower)**, versus raw **9.568 → 9.575 ms** (essentially unchanged). The target bottleneck is improved within this synthetic workload. Source, all 36 before/after rows, and variability: [MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md). No production SLA implied.
+- [x] **MON-OPEN-02 (P1).** Fix scoped-series identity/ownership TOCTOU. Concurrent direct raw Prometheus Family mutations remain outside supported contract.
+- [x] **MON-OPEN-03 (P1).** Managed cardinality rollback and HELP metadata validation under failure. Raw external Family mutation bypasses wrapper quota accounting.
+- [x] **MON-OPEN-04 (P2).** Loopback real HTTP `/metrics` integration, values, transient Registry expiration and teardown.
+- [x] Monitoring baseline CMake/CTest, existing decorators, RAII, health, labels, installed consumer and sanitizer/stress suites.
 
----
+## Still open
 
-## 2026-11-10 paired raw-vs-managed benchmark measured
-
-Owner supplied 36 CSV rows, valid 37-line file including header.
-Median (3 samples) registration at 1000:
-- one-family-many-series: Vex **3.070ms**, raw **0.930ms**
-- many-families: Vex **17.151ms**, raw **9.568ms**
-
-Both upstream Registry and Vex wrapper contribute. Vex's
-`tracked_metric_series_` vector is scanned for expired entries and
-matching Family on every registration; the upstream
-`Registry::Add` also performs linear scans of Family vectors.
-The former is an opportunity for indexed manager bookkeeping;
-any improvement must be verified, not assumed.
-
-Full analysis: [MONITORING_PROFILE_2026-11-10.md](MONITORING_PROFILE_2026-11-10.md).
-Raw CSV: [benchmarks/2026-11-10-monitoring-managed-vs-raw.csv](benchmarks/2026-11-10-monitoring-managed-vs-raw.csv).
-
----
-
-# Monitoring Tasks — Current Status (2026-11-10)
-
-**Scope:** `feature/monitoring-correctness-tests`, stacked Draft
-[PR #3](https://github.com/majiddarvishan/vex/pull/3).
-Current evidence: [MONITORING_ACCEPTANCE_2026-11-10_HTTP.md](MONITORING_ACCEPTANCE_2026-11-10_HTTP.md).
-Original task ledger and interim notes:
-[MONITORING_TASKS_HISTORY.md](MONITORING_TASKS_HISTORY.md).
-
-## Complete / verified in owner's acceptance output
-
-- [x] MON-OPEN-02 (**P1**) — Resolve scoped-series label-snapshot
-  ownership TOCTOU; concurrency regression passes. External raw
-  `Family::Add/Remove`, `Registry::Remove` and violation of
-  Registry/Family lifetime contracts are explicitly **not supported**.
-- [x] MON-OPEN-03 (**P1**) — Roll back provisional managed quota
-  metadata on registration failures, reject conflicting HELP,
-  recover from strict-registry errors. No quota promise for raw
-  third-party Family mutation bypassing the Vex manager.
-- [x] MON-OPEN-04 (**P2**) — Real loopback HTTP `/metrics`,
-  main/subsystem/expired Registry lifecycle, Counter/Gauge/Histogram
-  values, Exposer teardown. Test passed under all four modes and
-  100 repeated stress runs.
-- [x] Earlier Monitoring CMake/CTest, MetricsManager, HealthCheck,
-  Decorators, RAII, validation, Clang-version discovery, installed
-  package consumer and baseline Release benchmark.
-
-**Verification:** Baseline 10/10, Threaded 10/10, ASan/UBSan 10/10,
-Clang 20 TSan 10/10, Stress 900/900 (9 C++ tests × 100),
-full foundation/package consumer 13/13, and final all-mode PASS.
-Exact local git SHA was not emitted in the attached terminal output.
-
-## Open work
-
-| ID | Priority | Task | Acceptance criteria |
+| ID | Priority | Work | Acceptance gate |
 |---|---|---|---|
-| MON-OPEN-01 | P1 | **Indexed ledger correctness verified** by owner: 10/10 in four modes, stress 900/900, foundation 13/13. After-change benchmark compiled and ran; CSV was redirected and not uploaded. | Receive after-change 36-row CSV, compute matched before/after medians and variability, assess regressions / improvements and memory tradeoffs before closing |
-| MON-OPEN-05 | P2 | Portability and static review (GCC/Clang warnings, tidy, static/shared build/install) | Record actual compiler/OS versions, full clean build/consumer evidence; fix Monitoring-only issues |
-| MON-OPEN-06 | P2 | Expand performance/resource study | Measure RSS, allocation rates, multi-threaded register/update/Collect and scrape latency under controlled load; report distribution, hardware and uncertainty |
-| MON-OPEN-07 | Process | Owner review and merge/release decision | Confirm reviewed SHA, resolve PR comments, preserve stacked foundation dependency, obtain explicit owner merge approval |
+| MON-OPEN-05 | P2 | Static analysis, GCC/Clang portability, static/shared packaging | Record compiler versions and actual clean warning/static-analysis results; build and test supported library configurations and external package consumer |
+| MON-OPEN-06 | P2 | Resource/load and residual registration regression characterization | Measure memory/RSS, allocations, multithreaded registration/update/Collect/scrape; repeat enough matched Release runs with warmup/order control to determine whether 1000-series Vex median 3.070→3.257 ms (+6.1%) is a real regression; report confidence and limits. Avoid speculative optimization |
+| MON-OPEN-07 | Process | Final owner code review and release/merge decision | Freeze reviewed SHA, resolve PR comments, preserve stacked foundation dependency, require explicit owner authorization before merge |
 
-## Recommended next action
+## Evidence and boundaries
 
-Investigate **MON-OPEN-01** with an opt-in isolated **Release
-benchmark** comparing the wrapper and direct upstream registration
-paths. Favor one family with bounded labels when semantically suitable;
-do not rewrite schemas or claim a defect solely from timing differences.
-Then MON-OPEN-06, MON-OPEN-05, and owner decision MON-OPEN-07.
+- [Most recent all-mode acceptance](MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md): 10/10 × four modes; 900/900 Stress; 13/13 foundation.
+- [Before/after comparison](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md), [before raw CSV](benchmarks/2026-11-10-monitoring-managed-vs-raw.csv), [after raw CSV](benchmarks/2026-11-10-monitoring-managed-vs-raw-after.csv).
+- Only three sequential Release repetitions per scenario. Observed 1000-family improvement is credible for that measured setup; do not claim absent race conditions for unsupported operations or that other machine configurations share identical performance.
+- PR #3 remains **Draft and unmerged**. No Logger, ObjectPool or ThreadPool behavioral changes authorized.
 
-Do not change Logger/ObjectPool/ThreadPool runtime code. Do not
-merge the Draft PR without owner consent.
-
-## Next MON-OPEN-01 evidence collection
-
-The benchmark now compares matched **Vex managed** and **raw upstream** registration paths in the same Release build. Its output CSV has the same 8 columns but four shapes (new `raw_*` rows), 36 rows with three repeats. Run:
-
-```sh
-./tools/benchmark_monitoring.sh 3 > build/monitoring-profile.csv
-```
-
-Release runner build/config messages go to stderr; CSV to stdout. Do not invent results or claim the new benchmark is validated until the owner reports actual output.
-
-**Latest unverified source change:** indexed weak-owner ledger with periodic expiry sweep, plus 320-Registry churn test. The previous paired CSV is the **before** baseline. Do not claim any speedup or tests passed on this latest commit without fresh owner logs. See [MONITORING_PROFILE_2026-11-10.md](MONITORING_PROFILE_2026-11-10.md).
+**Next recommended order:** MON-OPEN-06 (resource/load and 1000-series concern), MON-OPEN-05 (portability/static), MON-OPEN-07 (owner-only merge decision).

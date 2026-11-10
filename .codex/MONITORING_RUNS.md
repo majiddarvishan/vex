@@ -1,3 +1,9 @@
+## Most recent after-index measured result (2026-11-10)
+
+Indexed-ledger owner test matrix **PASS** (10/10 each baseline/threaded/ASan/TSan, stress 900/900, foundation 13/13). After CSV has now arrived (37 lines; 36 measurements). Vex 1000-family median improved **17.151→11.169ms (34.9%)**, raw remained 9.568→9.575ms. Vex 1000-series median 3.070→3.257ms is a possible regression signal requiring more data. All details: [MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md). The earlier “after CSV pending” notices below are superseded.
+
+---
+
 ## Indexed-ledger follow-up: all automated tests PASS; after CSV pending (2026-11-10)
 
 Owner uploaded full `verify_monitoring.sh all` output after the
