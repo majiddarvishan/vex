@@ -46,6 +46,8 @@ namespace vex
     )
     {
         using Result = std::invoke_result_t<Func&&>;
+        static_assert(!std::is_rvalue_reference_v<Result>,
+          "TimeFunctionWithDuration: return by value or stable lvalue reference");
         ScopedTimer timer(histogram);
         if constexpr (std::is_void_v<Result>)
         {

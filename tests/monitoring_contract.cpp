@@ -173,6 +173,9 @@ int main()
     if (!throws_as<std::runtime_error>([]
             { (void) MetricsManager::GetRegistry(); }))
         return 16;
+    if (!throws_as<std::runtime_error>([]
+            { (void) MetricsManager::GetUptimeSeconds(); }))
+        return 26;
 
     // An externally owned registry is also safe: after the last owner goes
     // away, HealthCheck must refuse stale metric handles instead of using them.
