@@ -331,9 +331,9 @@ namespace vex
     bool MetricsManager::ValidateLabelValue(const std::string& value)
     {
         // Allow empty values and printable ASCII/UTF-8
-        for (char c: value)
+        for (unsigned char c: value)
         {
-            if (c < 32 && c != '\t')
+            if ((c < 32 && c != '\t') || c == 127)
             { // Reject control chars except tab
                 return false;
             }

@@ -19,3 +19,12 @@
 
 ## Evidence
 Implementation (manager synchronization, weak-registry HealthCheck access and namespace-qualified type-safe macros) is prepared as a separate commit after the contract-test commit. These changes need execution on the owner's real checkout. The existing `full` smoke PASS was from the owner's original checkout before this branch. The new contract test and fixes are **NOT RUN** at creation time. Run `./tools/verify_foundation.sh full`, and independently ASan/UBSan + TSan after implementation.
+
+## Verification helper
+
+`tools/verify_monitoring.sh baseline`: Monitoring-only build, compile-time threading disabled, both monitoring tests.
+`tools/verify_monitoring.sh threaded`: `ENABLE_METRICS_THREADING=ON`, same tests.
+`tools/verify_monitoring.sh asan`: AddressSanitizer + UndefinedBehaviorSanitizer, isolated binary.
+`tools/verify_monitoring.sh tsan`: ThreadSanitizer, isolated binary (do not combine with ASan).
+
+The helper intentionally filters to monitoring tests so the separately installed package consumer is not linked with sanitizer-instrumented static objects but absent sanitizer flags. The `full` foundation run already validated installation. These monitoring helper commands are **NOT RUN** until owner reports execution.

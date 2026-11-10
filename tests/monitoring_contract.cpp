@@ -35,6 +35,13 @@ int main()
         return 1;
     if (!MetricsManager::IsInitialized())
         return 2;
+#ifdef METRICS_MULTI_THREADED
+    if (!MetricsManager::IsThreadingEnabled())
+        return 19;
+#else
+    if (MetricsManager::IsThreadingEnabled())
+        return 20;
+#endif
 
     auto registry = MetricsManager::GetRegistry();
     auto registry_again = MetricsManager::GetRegistry();
@@ -68,6 +75,12 @@ int main()
     if (!throws_as<std::invalid_argument>([]
             { MetricsManager::SetDefaultLabels({{"bad-name", "value"}}); }))
         return 8;
+
+    // Prometheus label VALUES support UTF-8 (names still have ASCII rules).
+    MetricsManager::SetDefaultLabels(
+      {{"service", "vex"}, {"env", "test"}, {"city", u8"تهران"}});
+    if (MetricsManager::GetDefaultLabels().at("city") != u8"تهران")
+        return 21;
 
     auto& request_counter = MetricsManager::CreateCounter(
       registry, "vex_monitoring_contract_requests_total", "Contract requests");
