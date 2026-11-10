@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Optional Monitoring microbenchmark (Release mode, no sanitizer flags).
+# Configuration and environment metadata go to stderr, clean CSV to stdout.
 # It does not replace CTest, TSan, ASan, a real load test, or code review.
 set -Eeuo pipefail
 
@@ -24,7 +25,7 @@ cmake -S "$root" -B "$build_dir" \
     -DBUILD_TESTING=OFF \
     -DENABLE_METRICS_THREADING=ON \
     -DVEX_ALLOW_DEPENDENCY_FETCH="${VEX_ALLOW_DEPENDENCY_FETCH:-ON}" \
-    -DVEX_BUILD_MONITORING_BENCHMARK=ON
+    -DVEX_BUILD_MONITORING_BENCHMARK=ON >&2
 
 # Refuse an accidentally reused sanitized build cache.
 if grep -Eq '^CMAKE_CXX_FLAGS:STRING=.*-fsanitize=' "$build_dir/CMakeCache.txt"; then
@@ -33,17 +34,13 @@ if grep -Eq '^CMAKE_CXX_FLAGS:STRING=.*-fsanitize=' "$build_dir/CMakeCache.txt";
 fi
 
 cmake --build "$build_dir" --config Release \
-    --target vex_monitoring_benchmark --parallel "${VEX_JOBS:-2}"
+    --target vex_monitoring_benchmark --parallel "${VEX_JOBS:-2}" >&2
 
 printf 'BENCHMARK_ENV date=%s host_kernel=%s cpu_count=%s\n' \
     "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
     "$(uname -sr)" "$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo unknown)" >&2
 printf 'BENCHMARK_COMPILER ' >&2
-if [[ -n "${CXX:-}" ]]; then
-    "$CXX" --version | head -n 1 >&2
-else
-    grep '^CMAKE_CXX_COMPILER:FILEPATH=' "$build_dir/CMakeCache.txt" >&2 || true
-fi
+grep '^CMAKE_CXX_COMPILER:FILEPATH=' "$build_dir/CMakeCache.txt" >&2 || true
 printf 'BENCHMARK_NOTE microbenchmark results are machine-specific and not production guarantees\n' >&2
 
 "$build_dir/modules/monitoring/vex_monitoring_benchmark" "$repeats"
