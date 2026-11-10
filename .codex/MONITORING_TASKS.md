@@ -1,3 +1,22 @@
+## Indexed-ledger follow-up: all automated tests PASS; after CSV pending (2026-11-10)
+
+Owner uploaded full `verify_monitoring.sh all` output after the
+weak-Registry-owner indexed-ledger change: baseline/threaded/ASan+UBSan/
+Clang TSan **10/10 each**, stress initial **10/10** and 9 C++ tests
+×100 = **900/900**, full foundation/package **13/13**.
+Final `VEX MONITORING ACCEPTANCE PASS all`.
+
+The Release benchmark binary also rebuilt and the command completed,
+but its stdout was redirected to
+`build/monitoring-profile-after.csv`, which was **not included**
+in the owner-provided file. No measured after-change medians are
+available yet. **MON-OPEN-01 remains open until before/after
+performance analysis is possible**. Details:
+[MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md](MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md).
+
+
+---
+
 ## 2026-11-10 paired raw-vs-managed benchmark measured
 
 Owner supplied 36 CSV rows, valid 37-line file including header.
@@ -52,7 +71,7 @@ Exact local git SHA was not emitted in the attached terminal output.
 
 | ID | Priority | Task | Acceptance criteria |
 |---|---|---|---|
-| MON-OPEN-01 | P1 | **Indexed ledger implementation committed, unverified.** Owner's pre-change raw-vs-Vex medians at 1000: one family 0.930/3.070 ms, many families 9.568/17.151 ms. Tracked-series lookup now uses owner-aware std::map and amortized weak-registry expiry, plus 320-Registry churn regression. | Re-run complete 10/10, 900/900, 13/13 acceptance and the exact Release benchmark; document measured before/after and memory tradeoffs before closing |
+| MON-OPEN-01 | P1 | **Indexed ledger correctness verified** by owner: 10/10 in four modes, stress 900/900, foundation 13/13. After-change benchmark compiled and ran; CSV was redirected and not uploaded. | Receive after-change 36-row CSV, compute matched before/after medians and variability, assess regressions / improvements and memory tradeoffs before closing |
 | MON-OPEN-05 | P2 | Portability and static review (GCC/Clang warnings, tidy, static/shared build/install) | Record actual compiler/OS versions, full clean build/consumer evidence; fix Monitoring-only issues |
 | MON-OPEN-06 | P2 | Expand performance/resource study | Measure RSS, allocation rates, multi-threaded register/update/Collect and scrape latency under controlled load; report distribution, hardware and uncertainty |
 | MON-OPEN-07 | Process | Owner review and merge/release decision | Confirm reviewed SHA, resolve PR comments, preserve stacked foundation dependency, obtain explicit owner merge approval |

@@ -1,3 +1,22 @@
+## Indexed-ledger follow-up: all automated tests PASS; after CSV pending (2026-11-10)
+
+Owner uploaded full `verify_monitoring.sh all` output after the
+weak-Registry-owner indexed-ledger change: baseline/threaded/ASan+UBSan/
+Clang TSan **10/10 each**, stress initial **10/10** and 9 C++ tests
+×100 = **900/900**, full foundation/package **13/13**.
+Final `VEX MONITORING ACCEPTANCE PASS all`.
+
+The Release benchmark binary also rebuilt and the command completed,
+but its stdout was redirected to
+`build/monitoring-profile-after.csv`, which was **not included**
+in the owner-provided file. No measured after-change medians are
+available yet. **MON-OPEN-01 remains open until before/after
+performance analysis is possible**. Details:
+[MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md](MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md).
+
+
+---
+
 ## Performance-follow-up acceptance pending (2026-11-10)
 
 The latest Monitoring source changes Vex tracked-series metadata

@@ -117,3 +117,7 @@ Compare before/after results on the same machine and with identical
 Release toolchain and shape definitions. If CTest or sanitizer fails,
 fix the regression first; report both improvement and any tradeoffs
 (e.g. quota registry cleanup behavior, RSS allocations).
+
+## 2026-11-10 owner post-index test receipt
+
+The owner supplied a complete new `verify_monitoring.sh all` test log for the indexed owner-aware map. All correctness tests PASS: 10/10 per mode, 900/900 stress, 13/13 foundation. The optimized benchmark built and executed, but its measurements were redirected to `build/monitoring-profile-after.csv` and **were not provided**. This profile therefore remains only the *before* baseline. See [MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md](MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md).
