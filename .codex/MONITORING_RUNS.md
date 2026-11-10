@@ -347,3 +347,21 @@ working-tree SHA cannot be independently derived from the log.
 merge decision. Do not modify runtime behavior in Logger, ObjectPool
 or ThreadPool; their known issues remain in the backlog.
 
+
+### Review-time benchmark harness
+
+After finishing correctness tests, use `./tools/benchmark_monitoring.sh 3` for a
+non-sanitized Release-mode baseline. This configures the opt-in benchmark,
+prints date, kernel, CPU count, compiler context to stderr, and produces CSV
+to stdout for 10/100/1000 metric instances across two shapes:
+
+- `many_series`: one Counter family with many distinct label values;
+- `many_families`: many distinct Counter families, one series each.
+
+Each run reports registration time, time for 100 increments per series,
+`Registry::Collect()` time, number of families and samples. Repeat counts
+can be 1, 3, or 5. This is intended to reveal scaling trends and potential
+bottlenecks, not to enforce arbitrary numeric thresholds.
+
+**Not yet run on owner checkout.** Do not claim a performance value or
+benchmark regression until measured results and machine context are available.

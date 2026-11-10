@@ -1,11 +1,12 @@
-// Monitoring-only baseline benchmark. No external service or network.
-// Output is empirical; no hardcoded performance claims.
+// Monitoring registration/update/collection baseline. No network, no
+// externally hosted services, no hardcoded performance conclusions.
 #include <vex/monitoring/monitoring.hpp>
 
 #include <chrono>
-#include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -19,55 +20,88 @@ double milliseconds(Clock::time_point begin)
       Clock::now() - begin).count();
 }
 
-void measure(std::size_t series)
+void measure(std::size_t series, bool many_families)
 {
     using vex::MetricsManager;
+
     auto registry = std::make_shared<prometheus::Registry>();
+    std::vector<prometheus::Counter*> counters;
+    counters.reserve(series);
     const auto begin = Clock::now();
 
     for (std::size_t i = 0; i < series; ++i)
     {
+        const auto name = many_families
+          ? "vex_bench_family_" + std::to_string(i) + "_total"
+          : "vex_bench_requests_total";
+        const std::map<std::string, std::string> labels = many_families
+          ? std::map<std::string, std::string> {}
+          : std::map<std::string, std::string> {
+              {"status", std::to_string(i)}
+            };
+
         auto& counter = MetricsManager::CreateCounter(
-          registry, "vex_benchmark_requests_total",
-          "Synthetic benchmark requests",
-          {{"status", std::to_string(i)}}
+          registry, name, "Synthetic benchmark counter", labels
         );
-        counter.Increment();
+        counters.push_back(&counter);
     }
-    const double register_ms = milliseconds(begin);
-    const auto scrape_begin = Clock::now();
+    const double registration_ms = milliseconds(begin);
+
+    constexpr std::size_t updates_per_series = 100;
+    const auto update_begin = Clock::now();
+    for (std::size_t n = 0; n < updates_per_series; ++n)
+        for (auto* counter: counters)
+            counter->Increment();
+    const double update_ms = milliseconds(update_begin);
+
+    const auto collect_begin = Clock::now();
     const auto families = registry->Collect();
-    const double scrape_ms = milliseconds(scrape_begin);
+    const double collect_ms = milliseconds(collect_begin);
 
     std::size_t samples = 0;
     for (const auto& family: families)
         samples += family.metric.size();
 
-    std::cout << series << "," << std::fixed
-              << std::setprecision(3) << register_ms << ","
-              << scrape_ms << "," << families.size() << ","
-              << samples << "\n";
+    std::cout << (many_families ? "many_families" : "many_series")
+              << "," << series << ","
+              << std::fixed << std::setprecision(3)
+              << registration_ms << ","
+              << (series * updates_per_series) << ","
+              << update_ms << "," << collect_ms << ","
+              << families.size() << "," << samples << "\n";
 }
-}
+} // namespace
 
 int main(int argc, char** argv)
 {
-    std::size_t runs = 1;
-    if (argc > 1)
+    std::size_t repeats = 3;
+    if (argc > 2)
     {
-        const std::string arg = argv[1];
-        if (arg != "1" && arg != "3" && arg != "5")
+        std::cerr << "Usage: vex_monitoring_benchmark [1|3|5]\n";
+        return 2;
+    }
+    if (argc == 2)
+    {
+        const std::string argument = argv[1];
+        if (argument != "1" && argument != "3" && argument != "5")
         {
             std::cerr << "Usage: vex_monitoring_benchmark [1|3|5]\n";
             return 2;
         }
-        runs = static_cast<std::size_t>(std::stoi(arg));
+        repeats = static_cast<std::size_t>(std::stoi(argument));
     }
+
     (void) vex::MetricsManager::Init(true);
-    std::cout << "series,registration_ms,collect_ms,families,samples\n";
-    for (std::size_t r = 0; r < runs; ++r)
-        for (const auto count : {10U, 100U, 1000U})
-            measure(count);
+    std::cout << "shape,series,registration_ms,update_operations,"
+              << "update_ms,collect_ms,families,samples\n";
+    for (std::size_t run = 0; run < repeats; ++run)
+    {
+        for (std::size_t series : {10U, 100U, 1000U})
+        {
+            measure(series, false);
+            measure(series, true);
+        }
+    }
     vex::MetricsManager::Reset();
     return 0;
 }

@@ -53,15 +53,14 @@ The historical `vex::monitoring::record_metric(name, value)` is now a real persi
 
 `tsan-clang` auto-discovers clang++ or versioned clang++-N (or CXX override). GCC 13.3 TSan was unstable on one independently tested host; the owner previously passed the older suite with Clang 20. That historical PASS does not validate later code changes.
 
-Optional benchmark (registration + Collect timing for 10, 100 and 1000 series):
+Optional Release-mode benchmark for registration, 100 updates per series,
+and collection at 10/100/1000 samples using both **many-series** and
+**many-families** workloads:
 
 ```sh
-cmake -S . -B build/monitoring-bench -DBUILD_MONITORING=ON \
-  -DBUILD_THREADPOOL=OFF -DBUILD_OBJECT_POOL=OFF \
-  -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF \
-  -DVEX_BUILD_MONITORING_BENCHMARK=ON -DCMAKE_BUILD_TYPE=Release
-cmake --build build/monitoring-bench
-./build/monitoring-bench/modules/monitoring/vex_monitoring_benchmark 3
+./tools/benchmark_monitoring.sh 3
 ```
 
-Performance claims require real measurements. This README intentionally contains no invented nanosecond benchmarks.
+The script prints the environment to stderr and structured CSV to stdout.
+Build and execution are optional and not part of the correctness gate.
+No performance numbers are asserted until owner measurements are supplied.
