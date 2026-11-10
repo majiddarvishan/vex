@@ -78,8 +78,8 @@ fi
 if [[ "$mode" == "stress" ]]; then
     printf 'MONITORING STRESS: 100 repeat runs per monitoring C++ contract, fail fast\n'
     ctest --test-dir "$build_dir" --output-on-failure \
-        --repeat until-fail:100 -R '^vex[.]monitoring[.](smoke|contract|decorators|raii|validation|lifecycle)
-    printf 'VEX MONITORING STRESS PASS repetitions=100 each_test=smoke,contract,decorators,raii,validation,lifecycle\n'
+        --repeat until-fail:100 -R '^vex[.]monitoring[.](smoke|contract|decorators|raii|validation|lifecycle|registration)
+    printf 'VEX MONITORING STRESS PASS repetitions=100 each_test=smoke,contract,decorators,raii,validation,lifecycle,registration\n'
 else
     printf 'VEX MONITORING PASS mode=%s\n' "$mode"
 fi

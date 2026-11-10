@@ -53,6 +53,13 @@ if(BUILD_MONITORING)
     add_test(NAME vex.monitoring.lifecycle
         COMMAND vex_monitoring_lifecycle_contract)
 
+    add_executable(vex_monitoring_registration_contract
+        monitoring_registration_contract.cpp)
+    target_link_libraries(vex_monitoring_registration_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.registration
+        COMMAND vex_monitoring_registration_contract)
+
     if(UNIX)
         find_program(VEX_BASH_EXECUTABLE bash)
         if(VEX_BASH_EXECUTABLE)
