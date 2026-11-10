@@ -1,3 +1,25 @@
+# Latest owner-run acceptance result — 2026-11-10
+
+The owner ran `./tools/verify_monitoring.sh all` on the
+Monitoring branch. **ALL AUTOMATED CHECKS PASS:** Baseline 9/9,
+threaded 9/9, ASan+UBSan 9/9, Clang 20 TSan 9/9, stress initial 9/9,
+then 800/800 C++ repeat executions, and full foundation including
+installed package consumer 12/12. Terminal ended with
+`VEX MONITORING ACCEPTANCE PASS all`.
+
+This explicitly supersedes earlier "new suite NOT RUN" notes.
+Implementation and the agreed current automated verification work
+are complete for the tested configurations. Optional performance
+benchmark is available but no measurements were supplied.
+Exact local SHA was not printed; do not assert it was verified.
+
+Remaining actions: owner review, optional benchmark measurement,
+merge/release decision. PR #3 remains **Draft and unmerged**.
+All non-Monitoring behavioral remediation remains deferred.
+See [MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+---
+
 # Latest acceptance command (2026-11-10)
 
 On `feature/monitoring-correctness-tests` use:

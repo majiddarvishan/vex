@@ -1,3 +1,15 @@
+## Monitoring acceptance milestone — 2026-11-10
+
+All agreed automated Monitoring gates **PASS** on owner checkout:
+9/9 baseline, 9/9 threaded, 9/9 ASan/UBSan, 9/9 Clang TSan,
+800/800 100x stress repetitions, 12/12 foundation/package consumer.
+Monitoring implementation/test coverage can proceed to owner review.
+Do not infer all possible races are absent. Benchmark measurement
+(optional) and merge approval are separate remaining items.
+Logger/ObjectPool/ThreadPool behavior fixes remain **DEFERRED**.
+
+---
+
 # Remediation backlog and gates
 
 **Owner authorized all Monitoring work (2026-11-10).** New Monitoring implementation and tests are committed; execution/verification gates are OPEN. Other module behavioral work remains deferred.

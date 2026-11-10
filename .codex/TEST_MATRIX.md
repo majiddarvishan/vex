@@ -1,3 +1,20 @@
+## Verified Monitoring final acceptance (owner-run 2026-11-10)
+
+**Full `verify_monitoring.sh all` PASSED on real checkout**:
+baseline 9/9, threaded 9/9, ASan/UBSan 9/9,
+Clang 20 TSan 9/9, stress initial 9/9 and 100 repeats of
+each of 8 Monitoring C++ tests (800/800), foundation
+package consumer/full CTest 12/12. This supersedes the earlier
+expanded-suite "NOT RUN" status in historical notes below.
+No sanitizer reports appeared in the supplied log.
+Owner did not provide exact local commit SHA.
+
+Optional cardinality/scrape benchmark still unmeasured;
+no performance claims justified. PR remains Draft/unmerged.
+Full evidence: [MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+---
+
 ## Expanded Monitoring acceptance gate (2026-11-10)
 
 Current CTest: smoke, contract, decorators, raii, validation,

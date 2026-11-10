@@ -301,3 +301,49 @@ their Registry or externally removed Family. Reset is quiescent-only.
 Opt-in series limits cover manager-created series, not direct raw
 Family::Add calls. No benchmark measurements have been made.
 Other module behavioral changes remain deferred.
+
+## Owner-run expanded Monitoring acceptance: ALL PASS — 2026-11-10
+
+**This is a later result superseding all earlier "not yet run" notices
+above.** The owner submitted terminal output from
+`./tools/verify_monitoring.sh all` on
+`feature/monitoring-correctness-tests`, including compilation of all
+new Monitoring C++ contracts and examples.
+
+| Stage | Observed result | Total CTest time |
+|---|---|---:|
+| Baseline | **9/9 PASS** | 0.11 s |
+| Threaded | **9/9 PASS** | 0.17 s |
+| ASan + UBSan | **9/9 PASS** | 0.32 s |
+| Clang 20 TSan | **9/9 PASS** | 0.35 s |
+| Stress initial CTest | **9/9 PASS** | 0.21 s |
+| Stress repeated C++ tests | **8 tests × 100 successful runs = 800/800 PASS** | 8.61 s |
+| Full Foundation + package consumer | **12/12 PASS** | 1.67 s |
+
+**Terminal final line:** `VEX MONITORING ACCEPTANCE PASS all`.
+Clang TSan used `/usr/bin/clang++-20`; there are no sanitizer
+reports or build errors in the submitted output. Stress repetition
+counts were checked against the full pasted log and are exactly
+100 successful repetitions for each of: smoke, contract,
+decorators, raii, validation, lifecycle, registration, legacy.
+
+All eight new/existing Monitoring C++ tests plus the Clang compiler
+selection shell CTest pass in each of the four direct configurations.
+The full foundation additionally passes ThreadPool/ObjectPool smoke
+tests and `vex.package.consumer` (installed package integration).
+
+**Disposition:** The agreed automated Monitoring acceptance matrix
+is satisfied on the reported real checkout. This is strong evidence
+for the exercised code paths, but it does not prove absence of all
+possible races or eliminate public API ownership constraints. The
+optional 10/100/1000-series benchmark is provided but **was not
+executed** in this log, so there are no measured latency/throughput
+claims. No `git rev-parse HEAD` is present in the pasted output;
+the GitHub PR branch was at `557e0671c31cd4eb4d63653341bef90c73bab71c`
+immediately before this evidence was recorded, but the exact local
+working-tree SHA cannot be independently derived from the log.
+
+**Process:** Keep PR #3 Draft/unmerged pending owner code review and
+merge decision. Do not modify runtime behavior in Logger, ObjectPool
+or ThreadPool; their known issues remain in the backlog.
+

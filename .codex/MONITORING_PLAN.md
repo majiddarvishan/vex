@@ -1,3 +1,16 @@
+## Current completion checkpoint: automated acceptance PASS
+
+Owner-run `./tools/verify_monitoring.sh all` completed with
+`VEX MONITORING ACCEPTANCE PASS all` (2026-11-10).
+Baseline/threaded/ASan+UBSan/Clang TSan: **9/9 each**,
+Stress: **800/800 C++ repeats**, full foundation including
+installed-package consumer: **12/12**. No failures in pasted log.
+Earlier notes marking this expanded suite NOT RUN are historical
+and superseded here. Optional benchmark measurement remains open.
+Owner review/merge is a separate decision; PR remains Draft.
+
+---
+
 ## Completion implementation checkpoint; validation open
 
 Monitoring now has candidate fixes for Decorators, RAII lifetime,
