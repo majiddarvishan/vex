@@ -1,7 +1,7 @@
 # Instructions for coding agents
 
 ## Binding owner priority (2026-11-10)
-Only CMake/build/test infrastructure is approved now. Monitoring is next after foundation is proven. Logger, ObjectPool behavior, ThreadPool behavior, and other implementation improvements remain frozen until explicit owner direction. Do not opportunistically fix their behavior while touching CMake.
+The foundation CMake/CTest baseline was verified by the owner (thread 2/2, full 4/4) on 2026-11-10. Monitoring reliability, lifecycle and tests are now authorized and active. Logger, ObjectPool behavior, ThreadPool behavior, and other implementation improvements remain frozen until explicit owner direction.
 
 
 ## Ground rules

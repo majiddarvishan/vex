@@ -158,6 +158,19 @@ int main()
             { (void) MetricsManager::GetRegistry(); }))
         return 16;
 
+    // An externally owned registry is also safe: after the last owner goes
+    // away, HealthCheck must refuse stale metric handles instead of using them.
+    auto external_registry = std::make_shared<prometheus::Registry>();
+    HealthCheck::RegisterHealthMetrics(external_registry);
+    if (!HealthCheck::IsRegistered())
+        return 22;
+    external_registry.reset();
+    if (HealthCheck::IsRegistered())
+        return 23;
+    if (!throws_as<std::runtime_error>([]
+            { HealthCheck::UpdateMemoryUsage(100); }))
+        return 24;
+
     if (!MetricsManager::Init())
         return 17;
     registry = MetricsManager::GetRegistry();

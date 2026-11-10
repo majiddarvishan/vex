@@ -1,3 +1,16 @@
+# Current handoff — Monitoring priority (2026-11-10)
+
+- Foundation owner-run checkout: `thread` **2/2 PASS**, `full` **4/4 PASS**, full build GCC 13.3.0. Evidence: [FOUNDATION_RUNS.md](FOUNDATION_RUNS.md).
+- Active branch: `feature/monitoring-correctness-tests`, stacked on `feature/cmake-ctest-foundation`.
+- New test: `vex.monitoring.contract` exercises registry identity, label merging, UTF-8 values, macro qualification, repeated health registration, concurrent reads/updates and expired-registry/Reset/reinit behavior.
+- Proposed implementation: MetricsManager always locks its state, returns safe owning registry snapshots, and resets uptime; HealthCheck weakly tracks its Registry and obtains strong ownership under mutex before touching gauges; SAFE_* macros use explicit `vex::detail` namespace.
+- Monitoring-only build declares `Threads::Threads`; helper `tools/verify_monitoring.sh baseline|threaded|asan|tsan` adds independent runtime/sanitizer checks.
+- **NOT RUN YET:** any tests on new Monitoring branch. Do not mark findings fixed until real compilation and test logs are provided; instrumentation also needs ASan/UBSan and TSan runs.
+- Deferred (not authorized): Logger, ObjectPool, ThreadPool behavioral bugs and performance optimization.
+- Next owner command (after checking out/pulling this branch): `./tools/verify_monitoring.sh baseline && ./tools/verify_monitoring.sh threaded`. Follow with `asan` and `tsan` modes after baseline passes.
+
+---
+
 # Audit handoff — 2026-11-10
 
 ## Latest owner-run validation (2026-11-10)

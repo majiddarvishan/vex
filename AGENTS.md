@@ -1,6 +1,6 @@
 # Agent entrypoint for Vex
 
-**Owner implementation scope, decided 2026-11-10:** Work on CMake and reproducible test infrastructure first; prioritize Monitoring next. Every other behavioral fix is tracked but deferred until the owner explicitly says to start it. Do not confuse audit severity with implementation authorization.
+**Owner implementation scope, updated 2026-11-10:** The owner-run CMake/CTest foundation baseline passed (thread 2/2, full 4/4). **Monitoring correctness and tests are now the active implementation scope.** Every other behavioral fix remains tracked but deferred until explicit owner direction. Do not confuse audit severity with implementation authorization.
 
 
 Before editing this repository, read `.codex/README.md`, `.codex/AGENTS.md`, `.codex/ARCHITECTURE.md`, `.codex/AUDIT.md`, and `.codex/TEST_MATRIX.md`.

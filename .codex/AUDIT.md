@@ -1,6 +1,8 @@
 # Source-level engineering audit — Vex
 
 **Baseline:** `71e74d221f182f0567f43531f7f933104cb58c68` (`main`). **Date:** 2026-11-10.
+
+**Monitoring remediation candidate (NOT YET TESTED):** Branch `feature/monitoring-correctness-tests` addresses VEX-008 and portions of VEX-011 (metadata synchronization, registry-lifetime checks), as well as SAFE_* namespace qualification and UTF-8 label validation. `vex.monitoring.contract` was added. Do not mark these issues resolved until the owner's real CMake/CTest/sanitizer validation passes. All non-Monitoring issue statuses are unchanged and remain deferred.
 **Method:** GitHub source inspection of first-party headers, C++ sources, examples, tests and CMake. **Execution:** configure/build/tests/sanitizers/benchmarks NOT RUN due to unavailable local checkout/network dependency. Findings below are code-backed; runtime consequences should be verified with the regression cases in `REPRO_GUIDE.md`.
 
 Severity is an initial technical assessment, not a CVSS score. Lines refer to the above baseline. Paths below are relative to repository root.

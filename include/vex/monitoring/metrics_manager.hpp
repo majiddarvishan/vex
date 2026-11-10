@@ -13,6 +13,7 @@
 #include <regex>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include <unordered_map>
 
@@ -27,8 +28,9 @@ namespace vex
         /// Initialize the metrics manager. Must be called before any other
         /// methods. Manager control state is synchronized in all builds.
         /// Idempotent (safe to call multiple times).
-        /// @param enable_threading Retained compile-time capability flag (only works if
-        /// compiled with METRICS_MULTI_THREADED)
+        /// @param enable_threading Report requested legacy metrics threading
+        /// mode when built with METRICS_MULTI_THREADED. The manager's own
+        /// metadata access is synchronized regardless of this flag.
         /// @return true if initialization succeeded, false if already
         /// initialized
         [[nodiscard]] static bool Init(bool enable_threading = false);
