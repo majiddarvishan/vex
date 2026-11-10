@@ -143,7 +143,7 @@ int main()
         return 15;
 
     // All timed operations (including exceptions) must be observed once.
-    if (histogram.Collect().histogram.sample_count != start + 11)
+    if (histogram.Collect().histogram.sample_count != start + 13)
         return 16;
     if (successes.Value() != 8 || failures.Value() != 2)
         return 17;

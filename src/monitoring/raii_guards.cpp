@@ -4,6 +4,7 @@
 #include <map>
 #include <mutex>
 #include <utility>
+#include <type_traits>
 
 namespace vex
 {
