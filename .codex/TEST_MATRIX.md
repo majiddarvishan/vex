@@ -1,3 +1,9 @@
+## Latest verified Monitoring acceptance — 2026-11-10
+
+All stages passed on owner checkout **after** RAII ownership fix: baseline 9/9, threaded 9/9, ASan/UBSan 9/9, Clang TSan 9/9, stress 800/800, full installed consumer 12/12. Performance baseline 3 repeated runs per 10/100/1000 shape also completed. See [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md). Remaining scenarios are tracked in [MONITORING_TASKS.md](MONITORING_TASKS.md).
+
+---
+
 ## Verified Monitoring final acceptance (owner-run 2026-11-10)
 
 **Full `verify_monitoring.sh all` PASSED on real checkout**:

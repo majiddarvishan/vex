@@ -1,3 +1,9 @@
+## Latest Monitoring checkpoint — verified (2026-11-10)
+
+Owner's complete `verify_monitoring.sh all` output PASS after the scoped-ownership fix: 9/9 each baseline/threaded/ASan/TSan; stress 800/800; full 12/12. Release benchmark 18 rows recorded; 1000-family median registration 17.268 ms vs 1000-series 2.812 ms. No performance regression conclusion without a controlled comparison. **Tasks:** [MONITORING_TASKS.md](MONITORING_TASKS.md). **Full report:** [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md). PR #3 remains Draft; non-Monitoring work frozen. Earlier 'pending run' paragraphs below are obsolete for this run.
+
+---
+
 # Monitoring follow-up code review — pending latest rerun
 
 PR #3 remains Draft/unmerged. Previous full acceptance PASS is valid

@@ -1,3 +1,9 @@
+## Latest verified owner run (2026-11-10)
+
+The expanded Monitoring acceptance and Release benchmark both **PASS** after the scoped-ownership fix. Full provenance and median/raw measurements: [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md). Earlier historical notes below (including 'NOT YET RUN') are superseded for this specific revised code. Remaining work: [MONITORING_TASKS.md](MONITORING_TASKS.md).
+
+---
+
 # Monitoring verification — owner-supplied 2026-11-10
 
 **Source:** User-pasted terminal output from local workspace

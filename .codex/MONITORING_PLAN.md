@@ -1,3 +1,9 @@
+## Current accepted test and benchmark checkpoint — 2026-11-10
+
+The owner's expanded `verify_monitoring.sh all` run passed every gate after the latest scoped-ownership fix. Benchmark executed three repetitions, raw data and medians recorded. Any previous 'not tested' messages below are historical. See [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md). The remaining Monitoring tasks are in [MONITORING_TASKS.md](MONITORING_TASKS.md); PR #3 remains Draft.
+
+---
+
 ## Current completion checkpoint: automated acceptance PASS
 
 Owner-run `./tools/verify_monitoring.sh all` completed with

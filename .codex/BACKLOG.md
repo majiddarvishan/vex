@@ -1,3 +1,9 @@
+## Monitoring outstanding tasks (as of 2026-11-10)
+
+Owner verified the expanded Monitoring suite including post-review RAII ownership: 9/9 baseline/threaded/ASan/Clang TSan each; 800/800 stress; 12/12 foundation. Release benchmark ran successfully. Current Monitoring **open** tasks, priorities and acceptance criteria are maintained in [MONITORING_TASKS.md](MONITORING_TASKS.md), with measured data in [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md). Other runtime modules remain deferred.
+
+---
+
 ## Monitoring acceptance milestone — 2026-11-10
 
 All agreed automated Monitoring gates **PASS** on owner checkout:

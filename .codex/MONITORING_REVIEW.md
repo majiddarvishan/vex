@@ -1,3 +1,9 @@
+## Final owner-run validation after ownership fix (2026-11-10)
+
+**PASS**: baseline/threaded/ASan+UBSan/Clang TSan all 9/9; stress 800/800; full package 12/12. Release benchmark built and produced 18 measurements across 10/100/1000 series. The prior 'not tested' statement below is historical and superseded. See [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md) and [MONITORING_TASKS.md](MONITORING_TASKS.md).
+
+---
+
 # Monitoring follow-up code review — 2026-11-10
 
 **Repository:** `majiddarvishan/vex`  
