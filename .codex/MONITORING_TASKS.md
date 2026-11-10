@@ -1,3 +1,14 @@
+## Latest 2026-11-10 owner report — GCC static PASS, shared PIC dependency BLOCKED
+
+See [MONITORING_PORTABILITY_PARTIAL_2026-11-10.md](MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).
+Benchmarks built/executed but CSVs not provided; GCC static 11/11 PASS;
+GCC shared link failed on installed non-PIC prometheus-cpp archives.
+Clang variants never ran. A source-level C++17 macro warning fix and
+an isolated PIC dependency strategy were subsequently committed;
+**both remain unverified on owner checkout**.
+
+---
+
 # Vex Monitoring — current task register (2026-11-10)
 
 **Branch:** `feature/monitoring-correctness-tests` · [Draft PR #3](https://github.com/majiddarvishan/vex/pull/3), stacked on foundation PR #2. Only Monitoring behavior is within the approved remediation scope.
@@ -14,8 +25,8 @@
 
 | ID | Priority | Work | Acceptance gate |
 |---|---|---|---|
-| MON-OPEN-05 | P2 | **Portability matrix implemented, unverified:** `verify_monitoring_portability.sh` covers GCC/Clang × static/shared, installed consumer, warnings and optional clang-tidy | Run the four isolated configs; record compiler/OS versions and actual CTest/consumer output; document static analysis where available |
-| MON-OPEN-06 | P2 | **Load + controlled benchmark harness implemented, unverified:** 1/4/8-thread registration and shared Counter, concurrent Collect, HTTP percentiles, RSS/glibc heap snapshots, warmed rotated paired comparisons; optional heaptrack allocation profiling | Run new benchmarks and examine output, quantify contention and variability, obtain heaptrack allocation sites only if available; avoid assuming the +6.1% single-family change is a proven regression |
+| MON-OPEN-05 | P2 | **PARTIAL: GCC Static 11/11 PASS**, GCC Shared blocked by non-PIC `/usr/local/lib/libprometheus-cpp-*.a`; Clang cases not reached. PIC-isolated shared dependency and C++17 macro/test warning fixes committed, **NOT YET RERUN**. | Run revised four-mode matrix and the full Monitoring regression; require installed-package consumer PASS for each; document any remaining compiler or dependency errors |
+| MON-OPEN-06 | P2 | **Tools built and executed** (controlled 15, load 3), but stdout redirected to CSV and not provided. No numeric resource/load results. Optional heaptrack absent from log. | Obtain both CSV files (181/34 lines expected) and analyze RSS, thread scaling, p95/p99, and 1000-series registration variability before closing |
 | MON-OPEN-07 | Process | Final owner code review and release/merge decision | Freeze reviewed SHA, resolve PR comments, preserve stacked foundation dependency, require explicit owner authorization before merge |
 
 ## Evidence and boundaries

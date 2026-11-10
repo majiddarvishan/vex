@@ -1,3 +1,19 @@
+## Owner Portability partial (2026-11-10) and pending new macro/PIC rerun
+
+`benchmark_monitoring_controlled.sh 15` and
+`benchmark_monitoring_load.sh 3` both built and ran successfully,
+but CSV values are missing from the uploaded terminal log.
+`verify_monitoring_portability.sh all` reached GCC static
+**11/11 PASS** (with 3 warnings), then stopped at GCC Shared
+link failure from installed non-PIC prometheus-cpp archives.
+Clang cases were **NOT RUN**.
+C++17 macro fix, histogram reference warning fix, enforced pedantic
+contract test, and shared isolated dependency strategy have been
+committed **AFTER** those results. Re-run required.
+[Detailed report](MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).
+
+---
+
 ## MON-OPEN-05/06 new optional tools — not yet owner-run (2026-11-10)
 
 The last main acceptance **10/10 × four modes, stress 900/900 and

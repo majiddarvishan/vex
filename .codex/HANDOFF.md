@@ -1,52 +1,38 @@
-# Vex Monitoring handoff — optional MON-OPEN-05/06 tools added
+# Vex Monitoring handoff — PIC portability fix awaiting rerun
 
-**Branch:** `feature/monitoring-correctness-tests`; Draft PR #3 stacked on foundation PR #2.
-No merge or changes to non-Monitoring runtime modules.
+**Branch:** `feature/monitoring-correctness-tests` · [Draft PR #3](https://github.com/majiddarvishan/vex/pull/3).
+No merges; Logger/ObjectPool/ThreadPool runtime remains frozen.
 
-## Last verified results (before new tooling)
+## New owner evidence
 
-Owner-run Monitoring all-mode acceptance: **10/10** in baseline,
-threaded, ASan/UBSan and Clang TSan; **900/900** repeated stress
-checks; full installed package and foundation **13/13**.
-The indexed-ledger change measurably reduced synthetic 1000-Family
-registration from 17.151 to 11.169 ms (34.9% lower median).
-The possible single-Family 1000-series +6.1% difference was based
-on only three ordered runs with overlapping ranges.
+`Pasted text(6).txt`:
+- Controlled benchmark 15 repeats and load/resource benchmark 3
+  repeats **built and finished**; their redirected CSV results were
+  not included (expected lines 181 and 34).
+- GCC static portability: **11/11 CTests PASS**, including installed
+  package consumer; warning diagnostics on two variadic macro calls
+  and one histogram const-reference binding.
+- GCC shared portability: linker **FAIL** on installed non-PIC
+  `/usr/local/lib/libprometheus-cpp-{core,pull}.a`.
+  This is a dependency compatibility issue, not a failed runtime test.
+- Clang static/shared **NOT RUN**, old script stopped at GCC shared.
 
-## New unverified opt-in tooling
+## Subsequent unverified changes
 
-- `tools/benchmark_monitoring_load.sh`: Linux Release
-  multi-thread registration and shared Counter, concurrent Collect,
-  real loopback HTTP percentiles, process RSS and glibc heap snapshots.
-- `tools/benchmark_monitoring_controlled.sh`: 9/15/21 repeated
-  warm-up and rotated paired registration measurements.
-- `tools/verify_monitoring_portability.sh`: GCC/Clang ×
-  static/shared, warnings, CTest and installed consumer; optional
-  explicit clang-tidy.
-- `tools/profile_monitoring_allocations.sh`: heaptrack, only
-  if already installed, no automatic installation.
-- Optional new benchmark CMake target
-  `vex_monitoring_load_benchmark` on UNIX.
+`type_safety.hpp` C++17 portable SAFE_CREATE_* argument handling,
+test const-ref warning cleanup and -Werror=pedantic guard.
+The portability matrix now forces an isolated pinned prometheus-cpp
+build for Shared (without modifying system packages), continues
+through all requested modes and exits nonzero if any mode fails.
 
-**None of these new binaries/scripts have been executed on the
-owner machine**, so MON-OPEN-05 and MON-OPEN-06 remain OPEN.
-These additions are isolated benchmark/build tooling and do not
-modify MetricsManager/Logger/ObjectPool/ThreadPool runtime behavior.
+**Next:** re-run `./tools/verify_monitoring.sh all` and
+`./tools/verify_monitoring_portability.sh all`, then supply
+`build/monitoring-controlled.csv` and
+`build/monitoring-load.csv` for analysis. See detailed
+[MONITORING_PORTABILITY_PARTIAL_2026-11-10.md](MONITORING_PORTABILITY_PARTIAL_2026-11-10.md)
+and [MONITORING_TASKS.md](MONITORING_TASKS.md).
 
-Follow [MONITORING_PERFORMANCE_PLAN.md](MONITORING_PERFORMANCE_PLAN.md).
-Suggested owner commands:
-```sh
-git pull --ff-only origin feature/monitoring-correctness-tests
-git rev-parse HEAD
-git status --short
-./tools/benchmark_monitoring_controlled.sh 15 > build/monitoring-controlled.csv
-./tools/benchmark_monitoring_load.sh 3 > build/monitoring-load.csv
-./tools/verify_monitoring_portability.sh all
-```
-Optional heaptrack only if installed.
-Then share logs + CSVs for data-driven analysis.
-Keep PR Draft/unmerged and request owner decision for MON-OPEN-07.
-
-Evidence for previous release benchmark:
-[MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md).
-Task board: [MONITORING_TASKS.md](MONITORING_TASKS.md).
+Previous indexed-ledger acceptance 10/10 ×4, 900/900 stress,
+13/13 foundation, and 34.9% synthetic 1000-family registration
+improvement were obtained before the new warning fixes.
+Do not mark the new commit PASS or merge until rerun.

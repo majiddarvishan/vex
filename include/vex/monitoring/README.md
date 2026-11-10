@@ -116,3 +116,22 @@ The controlled registration benchmark alternates scenario order and
 warm-ups over 9/15/21 runs to investigate the noisy one-family series
 regression signal. No tool result or performance SLA is asserted until
 these commands are run on a real host.
+
+### Shared build PIC compatibility
+
+For the opt-in GCC/Clang × Static/Shared portability matrix, installed
+static prometheus-cpp archives must have been built with `-fPIC` to
+link into `libvex_monitoring.so`. The project's original
+find-package-first policy can select non-PIC archives from
+`/usr/local/lib`. The revised
+`./tools/verify_monitoring_portability.sh all` avoids that in Shared
+modes by building the project's pinned prometheus-cpp dependency
+inside an isolated build tree (without changing installed packages).
+This optional test may require fetching source if not cached. To
+explicitly test known PIC-compatible *installed* artifacts instead,
+set `VEX_PORTABILITY_SHARED_DEPENDENCY=installed`.
+
+The old GCC Static 11/11 run passed; GCC Shared failed to link against
+previous installed archives; Clang modes did not run. The new script
+and C++17 warning fixes **are pending verification on owner checkout**.
+Details: [Monitoring partial report](../../../.codex/MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).

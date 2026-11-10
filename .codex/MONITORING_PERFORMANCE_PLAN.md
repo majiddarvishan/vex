@@ -137,3 +137,15 @@ matrix. Tool absence should be reported as **not run**, not PASS.
   owner-run evidence.** The scripts are implementation candidates.
 - Logger, ObjectPool, ThreadPool behavior remains explicitly frozen;
   owner decides PR merge/release (MON-OPEN-07).
+
+## Owner partial results and PIC remediation, 2026-11-10
+
+The controlled and load benchmark binaries **built and executed**,
+but their CSV output was redirected and not attached. GCC static
+portability **11/11 PASS** with three Monitoring test warnings;
+GCC shared **FAILED LINK** against existing non-PIC installed
+prometheus-cpp static archives. Clang static/shared were not reached.
+The portability tool was changed to use an isolated pinned PIC-capable
+dependency for Shared and to aggregate results, and C++17 macro/test
+warnings were addressed. **Changes NOT YET owner-run.** Full record:
+[MONITORING_PORTABILITY_PARTIAL_2026-11-10.md](MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).
