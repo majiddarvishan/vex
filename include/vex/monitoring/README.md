@@ -48,12 +48,7 @@ The historical `vex::monitoring::record_metric(name, value)` is now a real persi
 ## Test and benchmark commands
 
 ```sh
-./tools/verify_monitoring.sh baseline
-./tools/verify_monitoring.sh threaded
-./tools/verify_monitoring.sh asan
-./tools/verify_monitoring.sh tsan-clang
-./tools/verify_monitoring.sh stress
-./tools/verify_foundation.sh full
+./tools/verify_monitoring.sh all
 ```
 
 `tsan-clang` auto-discovers clang++ or versioned clang++-N (or CXX override). GCC 13.3 TSan was unstable on one independently tested host; the owner previously passed the older suite with Clang 20. That historical PASS does not validate later code changes.

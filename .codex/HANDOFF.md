@@ -1,3 +1,16 @@
+# Latest acceptance command (2026-11-10)
+
+On `feature/monitoring-correctness-tests` use:
+```sh
+git pull --ff-only origin feature/monitoring-correctness-tests
+./tools/verify_monitoring.sh all
+```
+This is a fail-fast full Monitoring matrix. Do not claim current
+implementation PASS before the owner's output is available.
+The PR remains Draft, and non-Monitoring runtime work is frozen.
+
+---
+
 # Monitoring handoff: expanded implementation, validation pending
 
 Latest owner direction: complete Monitoring. Scope is only Monitoring.

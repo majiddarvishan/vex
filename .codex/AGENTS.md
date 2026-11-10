@@ -1,3 +1,19 @@
+# Current Monitoring scope and acceptance
+
+Owner approved completing Monitoring only. All non-Monitoring
+behavioral fixes stay frozen. The latest Monitoring implementation
+and test suite are not yet owner-run. Do not promote or merge the
+Draft PR until the real checkout passes the complete test matrix.
+
+Single-command acceptance:
+`./tools/verify_monitoring.sh all`
+
+This runs baseline, threaded, ASan/UBSan, Clang TSan, 100x stress
+for eight Monitoring C++ tests and the full package-consumer suite.
+It fails fast. Historic Clang TSan PASS belonged to older commits.
+
+---
+
 # Instructions for coding agents
 
 ## Binding owner priority (2026-11-10)

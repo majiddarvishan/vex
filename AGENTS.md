@@ -1,3 +1,14 @@
+# Current scope (2026-11-10)
+
+Monitoring is the only owner-approved runtime remediation scope.
+The user authorized completing its correctness, lifecycle, concurrency,
+RAII, cardinality, testing, benchmarking and documentation.
+All other behavioral changes (Logger, ObjectPool, ThreadPool, etc.)
+remain deferred. The Monitoring PR is Draft/unmerged and the expanded
+test suite must pass on the actual checkout before certification.
+
+---
+
 # Agent entrypoint for Vex
 
 **Owner implementation scope, updated 2026-11-10:** The owner-run CMake/CTest foundation baseline passed (thread 2/2, full 4/4). **Monitoring correctness and tests are now the active implementation scope.** Every other behavioral fix remains tracked but deferred until explicit owner direction. Do not confuse audit severity with implementation authorization.
