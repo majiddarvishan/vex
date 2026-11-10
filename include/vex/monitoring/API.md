@@ -20,14 +20,14 @@ CMake installed target: `Vex::monitoring`; dependency: prometheus-cpp 1.3+.
 - Default labels are merged first and explicit labels override them. Histograms reject the reserved `le` label.
 - Histogram buckets must be finite and strictly increasing. Empty buckets use default boundaries: 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10.
 - Conflicting buckets when re-registering an existing managed histogram series throw invalid_argument.
-- Invalid input and null Registries throw invalid_argument. Prometheus itself may reject conflicting types/families.
+- Invalid input and null Registries throw invalid_argument. Prometheus itself may reject conflicting types/families. For a manager-created Registry/family/name/type, reusing the name with a different HELP string is rejected with std::invalid_argument (the underlying prometheus-cpp Registry::Merge does not enforce HELP equality).
 
 ## Optional cardinality safeguards
 
 - `SetMaxSeriesPerMetric(N)` limits distinct label sets created through MetricsManager's Create* APIs, per Registry/name/type. Identical label sets reuse the existing series. When the limit is reached, new series throw length_error.
 - `SetMaxSubsystemRegistries(N)` limits new subsystem names. Existing subsystem names reuse their Registry. New names beyond the cap throw length_error.
 - Both default to 0 (unlimited) for compatibility and may be read with corresponding GetMax* methods. Reset resets them to unlimited.
-- Direct calls to Prometheus Family::Add / Registry APIs bypass these wrapper limits. Do not mix raw Family operations with strict managed cardinality quotas.
+- Direct calls to Prometheus Family::Add/Remove and Registry::Remove bypass the manager's managed-series ledger. Do not mix raw Family/Registry mutations with strict managed quotas; deletion outside the wrapper can leave old label signatures tracked. A managed Registry must remain quiescent with respect to external mutations.
 - Use bounded labels such as status/operation, not subscriber IDs, request IDs, or arbitrary paths.
 
 ## RAII and cumulative semantics
@@ -69,16 +69,19 @@ Optional benchmarking: enable `VEX_BUILD_MONITORING_BENCHMARK=ON`; results are m
 
 ### Configuration concurrency and ownership boundary
 
-`SetDefaultLabels` is synchronized against other manager metadata
-operations, but scoped-series ownership checks assume the set of
-default/dynamic labels does **not** change between inspecting a Family
-and adding a guard. Configure default labels during initialization,
-before creating `ScopedCounter` or `ScopedGauge` objects; avoid
-concurrent reconfiguration while guards are being acquired.
-Prometheus Family APIs invoked directly by callers are likewise
-outside the scoped guard ownership mutex. Do not concurrently add,
-remove or replace a Family's series externally while guards operate.
+`SetDefaultLabels` is synchronized against manager metadata access.
+Each new scoped guard now validates and captures **one immutable label
+snapshot**, used for both `Family::Has` and `Family::Add`. Changing
+default labels concurrently with guard acquisition therefore cannot
+change that guard's identity between ownership check and insertion;
+existing guards continue to use their already-created series. This
+does **not** migrate existing series or make raw third-party mutations
+safe.
 
-This is an explicit caller precondition, not a promise of atomic
-live label migration. Retain persistent metrics with a Registry
-`shared_ptr` and use `ScopedInFlightGauge` for in-flight values.
+Direct Prometheus Family::Has/Add/Remove calls are not guarded by
+Vex's scoped-owner mutex. You must not concurrently externally
+add/remove/replace a Family's series while scoped guards operate.
+Doing so can still produce a TOCTOU or dangling raw pointer, which Vex
+cannot prevent through the public prometheus-cpp APIs. Keep the
+Registry/Family alive and use `ScopedInFlightGauge` on persistent
+metrics when appropriate.

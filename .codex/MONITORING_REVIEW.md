@@ -1,3 +1,36 @@
+## Additional MON-OPEN-02/03 correctness review — candidate, not run
+
+- **Confirmed bug:** Scoped guard acquisition computed effective labels
+  before `Family::Has`, then called `MetricsManager::add_counter/gauge`
+  which **merged labels a second time**. A concurrent
+  `SetDefaultLabels` could change the actual series identity between
+  ownership check and Add. The scoped code now validates one snapshot
+  and passes it directly to both Prometheus operations; this removes
+  the internal reconfiguration TOCTOU.
+- **Unsupported raw mutations:** Prometheus `Family::Has` and
+  `Family::Add` are separate locked calls. Concurrent external
+  `Family::Add/Remove` cannot be made atomic through the existing
+  public Vex wrapper. Explicit contract: no uncoordinated direct
+  Family/Registry mutations while a scoped guard is active or being
+  acquired; no destruction of the owning Registry/Family. The
+  manager cannot promise protection against callers violating this.
+- **Confirmed metadata issue:** `RegisterTracked` appended a new
+  family ledger entry before confirming registration and removed only
+  its label signature after `create()` failed, leaving an empty entry.
+  The new implementation unwinds the provisional family record on
+  exception. Quota rejection and allocation error paths are included.
+- **Confirmed HELP mismatch:** prometheus-cpp 1.3 Registry Merge
+  returns an existing Family without checking a different HELP
+  argument. Vex's own tracked families now reject incompatible HELP
+  across manager API calls with `std::invalid_argument`.
+- Tests added: default label flip with persistent external series,
+  invalid label via scoped guard, strict-registry repeated registration
+  failure and recovery, HELP text mismatch and quota preservation.
+  **These additions have NOT been built or run on the owner checkout.**
+
+
+---
+
 ## Final owner-run validation after ownership fix (2026-11-10)
 
 **PASS**: baseline/threaded/ASan+UBSan/Clang TSan all 9/9; stress 800/800; full package 12/12. Release benchmark built and produced 18 measurements across 10/100/1000 series. The prior 'not tested' statement below is historical and superseded. See [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md) and [MONITORING_TASKS.md](MONITORING_TASKS.md).

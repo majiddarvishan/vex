@@ -384,3 +384,7 @@ many-families shapes and counter updates. **No execution results yet
 for these new changes**. See [MONITORING_REVIEW.md](MONITORING_REVIEW.md).
 Previous `verify_monitoring.sh all` PASS belongs to the earlier
 code. Re-run to validate the new branch.
+
+## New, not-yet-verified MON-OPEN-02 and MON-OPEN-03 candidate (2026-11-10)
+
+Post-last-owner-test changes: atomic label **identity** snapshot for both `Has` and `Add`, new label-reconfiguration stress regression; quota-ledger rollback for fresh failed registrations; explicit managed HELP-consistency rejection and negative quota tests. The previous test log was **before these changes**. Next `verify_monitoring.sh all` must pass on the new SHA. External uncoordinated raw Prometheus Family mutation is expressly unsupported while guards are active. See [MONITORING_TASKS.md](MONITORING_TASKS.md) and [MONITORING_REVIEW.md](MONITORING_REVIEW.md).

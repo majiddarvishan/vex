@@ -67,7 +67,8 @@ No performance numbers are asserted until owner measurements are supplied.
 
 **Scoped metric ownership:** An existing externally created counter
 or gauge series is not adopted by `ScopedCounter`/`ScopedGauge`;
-attempting to do so throws `std::invalid_argument`. Configure
-default labels once before acquiring scoped guards, and do not
-modify/remove the Family directly while guards are active. Details:
+attempting to do so throws `std::invalid_argument`. Concurrent changes to default
+labels are resolved to a single validated snapshot per new guard;
+they do not migrate existing series. Do not mutate/remove the Family
+directly while guards are active. Details:
 [API.md](API.md).

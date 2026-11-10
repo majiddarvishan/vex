@@ -22,6 +22,27 @@ follow-ups and formal release decisions.
 - [x] MON-DONE-06: Optional Release benchmark built and run,
   18 CSV samples across two series/family shapes.
 
+## Implementation in progress — new candidate after last verified run
+
+- **MON-OPEN-02:** The `Has`/ `Add` label re-merge TOCTOU was
+  eliminated by using one validated immutable label snapshot, with a
+  concurrent default-label change regression and persistent external
+  metric collision. **Awaiting full owner test run.** Uncoordinated
+  concurrent raw `Family::Add/Remove` is unsupported; keeping a live
+  Registry/Family and not externally mutating its series during active
+  guards is a documented caller contract.
+- **MON-OPEN-03:** Failed registration no longer leaves empty provisional
+  ledger records; managed family HELP-text conflicts reject explicitly;
+  tests cover repeated registration failure, quota preservation and
+  HELP mismatch. **Awaiting full owner test run.** Direct raw
+  Prometheus `Registry::Remove` and `Family::Add/Remove` bypass
+  manager quota accounting; they are not supported while relying on
+  the manager's strict series limit.
+- Tasks `MON-OPEN-01,04,05,06,07` remain open unchanged.
+- The owner's earlier 9/9 ×4, 800/800 stress and 12/12 package PASS
+  are **historical** evidence before the new code, not a new PASS.
+
+
 ## Remaining technical work
 
 | ID | Priority | Task | Definition of done |
