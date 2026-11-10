@@ -91,7 +91,7 @@ if [[ "$mode" == "stress" ]]; then
     printf 'MONITORING STRESS: 100 repeated runs per C++ Monitoring test, fail-fast\n'
     ctest --test-dir "$build_dir" --output-on-failure \
         --repeat until-fail:100 \
-        -R '^vex[.]monitoring[.](smoke|contract|decorators|raii|validation|lifecycle|registration|legacy)$'
+        -R '^vex[.]monitoring[.](smoke|contract|decorators|raii|validation|lifecycle|registration|legacy|http)$'
     printf 'VEX MONITORING STRESS PASS repetitions=100 per_cpp_test\n'
 else
     printf 'VEX MONITORING PASS mode=%s\n' "$mode"

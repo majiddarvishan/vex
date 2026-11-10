@@ -67,6 +67,17 @@ if(BUILD_MONITORING)
     add_test(NAME vex.monitoring.legacy
         COMMAND vex_monitoring_legacy_contract)
 
+    # Loopback-only HTTP integration with an OS-assigned ephemeral port.
+    # No curl, external service or fixed test port is required.
+    if(UNIX)
+        add_executable(vex_monitoring_http_contract
+            monitoring_http_contract.cpp)
+        target_link_libraries(vex_monitoring_http_contract
+            PRIVATE Vex::monitoring)
+        add_test(NAME vex.monitoring.http COMMAND vex_monitoring_http_contract)
+        set_tests_properties(vex.monitoring.http PROPERTIES TIMEOUT 30)
+    endif()
+
     if(UNIX)
         find_program(VEX_BASH_EXECUTABLE bash)
         if(VEX_BASH_EXECUTABLE)
