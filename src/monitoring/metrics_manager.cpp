@@ -239,7 +239,9 @@ namespace vex
           }
         );
 
-        if (found == tracked_metric_series_.end())
+        const bool new_family_tracking =
+          found == tracked_metric_series_.end();
+        if (new_family_tracking)
         {
             tracked_metric_series_.push_back(
               {registry, name, kind, {}}
@@ -247,38 +249,53 @@ namespace vex
             found = std::prev(tracked_metric_series_.end());
         }
 
-        auto known = found->signatures.find(labels);
-        if (known != found->signatures.end() &&
-            known->second != bucket_signature)
-        {
-            throw std::invalid_argument(
-              "Conflicting histogram bucket boundaries for existing metric"
-            );
-        }
-
-        if (known == found->signatures.end() &&
-            max_series_per_metric_ != 0 &&
-            found->signatures.size() >= max_series_per_metric_)
-        {
-            throw std::length_error(
-              "Metric series limit exceeded for '" + name + "'"
-            );
-        }
-
-        // Reserve quota before adding, and roll back if Prometheus rejects
-        // the family, label set, or metric configuration.
-        const bool inserted = known == found->signatures.end();
-        if (inserted)
-            found->signatures.emplace(labels, bucket_signature);
-
+        // A new ledger record is provisional until registration succeeds.
+        // Every failure path, including quota rejection or allocation
+        // failure, must remove an unused record. Otherwise repeated failed
+        // names accumulate empty families in the manager's metadata.
         try
         {
-            return create();
+            const auto known = found->signatures.find(labels);
+            if (known != found->signatures.end() &&
+                known->second != bucket_signature)
+            {
+                throw std::invalid_argument(
+                  "Conflicting histogram bucket boundaries for existing metric"
+                );
+            }
+
+            if (known == found->signatures.end() &&
+                max_series_per_metric_ != 0 &&
+                found->signatures.size() >= max_series_per_metric_)
+            {
+                throw std::length_error(
+                  "Metric series limit exceeded for '" + name + "'"
+                );
+            }
+
+            // Reserve quota before touching prometheus-cpp and roll back
+            // if it rejects the family, labels or metric configuration.
+            const bool inserted = known == found->signatures.end();
+            if (inserted)
+                found->signatures.emplace(labels, bucket_signature);
+
+            try
+            {
+                return create();
+            }
+            catch (...)
+            {
+                if (inserted)
+                    found->signatures.erase(labels);
+                throw;
+            }
         }
         catch (...)
         {
-            if (inserted)
-                found->signatures.erase(labels);
+            // Under mutex_, new records are appended at the vector end,
+            // so cleanup cannot invalidate any other tracked family.
+            if (new_family_tracking)
+                tracked_metric_series_.pop_back();
             throw;
         }
     }

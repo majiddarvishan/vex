@@ -131,6 +131,41 @@ int main()
         }))
         return 13;
 
+    // A failed managed registration must not reserve quota or leave
+    // an unusable shadow record that blocks a later valid registration.
+    auto strict = std::make_shared<prometheus::Registry>(
+      prometheus::Registry::InsertBehavior::Throw);
+    auto& collision = prometheus::BuildGauge()
+      .Name("vex_quota_registration_failure")
+      .Help("External collision").Register(*strict);
+    MetricsManager::SetMaxSeriesPerMetric(1);
+    for (int retry = 0; retry < 10; ++retry)
+    {
+        if (!throws_as<std::exception>([&]
+            {
+                (void) MetricsManager::CreateGauge(
+                  strict, "vex_quota_registration_failure",
+                  "Managed retry", {{"kind", "one"}});
+            }))
+            return 25;
+    }
+    if (!strict->Remove(collision))
+        return 26;
+    (void) MetricsManager::CreateGauge(
+      strict, "vex_quota_registration_failure",
+      "Managed retry", {{"kind", "one"}});
+
+    // Quota is consumed only by the successful creation above.
+    if (!throws_as<std::length_error>([&]
+        {
+            (void) MetricsManager::CreateGauge(
+              strict, "vex_quota_registration_failure",
+              "Managed retry", {{"kind", "two"}});
+        }))
+        return 27;
+    strict.reset();
+    MetricsManager::SetMaxSeriesPerMetric(2);
+
     // Eight callers cannot exceed the configured two-series limit.
     std::atomic<int> admitted{0};
     std::atomic<int> rejected{0};
