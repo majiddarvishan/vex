@@ -1,3 +1,22 @@
+# Monitoring follow-up code review — pending latest rerun
+
+PR #3 remains Draft/unmerged. Previous full acceptance PASS is valid
+for the earlier code. A new high-severity ownership fix prevents
+ScopedCounter/ScopedGauge from deleting externally registered series
+with colliding labels. CI/dynamic-label regression was extended.
+The benchmark now measures registration, updates and Collect under
+one-family/many-family workloads.
+
+**Current branch is NOT YET owner-tested after these changes.**
+Next required `./tools/verify_monitoring.sh all`; optional
+`./tools/benchmark_monitoring.sh 3`.
+
+Read [MONITORING_REVIEW.md](MONITORING_REVIEW.md) and
+[MONITORING_RUNS.md](MONITORING_RUNS.md).
+All non-Monitoring runtime changes remain deferred.
+
+---
+
 # Latest owner-run acceptance result — 2026-11-10
 
 The owner ran `./tools/verify_monitoring.sh all` on the

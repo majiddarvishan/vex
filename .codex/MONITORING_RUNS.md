@@ -365,3 +365,16 @@ bottlenecks, not to enforce arbitrary numeric thresholds.
 
 **Not yet run on owner checkout.** Do not claim a performance value or
 benchmark regression until measured results and machine context are available.
+
+## Follow-up ownership regression and benchmark pending (2026-11-10)
+
+The subsequent Code Review found a high-severity ownership bug:
+ScopedCounter/ScopedGauge could remove an externally registered,
+pre-existing series with the same labels on destruction. Fix added
+by comparing Family::Has against tracked active guards and rejecting
+unowned adoption; tests now include default/dynamic label merging.
+A Release-mode benchmark now includes both many-series and
+many-families shapes and counter updates. **No execution results yet
+for these new changes**. See [MONITORING_REVIEW.md](MONITORING_REVIEW.md).
+Previous `verify_monitoring.sh all` PASS belongs to the earlier
+code. Re-run to validate the new branch.

@@ -66,3 +66,19 @@ CMake installed target: `Vex::monitoring`; dependency: prometheus-cpp 1.3+.
 The Clang TSan mode automatically detects unversioned or versioned clang++ and uses a compiler-specific build directory. A passing suite is scoped to the exercised paths, not a proof of all possible races. The legacy record_metric(name,value) helper now publishes a persistent Gauge instead of silently doing nothing; call MetricsManager::Init first.
 
 Optional benchmarking: enable `VEX_BUILD_MONITORING_BENCHMARK=ON`; results are measured CSV, not fixed claims.
+
+### Configuration concurrency and ownership boundary
+
+`SetDefaultLabels` is synchronized against other manager metadata
+operations, but scoped-series ownership checks assume the set of
+default/dynamic labels does **not** change between inspecting a Family
+and adding a guard. Configure default labels during initialization,
+before creating `ScopedCounter` or `ScopedGauge` objects; avoid
+concurrent reconfiguration while guards are being acquired.
+Prometheus Family APIs invoked directly by callers are likewise
+outside the scoped guard ownership mutex. Do not concurrently add,
+remove or replace a Family's series externally while guards operate.
+
+This is an explicit caller precondition, not a promise of atomic
+live label migration. Retain persistent metrics with a Registry
+`shared_ptr` and use `ScopedInFlightGauge` for in-flight values.

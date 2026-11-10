@@ -64,3 +64,10 @@ and collection at 10/100/1000 samples using both **many-series** and
 The script prints the environment to stderr and structured CSV to stdout.
 Build and execution are optional and not part of the correctness gate.
 No performance numbers are asserted until owner measurements are supplied.
+
+**Scoped metric ownership:** An existing externally created counter
+or gauge series is not adopted by `ScopedCounter`/`ScopedGauge`;
+attempting to do so throws `std::invalid_argument`. Configure
+default labels once before acquiring scoped guards, and do not
+modify/remove the Family directly while guards are active. Details:
+[API.md](API.md).
