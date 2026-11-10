@@ -209,7 +209,7 @@ namespace vex
     auto MetricsManager::RegisterTracked(
       const std::shared_ptr<prometheus::Registry>& registry,
       const std::string& name, const std::string& kind,
-      const Labels& labels,
+      const std::string& help, const Labels& labels,
       const std::vector<double>& bucket_signature,
       Fn&& create
     ) -> decltype(create())
@@ -244,7 +244,7 @@ namespace vex
         if (new_family_tracking)
         {
             tracked_metric_series_.push_back(
-              {registry, name, kind, {}}
+              {registry, name, kind, help, {}}
             );
             found = std::prev(tracked_metric_series_.end());
         }
@@ -255,6 +255,14 @@ namespace vex
         // names accumulate empty families in the manager's metadata.
         try
         {
+            // Registry::InsertBehavior::Merge reuses the first
+            // Family even when a later caller supplies different HELP.
+            // Enforce metadata consistency for manager-created metrics.
+            if (found->help != help)
+                throw std::invalid_argument(
+                  "Conflicting HELP text for metric '" + name + "'"
+                );
+
             const auto known = found->signatures.find(labels);
             if (known != found->signatures.end() &&
                 known->second != bucket_signature)
@@ -326,7 +334,7 @@ namespace vex
         ValidateLabels(merged);
 
         return RegisterTracked(
-          registry, name, "counter", merged, {},
+          registry, name, "counter", help, merged, {},
           [&]() -> prometheus::Counter&
           {
               auto& family = prometheus::BuildCounter()
@@ -350,7 +358,7 @@ namespace vex
         ValidateLabels(merged);
 
         return RegisterTracked(
-          registry, name, "gauge", merged, {},
+          registry, name, "gauge", help, merged, {},
           [&]() -> prometheus::Gauge&
           {
               auto& family = prometheus::BuildGauge()
@@ -396,7 +404,7 @@ namespace vex
         }
 
         return RegisterTracked(
-          registry, name, "histogram", merged, bounds,
+          registry, name, "histogram", help, merged, bounds,
           [&]() -> prometheus::Histogram&
           {
               auto& family = prometheus::BuildHistogram()

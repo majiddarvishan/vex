@@ -166,6 +166,38 @@ int main()
     strict.reset();
     MetricsManager::SetMaxSeriesPerMetric(2);
 
+    // prometheus-cpp Merge reuses Family metadata and does not reject
+    // inconsistent HELP text; the manager must fail closed.
+    auto help_registry = std::make_shared<prometheus::Registry>();
+    (void) MetricsManager::CreateCounter(
+      help_registry, "vex_consistent_help_total", "Original HELP",
+      {{"result", "a"}});
+    if (!throws_as<std::invalid_argument>([&]
+        {
+            (void) MetricsManager::CreateCounter(
+              help_registry, "vex_consistent_help_total",
+              "Different HELP", {{"result", "a"}});
+        }))
+        return 28;
+    if (!throws_as<std::invalid_argument>([&]
+        {
+            (void) MetricsManager::CreateCounter(
+              help_registry, "vex_consistent_help_total",
+              "Different HELP", {{"result", "b"}});
+        }))
+        return 29;
+    // Rejected registrations must not consume a series slot.
+    (void) MetricsManager::CreateCounter(
+      help_registry, "vex_consistent_help_total", "Original HELP",
+      {{"result", "b"}});
+    if (!throws_as<std::length_error>([&]
+        {
+            (void) MetricsManager::CreateCounter(
+              help_registry, "vex_consistent_help_total", "Original HELP",
+              {{"result", "c"}});
+        }))
+        return 30;
+
     // Eight callers cannot exceed the configured two-series limit.
     std::atomic<int> admitted{0};
     std::atomic<int> rejected{0};

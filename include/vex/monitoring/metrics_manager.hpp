@@ -167,6 +167,7 @@ namespace vex
             std::weak_ptr<prometheus::Registry> registry;
             std::string name;
             std::string kind;
+            std::string help;
             std::map<Labels, std::vector<double>> signatures;
         };
 
@@ -175,6 +176,7 @@ namespace vex
           const std::shared_ptr<prometheus::Registry>& registry,
           const std::string& name,
           const std::string& kind,
+          const std::string& help,
           const Labels& labels,
           const std::vector<double>& bucket_signature,
           Fn&& create
