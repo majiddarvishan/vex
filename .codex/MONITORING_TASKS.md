@@ -14,8 +14,8 @@
 
 | ID | Priority | Work | Acceptance gate |
 |---|---|---|---|
-| MON-OPEN-05 | P2 | Static analysis, GCC/Clang portability, static/shared packaging | Record compiler versions and actual clean warning/static-analysis results; build and test supported library configurations and external package consumer |
-| MON-OPEN-06 | P2 | Resource/load and residual registration regression characterization | Measure memory/RSS, allocations, multithreaded registration/update/Collect/scrape; repeat enough matched Release runs with warmup/order control to determine whether 1000-series Vex median 3.070→3.257 ms (+6.1%) is a real regression; report confidence and limits. Avoid speculative optimization |
+| MON-OPEN-05 | P2 | **Portability matrix implemented, unverified:** `verify_monitoring_portability.sh` covers GCC/Clang × static/shared, installed consumer, warnings and optional clang-tidy | Run the four isolated configs; record compiler/OS versions and actual CTest/consumer output; document static analysis where available |
+| MON-OPEN-06 | P2 | **Load + controlled benchmark harness implemented, unverified:** 1/4/8-thread registration and shared Counter, concurrent Collect, HTTP percentiles, RSS/glibc heap snapshots, warmed rotated paired comparisons; optional heaptrack allocation profiling | Run new benchmarks and examine output, quantify contention and variability, obtain heaptrack allocation sites only if available; avoid assuming the +6.1% single-family change is a proven regression |
 | MON-OPEN-07 | Process | Final owner code review and release/merge decision | Freeze reviewed SHA, resolve PR comments, preserve stacked foundation dependency, require explicit owner authorization before merge |
 
 ## Evidence and boundaries

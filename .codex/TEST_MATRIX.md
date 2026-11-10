@@ -1,3 +1,22 @@
+## MON-OPEN-05/06 new optional tools — not yet owner-run (2026-11-10)
+
+The last main acceptance **10/10 × four modes, stress 900/900 and
+foundation 13/13 PASS** is historical for the previous Monitoring
+implementation before optional benchmark and portability tooling.
+
+New tools:
+- `benchmark_monitoring_controlled.sh 15` → **expected 181 CSV lines**.
+- `benchmark_monitoring_load.sh 3` → **expected 34 CSV lines**.
+- `verify_monitoring_portability.sh all` → **expected four
+  GCC/Clang × static/shared CMake/CTest/package-consumer builds**.
+- `profile_monitoring_allocations.sh` optional only with
+  preinstalled heaptrack.
+
+No new source, memory/resource, portability or static analysis PASS
+is claimed yet. See [MONITORING_PERFORMANCE_PLAN.md](MONITORING_PERFORMANCE_PLAN.md).
+
+---
+
 ## Indexed-ledger follow-up: all automated tests PASS; after CSV pending (2026-11-10)
 
 Owner uploaded full `verify_monitoring.sh all` output after the

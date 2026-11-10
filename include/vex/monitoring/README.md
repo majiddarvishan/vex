@@ -92,3 +92,27 @@ This provides a controlled comparison of Vex-tracking overhead vs
 upstream registration cost; it does not prove bottleneck location
 without profiling and does not replace ASan/TSan/CTest. **Not yet
 compiled/run on the owner's checkout.**
+
+## Optional resource/load and packaging validation (2026-11-10)
+
+The following independent scripts do **not** replace normal CTest and
+sanitizer acceptance:
+
+```sh
+./tools/benchmark_monitoring_controlled.sh 15 > build/monitoring-controlled.csv
+./tools/benchmark_monitoring_load.sh 3 > build/monitoring-load.csv
+./tools/verify_monitoring_portability.sh all
+```
+
+The load benchmark uses a Linux Release build, loopback-only HTTP,
+1/4/8-thread registration and shared Counter updates, parallel
+Collect+updates, and reports p50/p95/p99 for sequential HTTP
+requests and Collect calls. Memory values are process snapshots;
+`heap_live_bytes` is glibc allocator state, **not** allocation count.
+Optional `./tools/profile_monitoring_allocations.sh` uses a previously
+installed heaptrack without installing anything.
+
+The controlled registration benchmark alternates scenario order and
+warm-ups over 9/15/21 runs to investigate the noisy one-family series
+regression signal. No tool result or performance SLA is asserted until
+these commands are run on a real host.
