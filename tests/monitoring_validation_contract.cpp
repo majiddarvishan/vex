@@ -115,7 +115,7 @@ int main()
     (void) MetricsManager::CreateCounter(
       second_registry, name, "Bounded family", {{"status", "c"}});
 
-    const auto& default_hist = MetricsManager::CreateHistogram(
+    auto& default_hist = MetricsManager::CreateHistogram(
       registry, "vex_default_histogram", "Default histogram");
     if (default_hist.Collect().histogram.bucket.size() < 5)
         return 12;

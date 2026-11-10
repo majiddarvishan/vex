@@ -24,7 +24,7 @@ if(BUILD_MONITORING)
     # Fail this regression at compile time with both GCC and Clang.
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(vex_monitoring_contract PRIVATE
-            -Werror=unused-value)
+            -Werror=unused-value -Werror=pedantic)
     endif()
     add_test(NAME vex.monitoring.contract COMMAND vex_monitoring_contract)
 
