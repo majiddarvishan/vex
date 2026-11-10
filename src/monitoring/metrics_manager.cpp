@@ -479,13 +479,47 @@ namespace vex
 
     bool MetricsManager::ValidateLabelValue(const std::string& value)
     {
-        // Allow empty values and printable ASCII/UTF-8
-        for (unsigned char c: value)
+        // Validate Unicode scalar UTF-8 (no overlong encodings, surrogates,
+        // non-continuation bytes or codepoints above U+10FFFF). Preserve
+        // the existing policy of rejecting ASCII controls except TAB.
+        const auto* bytes =
+          reinterpret_cast<const unsigned char*>(value.data());
+        std::size_t i = 0;
+        while (i < value.size())
         {
-            if ((c < 32 && c != '\t') || c == 127)
-            { // Reject control chars except tab
-                return false;
+            const unsigned char c = bytes[i];
+            if (c <= 0x7F)
+            {
+                if ((c < 32 && c != '\t') || c == 127)
+                    return false;
+                ++i;
+                continue;
             }
+
+            std::size_t length = 0;
+            if (c >= 0xC2 && c <= 0xDF)
+                length = 2;
+            else if (c >= 0xE0 && c <= 0xEF)
+                length = 3;
+            else if (c >= 0xF0 && c <= 0xF4)
+                length = 4;
+            else
+                return false;
+
+            if (value.size() - i < length)
+                return false;
+            for (std::size_t j = 1; j < length; ++j)
+            {
+                if ((bytes[i + j] & 0xC0) != 0x80)
+                    return false;
+            }
+            if ((c == 0xE0 && bytes[i + 1] < 0xA0) ||
+                (c == 0xED && bytes[i + 1] >= 0xA0) ||
+                (c == 0xF0 && bytes[i + 1] < 0x90) ||
+                (c == 0xF4 && bytes[i + 1] > 0x8F))
+                return false;
+
+            i += length;
         }
         return true;
     }

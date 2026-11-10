@@ -1,3 +1,4 @@
-#include "vex/monitoring/metrics.h"
-// Monitoring is header-only (INTERFACE) in CMake; this file exists to show
-// structure.
+#include <vex/monitoring/metrics.h>
+
+// record_metric remains header-only so callers can compile without
+// requiring a separate source-level entry point.
