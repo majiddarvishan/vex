@@ -132,6 +132,22 @@ int main()
     auto& persistent = gauges.Add(persistent_label_set);
     persistent.Set(23.0);
 
+    // Guarantee the transient branch is exercised independently of
+    // scheduler timing during the concurrent reconfiguration loop.
+    MetricsManager::SetDefaultLabels({
+      {"service", "vex_scoped_test"}, {"zone", "east"}
+    });
+    {
+        ScopedGauge transient(gauges, changing);
+        transient->Increment();
+    }
+    const auto transient_label_set = MetricsManager::MergeLabels(changing);
+    if (gauges.Has(transient_label_set))
+        return 18;
+    MetricsManager::SetDefaultLabels({
+      {"service", "vex_scoped_test"}, {"zone", "west"}
+    });
+
     std::atomic<int> unexpected_label_errors{0};
     std::atomic<int> accepted_guards{0};
     std::atomic<bool> begin_label_race{false};
@@ -178,8 +194,9 @@ int main()
     reconfigure.join();
     for (auto& worker : reconfig_workers)
         worker.join();
-    if (unexpected_label_errors != 0 || accepted_guards == 0 ||
-        !gauges.Has(persistent_label_set) || persistent.Value() != 23.0)
+    if (unexpected_label_errors != 0 ||
+        !gauges.Has(persistent_label_set) || persistent.Value() != 23.0 ||
+        gauges.Has(transient_label_set))
         return 16;
     MetricsManager::SetDefaultLabels({{"service", "vex_scoped_test"}});
 
