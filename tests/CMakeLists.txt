@@ -20,6 +20,12 @@ if(BUILD_MONITORING)
 
     add_executable(vex_monitoring_contract monitoring_contract.cpp)
     target_link_libraries(vex_monitoring_contract PRIVATE Vex::monitoring)
+    # A prior Clang 20 TSan run exposed -Wunused-value in SAFE_* macros.
+    # Fail this regression at compile time with both GCC and Clang.
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(vex_monitoring_contract PRIVATE
+            -Werror=unused-value)
+    endif()
     add_test(NAME vex.monitoring.contract COMMAND vex_monitoring_contract)
     if(UNIX)
         find_program(VEX_BASH_EXECUTABLE bash)

@@ -1,6 +1,7 @@
 #include <vex/monitoring/monitoring.hpp>
 
 #include <atomic>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -94,6 +95,21 @@ int main()
     type_safe_gauge.Set(3.0);
     if (type_safe_gauge.Value() != 3.0)
         return 10;
+
+    // All three public SAFE_* macros must compile without -Wunused-value.
+    auto& type_safe_counter = SAFE_CREATE_COUNTER(
+      registry, "vex_monitoring_contract_safe_counter_total",
+      "Safe macro counter");
+    type_safe_counter.Increment();
+    if (type_safe_counter.Value() != 1.0)
+        return 25;
+
+    const std::map<std::string, std::string> histogram_labels {};
+    const std::vector<double> histogram_buckets {0.1, 0.5, 1.0};
+    auto& type_safe_histogram = SAFE_CREATE_HISTOGRAM(
+      registry, "vex_monitoring_contract_safe_duration_seconds",
+      "Safe macro histogram", histogram_labels, histogram_buckets);
+    type_safe_histogram.Observe(0.2);
 
     HealthCheck::RegisterHealthMetrics(registry);
     if (!HealthCheck::IsRegistered())
