@@ -5,6 +5,13 @@
 namespace vex
 {
 
+    // ScopedCounter is an EPHEMERAL series owner. All overlapping guards
+    // with identical family/labels share the series, which is removed when
+    // the final guard expires. Do not use for *_total counters: use a
+    // persistent CreateCounter() reference instead.
+    // Existing non-guard-owned series with the same effective labels are
+    // rejected (std::invalid_argument), never adopted or deleted.
+    // The owning Family/Registry MUST outlive every guard.
     class ScopedCounter
     {
     public:
@@ -38,6 +45,10 @@ namespace vex
         prometheus::Counter* metric_;
     };
 
+    // Ephemeral series; overlapping guards for identical labels share it.
+    // Existing non-guard-owned series with the same effective labels are
+    // rejected (std::invalid_argument), never adopted or deleted.
+    // The owning Family/Registry MUST outlive every guard.
     class ScopedGauge
     {
     public:
@@ -69,6 +80,23 @@ namespace vex
     private:
         prometheus::Family<prometheus::Gauge>* family_;
         prometheus::Gauge* metric_;
+    };
+
+    // Use for tracking in-flight operations without removing the underlying
+    // metric or resetting it. The Gauge/Registry MUST outlive the guard.
+    class ScopedInFlightGauge
+    {
+    public:
+        explicit ScopedInFlightGauge(prometheus::Gauge& gauge);
+        ~ScopedInFlightGauge() noexcept;
+
+        ScopedInFlightGauge(const ScopedInFlightGauge&) = delete;
+        ScopedInFlightGauge& operator=(const ScopedInFlightGauge&) = delete;
+        ScopedInFlightGauge(ScopedInFlightGauge&& other) noexcept;
+        ScopedInFlightGauge& operator=(ScopedInFlightGauge&& other) noexcept;
+
+    private:
+        prometheus::Gauge* gauge_;
     };
 
 } // namespace vex

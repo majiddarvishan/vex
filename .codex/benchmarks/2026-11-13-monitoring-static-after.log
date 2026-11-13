@@ -1,0 +1,14 @@
+MONITORING_STATIC_TOOL Ubuntu LLVM version 20.1.2
+MONITORING_STATIC_CHECKS -*,clang-analyzer-*,bugprone-*,performance-*
+MONITORING_STATIC_BUILD_DIR /home/darvishan/workspace/mine/vex/build/monitoring-portability-clang-static
+MONITORING_STATIC_FILE /home/darvishan/workspace/mine/vex/src/monitoring/decorators.cpp
+26404 warnings generated.
+MONITORING_STATIC_FILE /home/darvishan/workspace/mine/vex/src/monitoring/health_check.cpp
+26404 warnings generated.
+MONITORING_STATIC_FILE /home/darvishan/workspace/mine/vex/src/monitoring/metrics.cpp
+26404 warnings generated.
+MONITORING_STATIC_FILE /home/darvishan/workspace/mine/vex/src/monitoring/metrics_manager.cpp
+31017 warnings generated.
+MONITORING_STATIC_FILE /home/darvishan/workspace/mine/vex/src/monitoring/raii_guards.cpp
+26425 warnings generated.
+MONITORING_STATIC_PASS checked=5 failed=0

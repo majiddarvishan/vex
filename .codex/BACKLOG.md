@@ -1,8 +1,35 @@
+## 2026-11-10 monitoring optimization result
+
+MON-OPEN-01's targeted 1000-Family registration overhead is materially reduced in the measured Release comparison (Vex median 17.151→11.169ms; 34.9%). All owner-run post-index correctness/sanitizer/package gates passed. Wider resource/variance benchmarking is **MON-OPEN-06**, portability/static is **MON-OPEN-05**, and explicit owner review/merge decision is **MON-OPEN-07**. See [MONITORING_TASKS.md](MONITORING_TASKS.md) and [MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md).
+
+---
+
+## Monitoring outstanding tasks (as of 2026-11-10)
+
+Owner verified the expanded Monitoring suite including post-review RAII ownership: 9/9 baseline/threaded/ASan/Clang TSan each; 800/800 stress; 12/12 foundation. Release benchmark ran successfully. Current Monitoring **open** tasks, priorities and acceptance criteria are maintained in [MONITORING_TASKS.md](MONITORING_TASKS.md), with measured data in [MONITORING_FINAL_REPORT_2026-11-10.md](MONITORING_FINAL_REPORT_2026-11-10.md). Other runtime modules remain deferred.
+
+---
+
+## Monitoring acceptance milestone — 2026-11-10
+
+All agreed automated Monitoring gates **PASS** on owner checkout:
+9/9 baseline, 9/9 threaded, 9/9 ASan/UBSan, 9/9 Clang TSan,
+800/800 100x stress repetitions, 12/12 foundation/package consumer.
+Monitoring implementation/test coverage can proceed to owner review.
+Do not infer all possible races are absent. Benchmark measurement
+(optional) and merge approval are separate remaining items.
+Logger/ObjectPool/ThreadPool behavior fixes remain **DEFERRED**.
+
+---
+
 # Remediation backlog and gates
+
+**Owner authorized all Monitoring work (2026-11-10).** New Monitoring implementation and tests are committed; execution/verification gates are OPEN. Other module behavioral work remains deferred.
+
 
 ## Owner-approved execution order (2026-11-10)
 
-**BASELINE PASSED (owner-run 2026-11-10):** CMake/CTest on real checkout, thread 2/2 and full 4/4 tests PASS. Extended build-matrix remains open. **ACTIVE NEXT P1:** Monitoring module reliability, API lifetime, reset, concurrency, semantics and tests. **DEFERRED / FROZEN:** All other changes, including critical logger, object pool, threadpool and performance work, are **record-only until the owner explicitly authorizes starting them**. The historical phases below are a risk ranking, **not** authorization to implement them.
+**FOUNDATION + MONITORING REGRESSIONS PASSED (owner-run 2026-11-10):** CMake/CTest full 6/6 PASS; Clang 20 TSan 3/3 PASS; baseline/threaded/ASan 2/2 each and 100x smoke+contract stress PASS. Wider Monitoring review remains active, not completed. Extended build-matrix remains open. **ACTIVE NEXT P1:** Monitoring module reliability, API lifetime, reset, concurrency, semantics and tests. **DEFERRED / FROZEN:** All other changes, including critical logger, object pool, threadpool and performance work, are **record-only until the owner explicitly authorizes starting them**. The historical phases below are a risk ranking, **not** authorization to implement them.
 
 
 Baseline `71e74d221f182f0567f43531f7f933104cb58c68`. This backlog is a proposal; nothing here is claimed implemented.

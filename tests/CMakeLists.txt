@@ -17,6 +17,76 @@ if(BUILD_MONITORING)
     add_executable(vex_monitoring_smoke monitoring_smoke.cpp)
     target_link_libraries(vex_monitoring_smoke PRIVATE Vex::monitoring)
     add_test(NAME vex.monitoring.smoke COMMAND vex_monitoring_smoke)
+
+    add_executable(vex_monitoring_contract monitoring_contract.cpp)
+    target_link_libraries(vex_monitoring_contract PRIVATE Vex::monitoring)
+    # A prior Clang 20 TSan run exposed -Wunused-value in SAFE_* macros.
+    # Fail this regression at compile time with both GCC and Clang.
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(vex_monitoring_contract PRIVATE
+            -Werror=unused-value -Werror=pedantic)
+    endif()
+    add_test(NAME vex.monitoring.contract COMMAND vex_monitoring_contract)
+
+    add_executable(vex_monitoring_decorators_contract
+        monitoring_decorators_contract.cpp)
+    target_link_libraries(vex_monitoring_decorators_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.decorators
+        COMMAND vex_monitoring_decorators_contract)
+
+    add_executable(vex_monitoring_raii_contract monitoring_raii_contract.cpp)
+    target_link_libraries(vex_monitoring_raii_contract PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.raii COMMAND vex_monitoring_raii_contract)
+
+    add_executable(vex_monitoring_validation_contract
+        monitoring_validation_contract.cpp)
+    target_link_libraries(vex_monitoring_validation_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.validation
+        COMMAND vex_monitoring_validation_contract)
+
+    add_executable(vex_monitoring_lifecycle_contract
+        monitoring_lifecycle_contract.cpp)
+    target_link_libraries(vex_monitoring_lifecycle_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.lifecycle
+        COMMAND vex_monitoring_lifecycle_contract)
+
+    add_executable(vex_monitoring_registration_contract
+        monitoring_registration_contract.cpp)
+    target_link_libraries(vex_monitoring_registration_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.registration
+        COMMAND vex_monitoring_registration_contract)
+
+    add_executable(vex_monitoring_legacy_contract
+        monitoring_legacy_contract.cpp)
+    target_link_libraries(vex_monitoring_legacy_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.legacy
+        COMMAND vex_monitoring_legacy_contract)
+
+    # Loopback-only HTTP integration with an OS-assigned ephemeral port.
+    # No curl, external service or fixed test port is required.
+    if(UNIX)
+        add_executable(vex_monitoring_http_contract
+            monitoring_http_contract.cpp)
+        target_link_libraries(vex_monitoring_http_contract
+            PRIVATE Vex::monitoring)
+        add_test(NAME vex.monitoring.http COMMAND vex_monitoring_http_contract)
+        set_tests_properties(vex.monitoring.http PROPERTIES TIMEOUT 30)
+    endif()
+
+    if(UNIX)
+        find_program(VEX_BASH_EXECUTABLE bash)
+        if(VEX_BASH_EXECUTABLE)
+            add_test(NAME vex.monitoring.compiler-selection
+                COMMAND "${VEX_BASH_EXECUTABLE}"
+                    "${PROJECT_SOURCE_DIR}/tests/compiler_discovery_test.sh"
+            )
+        endif()
+    endif()
 endif()
 
 # Ensure the installed CMake package can be consumed from outside this tree.

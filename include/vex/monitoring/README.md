@@ -1,669 +1,186 @@
-# Prometheus Metrics C++
+# Vex Monitoring
 
-[![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B17)
-[![CMake](https://img.shields.io/badge/CMake-3.14+-blue.svg)](https://cmake.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+A C++17 Prometheus monitoring module. Public header `vex/monitoring/monitoring.hpp`, namespace `vex`, CMake target `Vex::monitoring`.
 
-A modern, type-safe C++ wrapper for [prometheus-cpp](https://github.com/jupp0r/prometheus-cpp) with RAII guards, compile-time validation, and automatic instrumentation decorators.
+## Verified Monitoring handoff (2026-11-14)
 
-## ✨ Features
+Monitoring work items **MON-OPEN-01 through MON-OPEN-06** are accepted for their measured scope. Owner-run Linux evidence includes Monitoring baseline/threaded/ASan+UBSan/Clang 20 TSan **10/10 each**, stress **900/900**, full foundation/package-consumer **13/13**, GCC/Clang × Static/Shared package configurations **11/11 each**, and focused clang-tidy 20.1.2 **checked=5 failed=0**. The final 300-second independent Managed and Raw Registry-soak probes each completed **599,999 Registry churn/expiration checks** with no persistent post-warmup RSS or glibc live-heap growth at an aligned sample phase. These are scoped checks, **not guarantees of leak/race freedom**.
 
-- 🚀 **Single-threaded by default** - Zero synchronization overhead (opt-in multi-threading)
-- ✅ **Compile-time metric name validation** - Catch typos at build time, not runtime
-- 🔒 **RAII metric guards** - Automatic cleanup when metrics go out of scope
-- ⏱️ **Automatic timing decorators** - Measure execution time effortlessly
-- 🏥 **Built-in health check integration** - Standard health metrics out of the box
-- 📊 **Success/failure tracking** - Automatic error rate monitoring
-- 🎯 **[[nodiscard]] attributes** - Prevent accidental value ignoring
-- 🔧 **Type-safe API** - Modern C++17 design patterns
+A final **MON-OPEN-07 focused review** found no new demonstrated Monitoring Runtime defect; review handoff and residual risks are recorded in [final review](../../../.codex/MONITORING_FINAL_REVIEW_2026-11-14.md). There are no new code changes after the owner-verified Monitoring source (the last follow-ups are benchmark/documentation-only). GitHub-hosted CI was not observed for the latest review commit; manual owner-run results must not be represented as CI. PR [#3](https://github.com/majiddarvishan/vex/pull/3) remains **Open/Draft**, stacked on Draft PR #2, and the owner alone authorizes any Ready/merge or base changes.
 
-## 📋 Table of Contents
+Optional 300s soak commands, on a Linux host with existing dependencies:
 
-- [Quick Start](#-quick-start)
-- [Installation](#-installation)
-- [Basic Usage](#-basic-usage)
-- [Advanced Features](#-advanced-features)
-- [Build Options](#-build-options)
-- [Examples](#-examples)
-- [API Reference](#-api-reference)
-- [Performance](#-performance)
-- [Contributing](#-contributing)
-- [License](#-license)
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- C++17 compatible compiler (GCC 7+, Clang 5+, MSVC 2017+)
-- CMake 3.14 or higher
-- [prometheus-cpp](https://github.com/jupp0r/prometheus-cpp) library
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/majiddarvishan/vex.git
-cd vex
-
-# Build and install
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-sudo make install
+```sh
+./tools/benchmark_monitoring_soak.sh 300 managed 10 30 2000
+./tools/benchmark_monitoring_soak.sh 300 raw 10 30 2000
 ```
 
-### Basic Usage
+The runs are **already completed** for current acceptance and should not be repeated solely for this documentation update. Full data interpretation: [memory soak report](../../../.codex/MONITORING_MEMORY_SOAK_2026-11-14.md).
+
+## Configure and test
+
+```sh
+cmake -S . -B build/monitoring-only -DBUILD_MONITORING=ON \
+  -DBUILD_OBJECT_POOL=OFF -DBUILD_THREADPOOL=OFF \
+  -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=ON
+cmake --build build/monitoring-only
+ctest --test-dir build/monitoring-only --output-on-failure
+```
+
+Use `ENABLE_METRICS_THREADING=ON` for the legacy mode-reporting flag; mutable MetricsManager state is synchronized in both configurations. The build resolves installed prometheus-cpp first, then optionally fetches it with VEX_ALLOW_DEPENDENCY_FETCH.
+
+An installed CMake consumer calls `find_package(Vex CONFIG REQUIRED)` and links `Vex::monitoring`.
+
+## Minimal example
 
 ```cpp
-#include <metrics/monitoring.hpp>
-
+#include <vex/monitoring/monitoring.hpp>
 int main() {
-    // Initialize metrics manager
-    metrics::MetricsManager::Init();
-    auto registry = metrics::MetricsManager::GetRegistry();
-
-    // Create a counter with compile-time validation
-    auto& requests = SAFE_CREATE_COUNTER(
-        registry,
-        "http_requests_total",
-        "Total HTTP requests",
-        {}
-    );
-
-    // Increment the counter
-    requests.Increment();
-
-    // Expose metrics via HTTP
-    prometheus::Exposer exposer{"0.0.0.0:8080"};
-    metrics::MetricsManager::RegisterAllWithExposer(exposer);
-
-    // Metrics available at http://localhost:8080/metrics
-
-    return 0;
+    (void)vex::MetricsManager::Init(true);
+    auto registry = vex::MetricsManager::GetRegistry();
+    auto& completed = vex::MetricsManager::CreateCounter(
+      registry, "jobs_completed_total", "Completed jobs");
+    auto& active = vex::MetricsManager::CreateGauge(
+      registry, "jobs_active", "In-flight jobs");
+    {
+        vex::ScopedInFlightGauge guard(active);
+        completed.Increment();
+    }
+    return (completed.Value() == 1.0 && active.Value() == 0.0) ? 0 : 1;
 }
 ```
 
-## 📦 Installation
+## Safety and lifetime
 
-### From Source
+- A Counter is cumulative: keep `*_total` series alive. An in-flight Gauge increments and decrements. `ScopedCounter`/`ScopedGauge` delete ephemeral series when the last matching guard ends; do not use them for persistent cumulative metrics.
+- Hold a Registry shared_ptr as long as any raw metric reference, guard, decorator, or exposed family is in use. `Reset` requires all users to quiesce.
+- Opt-in cardinality caps are available with `SetMaxSeriesPerMetric` and `SetMaxSubsystemRegistries`. Defaults are unlimited for compatibility. Direct raw Prometheus operations bypass these limits.
+- HealthCheck safely refuses to access metrics after its weak Registry expires, but external deletion of a still-live Family is not supported.
+- Avoid unbounded labels (raw user IDs, request IDs, subscriber numbers).
 
-```bash
-git clone https://github.com/majiddarvishan/vex.git
-cd prometheus-metrics-cpp
-mkdir build && cd build
+The historical `vex::monitoring::record_metric(name, value)` is now a real persistent Gauge adapter (not a no-op) and requires prior MetricsManager initialization. Full contracts and exceptions: [API.md](API.md).
 
-# Single-threaded (default, fastest)
-cmake ..
+## Test and benchmark commands
 
-# Multi-threaded
-cmake -DMETRICS_MULTI_THREADED=ON ..
-
-# Build
-make -j$(nproc)
-
-# Install
-sudo make install
+```sh
+./tools/verify_monitoring.sh all
 ```
 
-### Using in Your CMake Project
+`tsan-clang` auto-discovers clang++ or versioned clang++-N (or CXX override). GCC 13.3 TSan was unstable on one independently tested host; the owner previously passed the older suite with Clang 20. That historical PASS does not validate later code changes.
 
-```cmake
-find_package(metrics-cpp REQUIRED)
+Optional Release-mode benchmark for registration, 100 updates per series,
+and collection at 10/100/1000 samples using both **many-series** and
+**many-families** workloads:
 
-add_executable(your_app main.cpp)
-target_link_libraries(your_app PRIVATE metrics::metrics-cpp)
+```sh
+./tools/benchmark_monitoring.sh 3
 ```
 
-### Manual Linking
+The script prints the environment to stderr and structured CSV to stdout.
+Build and execution are optional and not part of the correctness gate.
+See the owner-measured registration and load results in `.codex/MONITORING_TASKS.md` and `.codex/MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md`; performance numbers are workload-specific.
 
-```bash
-g++ -std=c++17 your_app.cpp -lmetrics-cpp -lprometheus-cpp-core -lprometheus-cpp-pull
+**Scoped metric ownership:** An existing externally created counter
+or gauge series is not adopted by `ScopedCounter`/`ScopedGauge`;
+attempting to do so throws `std::invalid_argument`. Concurrent changes to default
+labels are resolved to a single validated snapshot per new guard;
+they do not migrate existing series. Do not mutate/remove the Family
+directly while guards are active. Details:
+[API.md](API.md).
+
+
+### Direct prometheus-cpp comparison for MON-OPEN-01
+
+The optional `./tools/benchmark_monitoring.sh 3` now emits **four**
+`shape` values (preserving the existing CSV column names):
+
+- `many_series` — Vex manager, one family with N labeled series
+- `raw_many_series` — direct prometheus-cpp, identical schema
+- `many_families` — Vex manager, N families with one series each
+- `raw_many_families` — direct prometheus-cpp, identical schema
+
+Each scenario uses a **fresh Registry**, 100 Counter increments per
+series, and `Registry::Collect()`. The benchmark checks that each
+shape produces the expected family/sample counts and fails if it does
+not. Runs for N=10,100,1000, three repeats by default (36 CSV rows).
+This provides a controlled comparison of Vex-tracking overhead vs
+upstream registration cost; it does not prove bottleneck location
+without profiling and does not replace ASan/TSan/CTest. **Later owner-run acceptance and benchmark reports supersede this original unverified status.**
+
+## Optional resource/load and packaging validation (2026-11-10)
+
+The following independent scripts do **not** replace normal CTest and
+sanitizer acceptance:
+
+```sh
+./tools/benchmark_monitoring_controlled.sh 15 > build/monitoring-controlled.csv
+./tools/benchmark_monitoring_load.sh 3 > build/monitoring-load.csv
+./tools/verify_monitoring_portability.sh all
 ```
 
-## 💡 Basic Usage
+The load benchmark uses a Linux Release build, loopback-only HTTP,
+1/4/8-thread registration and shared Counter updates, parallel
+Collect+updates, and reports p50/p95/p99 for sequential HTTP
+requests and Collect calls. Memory values are process snapshots;
+`heap_live_bytes` is glibc allocator state, **not** allocation count.
+Optional `./tools/profile_monitoring_allocations.sh` uses a previously
+installed heaptrack without installing anything.
 
-### Creating Metrics
+The controlled registration benchmark alternates scenario order and
+warm-ups over 9/15/21 runs to investigate the noisy one-family series
+regression signal. No tool result or performance SLA is asserted until
+these commands are run on a real host.
 
-```cpp
-using namespace metrics;
+### Shared build PIC compatibility
 
-// Initialize once at application startup
-MetricsManager::Init();
-auto registry = MetricsManager::GetRegistry();
+For the opt-in GCC/Clang × Static/Shared portability matrix, installed
+static prometheus-cpp archives must have been built with `-fPIC` to
+link into `libvex_monitoring.so`. The project's original
+find-package-first policy can select non-PIC archives from
+`/usr/local/lib`. The revised
+`./tools/verify_monitoring_portability.sh all` avoids that in Shared
+modes by building the project's pinned prometheus-cpp dependency
+inside an isolated build tree (without changing installed packages).
+This optional test may require fetching source if not cached. To
+explicitly test known PIC-compatible *installed* artifacts instead,
+set `VEX_PORTABILITY_SHARED_DEPENDENCY=installed`.
 
-// Counter - monotonically increasing value
-auto& request_counter = SAFE_CREATE_COUNTER(
-    registry,
-    "requests_total",
-    "Total number of requests",
-    {}
-);
-request_counter.Increment();
+After those interim failures, the owner completed the final four-mode portability matrix: **GCC Static, GCC Shared, Clang Static and Clang Shared all 11/11 PASS**. See `.codex/MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md`.
+Details: [Monitoring partial report](../../../.codex/MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).
 
-// Gauge - value that can go up or down
-auto& temperature_gauge = SAFE_CREATE_GAUGE(
-    registry,
-    "temperature_celsius",
-    "Current temperature in Celsius",
-    {}
-);
-temperature_gauge.Set(23.5);
+### Runtime lookup of installed Shared dependencies
 
-// Histogram - observe values and calculate quantiles
-auto& request_duration = SAFE_CREATE_HISTOGRAM(
-    registry,
-    "request_duration_seconds",
-    "HTTP request duration in seconds",
-    {},
-    {0.001, 0.01, 0.1, 1.0, 10.0}  // Custom buckets
-);
-request_duration.Observe(0.042);
+When Shared Monitoring and prometheus-cpp are installed in the
+same ELF library directory, `$ORIGIN` in the installed
+`libvex_monitoring.so` and fetched `prometheus-cpp-pull` allows
+the loader to find adjacent third-party libraries without setting
+`LD_LIBRARY_PATH`. This packaging fix was subsequently verified by the owner in GCC/Clang Shared package-consumer runs (**11/11 each**). Details are documented in
+[the package report](../../../.codex/MONITORING_PORTABILITY_RUNTIME_2026-11-10.md).
+
+### Optional Counter contention attribution and peak memory integrity
+
+After analyzing 15-run controlled and 3-run multi-thread datasets, a further opt-in Linux Release benchmark mode was added:
+
+```sh
+./tools/benchmark_monitoring_load.sh 3 --controls > build/monitoring-load-controls.csv
 ```
 
-### Labels
+It compares raw Prometheus and Vex-managed shared Counter updates with raw/managed per-thread sharded Counter updates. The existing default run remains available unchanged. The new control mode adds 9 records per repetition: **61 CSV lines** for 3 rounds versus **34** for the old default. Peak RSS now reads Linux `VmHWM`, returning `-1` for contradictory measurements rather than reporting a smaller peak than current RSS. The owner subsequently validated the **60-record control dataset** and **60/60** peak RSS consistency checks; see `.codex/MONITORING_LOAD_CONTROLS_2026-11-13.md`.
 
-```cpp
-// Add labels to metrics
-auto& counter_with_labels = SAFE_CREATE_COUNTER(
-    registry,
-    "http_requests_total",
-    "Total HTTP requests",
-    {{"method", "GET"}, {"endpoint", "/api/users"}}
-);
+### Optional long-running Registry churn and static-analysis probes (2026-11-14)
 
-// Set default labels for all metrics
-MetricsManager::SetDefaultLabels({
-    {"service", "my-app"},
-    {"version", "1.0.0"}
-});
+```sh
+./tools/benchmark_monitoring_lifetime.sh 8 512 > build/monitoring-lifetime.csv
+./tools/verify_monitoring_static.sh check-tools
+./tools/verify_monitoring_static.sh > build/monitoring-static.log 2>&1
 ```
 
-### Subsystem Registries
-
-```cpp
-// Create isolated registries for different subsystems
-auto db_registry = MetricsManager::GetSubsystemRegistry("database");
-auto cache_registry = MetricsManager::GetSubsystemRegistry("cache");
-
-auto& db_queries = SAFE_CREATE_COUNTER(
-    db_registry,
-    "queries_total",
-    "Database queries",
-    {}
-);
-```
-
-## 🔥 Advanced Features
-
-### 1. RAII Metric Guards
-
-Automatically remove metrics when they go out of scope:
-
-```cpp
-void ProcessRequest(const std::string& user_id) {
-    // Metric exists only during request processing
-    ScopedCounter counter(
-        counter_family,
-        {{"user_id", user_id}}
-    );
-
-    counter->Increment();
-
-    // Do work...
-
-}  // Metric automatically removed here
-```
-
-### 2. Automatic Timing
-
-**Scoped Timer:**
-```cpp
-void HandleRequest() {
-    ScopedTimer timer(request_duration_histogram);
-
-    // Do expensive work...
-    ProcessData();
-    QueryDatabase();
-
-}  // Duration automatically observed
-```
-
-**Function Timer:**
-```cpp
-auto result = TimeFunction(duration_histogram, []() {
-    return ExpensiveComputation();
-});
-// Returns result, automatically times execution
-```
-
-**With Duration:**
-```cpp
-auto [result, duration] = TimeFunctionWithDuration(duration_histogram, []() {
-    return DatabaseQuery();
-});
-
-std::cout << "Query took " << duration << " seconds\n";
-```
-
-### 3. Success/Failure Tracking
-
-**Simple Tracking:**
-```cpp
-ResultTracker tracker(success_counter, failure_counter);
-
-auto result = tracker.Track([]() {
-    return RiskyOperation();  // Success/failure auto-tracked
-});
-```
-
-**Combined Timing + Tracking:**
-```cpp
-TimedResultTracker tracker(
-    duration_histogram,
-    success_counter,
-    failure_counter
-);
-
-auto result = tracker.Track([]() {
-    return DatabaseQuery();
-});
-// Tracks both timing AND success/failure!
-```
-
-### 4. Health Check Integration
-
-```cpp
-// Register standard health metrics
-HealthCheck::RegisterHealthMetrics(registry);
-
-// Set service health status
-HealthCheck::SetHealthy(true);   // 1.0
-HealthCheck::SetHealthy(false);  // 0.0
-
-// Update uptime (call periodically)
-HealthCheck::UpdateUptime();
-
-// Update memory usage
-HealthCheck::UpdateMemoryUsage(getCurrentMemoryUsage());
-```
-
-**Provided metrics:**
-- `health_status` - Service health (1=healthy, 0=unhealthy)
-- `uptime_seconds` - Service uptime in seconds
-- `memory_usage_bytes` - Current memory usage
-
-### 5. Compile-Time Name Validation
-
-```cpp
-// ✅ Valid - compiles successfully
-auto& counter = SAFE_CREATE_COUNTER(registry, "requests_total", "Help", {});
-auto& gauge = SAFE_CREATE_GAUGE(registry, "cpu_usage_percent", "Help", {});
-
-// ❌ Compile error - invalid characters
-auto& bad1 = SAFE_CREATE_COUNTER(registry, "bad-name!", "Help", {});
-
-// ❌ Compile error - starts with number
-auto& bad2 = SAFE_CREATE_COUNTER(registry, "9requests", "Help", {});
-
-// ❌ Compile error - reserved prefix
-auto& bad3 = SAFE_CREATE_COUNTER(registry, "__reserved", "Help", {});
-```
-
-## 🏗️ Build Options
-
-### CMake Options
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `METRICS_MULTI_THREADED` | `OFF` | Enable thread-safe operations |
-| `METRICS_BUILD_EXAMPLES` | `ON` | Build example programs |
-| `METRICS_BUILD_TESTS` | `ON` | Build unit tests |
-| `BUILD_SHARED_LIBS` | `OFF` | Build shared library instead of static |
-
-### Build Configurations
-
-**Single-threaded (fastest, default):**
-```bash
-cmake -DMETRICS_MULTI_THREADED=OFF ..
-```
-- Zero synchronization overhead
-- Best performance for single-threaded applications
-
-**Multi-threaded (thread-safe):**
-```bash
-cmake -DMETRICS_MULTI_THREADED=ON ..
-```
-- Thread-safe operations with mutexes
-- Required for concurrent access from multiple threads
-
-**Debug build:**
-```bash
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-```
-
-**Release build:**
-```bash
-cmake -DCMAKE_BUILD_TYPE=Release ..
-```
-
-### Using the Build Script
-
-```bash
-# Default build (single-threaded, release)
-./build.sh
-
-# Multi-threaded build
-./build.sh --multi-threaded
-
-# Debug build
-./build.sh --debug
-
-# Clean build
-./build.sh --clean
-
-# No examples or tests
-./build.sh --no-examples --no-tests
-```
-
-## 📚 Examples
-
-The library comes with several complete examples:
-
-### HTTP Server Monitoring
-
-```bash
-./build/examples/example_http_server
-```
-
-Demonstrates:
-- Request counting
-- Duration tracking with histograms
-- Active request gauges
-- Success/failure rates
-
-### Database Connection Pool
-
-```bash
-./build/examples/example_database
-```
-
-Demonstrates:
-- Subsystem-specific registries
-- Connection pool metrics
-- Query timing
-- Result tracking
-
-### Complete Application
-
-```bash
-./build/examples/example_full_app
-```
-
-Demonstrates:
-- Full application setup
-- Health check integration
-- Multiple subsystems
-- HTTP metrics endpoint
-- Coordinated monitoring
-
-### Example Code
-
-**Full Application Example:**
-
-```cpp
-#include <metrics/monitoring.hpp>
-#include <iostream>
-#include <thread>
-
-using namespace metrics;
-
-class MyService {
-public:
-    MyService() {
-        auto registry = MetricsManager::GetRegistry();
-
-        requests_ = &SAFE_CREATE_COUNTER(
-            registry, "requests_total", "Total requests", {}
-        );
-
-        duration_ = &SAFE_CREATE_HISTOGRAM(
-            registry, "request_duration_seconds", "Request duration",
-            {}, {0.001, 0.01, 0.1, 1.0}
-        );
-
-        success_ = &SAFE_CREATE_COUNTER(
-            registry, "requests_success_total", "Successful requests", {}
-        );
-
-        failure_ = &SAFE_CREATE_COUNTER(
-            registry, "requests_failure_total", "Failed requests", {}
-        );
-    }
-
-    void ProcessRequest() {
-        requests_->Increment();
-
-        TimedResultTracker tracker(*duration_, *success_, *failure_);
-
-        tracker.Track([this]() {
-            // Your business logic here
-            DoWork();
-        });
-    }
-
-private:
-    void DoWork() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    prometheus::Counter* requests_;
-    prometheus::Histogram* duration_;
-    prometheus::Counter* success_;
-    prometheus::Counter* failure_;
-};
-
-int main() {
-    // Initialize
-    MetricsManager::Init();
-    auto registry = MetricsManager::GetRegistry();
-
-    // Setup health checks
-    HealthCheck::RegisterHealthMetrics(registry);
-    HealthCheck::SetHealthy(true);
-
-    // Create service
-    MyService service;
-
-    // Start metrics HTTP endpoint
-    prometheus::Exposer exposer{"0.0.0.0:8080"};
-    MetricsManager::RegisterAllWithExposer(exposer);
-
-    std::cout << "Service started. Metrics at http://localhost:8080/metrics\n";
-
-    // Process requests
-    for (int i = 0; i < 100; ++i) {
-        service.ProcessRequest();
-        HealthCheck::UpdateUptime();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-
-    return 0;
-}
-```
-
-## 📖 API Reference
-
-### MetricsManager
-
-**Initialization:**
-```cpp
-[[nodiscard]] static bool Init(bool enable_threading = false);
-static void Reset();
-[[nodiscard]] static bool IsInitialized();
-[[nodiscard]] static bool IsThreadingEnabled();
-```
-
-**Registry Management:**
-```cpp
-[[nodiscard]] static std::shared_ptr<prometheus::Registry> GetRegistry();
-[[nodiscard]] static std::shared_ptr<prometheus::Registry> GetSubsystemRegistry(const std::string& ns);
-static void RegisterAllWithExposer(prometheus::Exposer& exposer);
-```
-
-**Creating Metrics:**
-```cpp
-[[nodiscard]] static Counter& CreateCounter(registry, name, help, labels = {});
-[[nodiscard]] static Gauge& CreateGauge(registry, name, help, labels = {});
-[[nodiscard]] static Histogram& CreateHistogram(registry, name, help, labels = {}, buckets = {});
-```
-
-**Type-Safe Macros:**
-```cpp
-SAFE_CREATE_COUNTER(registry, name, help, labels)
-SAFE_CREATE_GAUGE(registry, name, help, labels)
-SAFE_CREATE_HISTOGRAM(registry, name, help, labels, buckets)
-```
-
-### RAII Guards
-
-```cpp
-class ScopedCounter {
-    ScopedCounter(Family<Counter>& family, const map<string,string>& labels);
-    Counter& operator*();
-    Counter* operator->();
-    Counter* get();
-};
-
-class ScopedGauge {
-    ScopedGauge(Family<Gauge>& family, const map<string,string>& labels);
-    Gauge& operator*();
-    Gauge* operator->();
-    Gauge* get();
-};
-```
-
-### Decorators
-
-```cpp
-class ScopedTimer {
-    explicit ScopedTimer(Histogram& histogram);
-    [[nodiscard]] double ElapsedSeconds() const;
-};
-
-template<typename Func>
-auto TimeFunction(Histogram& histogram, Func&& func) -> decltype(func());
-
-template<typename Func>
-auto TimeFunctionWithDuration(Histogram& histogram, Func&& func)
-    -> pair<decltype(func()), double>;
-
-class ResultTracker {
-    ResultTracker(Counter& success, Counter& failure);
-    template<typename Func> auto Track(Func&& func) -> decltype(func());
-};
-
-class TimedResultTracker {
-    TimedResultTracker(Histogram& duration, Counter& success, Counter& failure);
-    template<typename Func> auto Track(Func&& func) -> decltype(func());
-};
-```
-
-### Health Check
-
-```cpp
-class HealthCheck {
-    static void RegisterHealthMetrics(shared_ptr<Registry> registry);
-    static void SetHealthy(bool healthy);
-    static void UpdateUptime();
-    static void UpdateMemoryUsage(size_t bytes);
-    [[nodiscard]] static bool IsRegistered();
-};
-```
-
-## ⚡ Performance
-
-### Single-threaded Mode (Default)
-
-- **Zero synchronization overhead** - No mutex locks
-- **~1-2ns per metric operation** - Direct memory access
-- **Optimal for single-threaded applications**
-- **Compile-time optimization** - Mutex code completely removed
-
-### Multi-threaded Mode
-
-- **Thread-safe operations** - Protected by mutexes
-- **~10-50ns per metric operation** - Includes lock overhead
-- **Safe for concurrent access** - Multiple threads can update metrics
-- **Opt-in design** - Pay only when you need it
-
-### Benchmark Results
-
-Environment: Intel i7-10700K, 32GB RAM, GCC 11.3, -O3
-
-| Operation | Single-threaded | Multi-threaded |
-|-----------|----------------|----------------|
-| Counter increment | 1.2ns | 12ns |
-| Gauge set | 1.5ns | 14ns |
-| Histogram observe | 8ns | 45ns |
-| Timer overhead | 15ns | 25ns |
-
-## 🧪 Testing
-
-```bash
-cd build
-ctest --output-on-failure
-```
-
-Or run tests manually:
-```bash
-./tests/metrics_tests
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Setup
-
-```bash
-git clone https://github.com/majiddarvishan/vex.git
-cd prometheus-metrics-cpp
-mkdir build && cd build
-cmake -DMETRICS_BUILD_TESTS=ON ..
-make
-ctest
-```
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [prometheus-cpp](https://github.com/jupp0r/prometheus-cpp) - The underlying Prometheus client library
-- [Prometheus](https://prometheus.io/) - The monitoring system and time series database
-
-## 📞 Support
-
-- 📧 Email: majiddarvishan@outlook.com
-- 🐛 Issues: [GitHub Issues](https://github.com/majiddarvishan/prometheus-metrics-cpp/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/majiddarvishan/prometheus-metrics-cpp/discussions)
-
-## 🗺️ Roadmap
-
-- [ ] Support for Summary metrics
-- [ ] Metric exporters (push gateway, remote write)
-- [ ] Additional decorators (rate limiting, circuit breakers)
-- [ ] Performance profiling tools
-- [ ] Docker integration examples
-- [ ] Kubernetes deployment examples
-
----
-
-**Made with ❤️ by the community**
+The bounded Linux lifetime probe creates 4096 short-lived Registries
+across eight rounds, checks weak ownership/manager quota isolation and
+reports VmRSS, VmHWM and optional glibc Heap trends. It **does not**
+prove memory-leak freedom or provide allocation call-site data. The
+clang-tidy script performs a focused warning-as-error check of the
+Monitoring source and public headers, without automatic source fixes;
+it never installs clang-tidy if absent. Both tools were subsequently exercised on the owner's checkout: selected clang-tidy **5/5 PASS**; lifetime Managed/Raw and aligned 8×509 probes completed. The additional 300-second Managed/Raw soak also passed its measured scope; this remains no proof of global leak freedom.
+
+Details: [Monitoring follow-up plan](../../../.codex/MONITORING_FOLLOWUP_PLAN_2026-11-14.md).
