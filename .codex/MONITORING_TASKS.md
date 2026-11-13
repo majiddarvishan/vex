@@ -1,3 +1,15 @@
+## 2026-11-13: Lifetime build successful; static tool available; redirected outputs needed
+
+Owner's checkout SHA `6df93958decb1ccc9f68176e0f817af2602e04b9` ran the 8×512 Registry lifetime tool;
+GCC 13.3 CMake/build completed. `clang-tidy` 20.1.2 discovery PASS.
+The Lifetime CSV and full static log were redirected and **not
+included** in the terminal text. No numeric memory trend,
+`MONITORING_STATIC_PASS` or 4096-expiration acceptance is inferred
+without those files. See
+[MONITORING_LIFETIME_STATIC_PRELIM_2026-11-13.md](MONITORING_LIFETIME_STATIC_PRELIM_2026-11-13.md).
+
+---
+
 # Vex Monitoring — open work and acceptance (2026-11-14)
 
 **Repository:** `majiddarvishan/vex`  
@@ -19,8 +31,8 @@
 
 | Task | Priority | Scope | Acceptance/evidence |
 |---|---|---|---|
-| MON-OPEN-05 static-analysis follow-up | P2 | Focused `clang-tidy` `clang-analyzer-*`, `bugprone-*`, `performance-*` checks with warnings-as-errors | Run `tools/verify_monitoring_static.sh`; record Clang/clang-tidy versions and diagnostics. Missing tool is **NOT RUN**, never PASS. No auto-fix or dependency install. |
-| MON-OPEN-06 memory/retention follow-up | P2 | Bounded repeated external Registry ownership churn, periodic weak-ledger reclamation and process RSS/heap trend | **New optional tool NOT YET RUN**: `tools/benchmark_monitoring_lifetime.sh 8 512`; expect 9 CSV lines, verify weak ownership/quotas and report memory trend without claiming leak freedom. Optional heaptrack call-site profiling requires preinstalled tool. |
+| MON-OPEN-05 static-analysis follow-up | P2 | `clang-tidy` **20.1.2 discovered successfully**; analysis command invoked with stdout/stderr redirected. Log not yet provided. | Inspect `build/monitoring-static.log` for final `MONITORING_STATIC_PASS checked=5 failed=0` or findings; do not claim zero diagnostics before log review. No auto-fix/install. |
+| MON-OPEN-06 memory/retention follow-up | P2 | **GCC 13.3 Release Build PASS**, Lifetime executable invoked at owner checkout `6df9395`; stdout redirected, 9-line CSV expected but not shown. | Review 8-round CSV and per-round RSS/VmHWM/glibc heap trends; check 4096 expirations and quota/HELP assertions before calling Lifetime probe PASS. Do not claim leak freedom. |
 | MON-OPEN-06 historical registration noise | P2 / research | The old-vs-new 1000-series one-family +6.1% in three ordered repeats | Requires both revisions measured by the **same** warmed/rotated harness on one host to establish causality. Do not call it a confirmed regression. |
 | MON-OPEN-07 | Process | Final owner review, release/merge decision | Resolve reviews, freeze reviewed SHA, retain stacked base and require explicit approval for any merge or Ready-for-Review change. |
 

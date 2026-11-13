@@ -1,3 +1,19 @@
+## New owner Lifetime and static commands: preliminary 2026-11-13
+
+Exact owner SHA `6df93958decb1ccc9f68176e0f817af2602e04b9` before documentation reporting.
+GCC 13.3 Lifetime CMake/Build **PASS**; binary command invoked,
+output redirected; **CSV NOT PROVIDED** (9 lines expected).
+`clang-tidy` 20.1.2 check-tools **PASS**; static analysis command
+invoked, log redirected; **analysis result NOT VERIFIED** until
+`MONITORING_STATIC_PASS checked=5 failed=0` or diagnostic log
+is inspected. Neither leak freedom nor heap trend is established.
+
+[Provenance and commands](MONITORING_LIFETIME_STATIC_PRELIM_2026-11-13.md).
+Earlier full test suites and four Static/Shared package consumers
+remain PASS as documented below.
+
+---
+
 ## 2026-11-14 optional Monitoring memory/static probes pending
 
 Historical owner-run tests **PASS**: 10/10 ×4 modes, stress 900/900,
