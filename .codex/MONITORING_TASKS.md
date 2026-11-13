@@ -1,3 +1,9 @@
+## MON-OPEN-06 owner-run update — 2026-11-14
+
+**PASS:** GCC13 Release Monitoring-only Build, shell check, 5s Managed/Raw smoke (owner transcript). **Raw 300s evidence validated:** 63 rows, elapsed 300.000s, 599999/599999 expired, 1999.994 ops/s; phase 255/0; RSS 4500 KiB and glibc live heap 81504 B stable from 30–300s, including second half. Raw phases are synthetic and bypass manager quotas. **Managed 300s command completed and yielded CSV/log paths, but managed CSV contents were not provided; managed trend/actual Sweep/quota acceptance PENDING.** Do not close 300s subgate or claim leak freedom. Details: [soak report](MONITORING_MEMORY_SOAK_2026-11-14.md). Obtain **only existing managed CSV**, then finish trend/sweep analysis; no rerun is necessary for the current missing-evidence issue.
+
+---
+
 ## MON-OPEN-06 five-minute soak — 2026-11-14
 
 New time-bounded Monitoring synthetic soak tool (Managed/Raw, 300s default, phase 255→0, quota/weak-owner assertions, unique CSV/log) and [report](MONITORING_MEMORY_SOAK_2026-11-14.md) prepared. **Build, 5s smoke and 300s runs NOT RUN; five-minute subgate OPEN.** Existing short lifetime PASS evidence remains separate; no leak-free claim. No runtime code change.

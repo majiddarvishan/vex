@@ -1,3 +1,21 @@
+## MON-OPEN-06 300s owner-run update — 2026-11-14
+
+| Gate | Result / evidence |
+|---|---|
+| Monitoring-only offline GCC 13.3 Release build | **PASS**, owner terminal transcript |
+| Shell syntax and Managed/Raw 5s Smoke | **PASS**, sequential `&&` commands produced both output files |
+| Raw 300s completion and CSV integrity | **PASS**, run `monitoring-soak-raw-sbHznA`, 63 rows, final 300.000s |
+| Raw Registry expiration | **PASS**, 599999/599999 |
+| Raw phase-aligned 255→0 and VmHWM >= RSS | **PASS**; modeled, NOT actual manager sweep |
+| Raw post-warmup RSS/heap slope | **0 KiB / 0 B** across 30–300s and 150–300s |
+| Managed 300s command completion | **COMPLETED**, output path reported |
+| Managed 300s CSV expiration/quota/Sweep/heap validation | **PENDING managed CSV** |
+| Full MON-OPEN-06 five-minute subgate | **OPEN pending Managed analysis** |
+
+See [result report](MONITORING_MEMORY_SOAK_2026-11-14.md); historical unverified table below predates owner execution.
+
+---
+
 ## MON-OPEN-06 300s soak — 2026-11-14
 
 | Gate | Evidence |

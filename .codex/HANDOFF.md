@@ -1,3 +1,16 @@
+# VEX handoff — 2026-11-14 owner 300s soak evidence
+
+- Branch: `feature/monitoring-correctness-tests` ONLY; PR #3 open/Draft; base `feature/cmake-ctest-foundation`; no merge, base, or Draft-state changes.
+- Source for owner run: `63d90c07ae78435f387ece30fac6a43d9f58a90f`; Linux 6.8.0-147-generic, /usr/bin/c++, GNU13.3.0 Release, 300s/10s sample/30s warmup/2000 ops/s.
+- **PASS:** new soak Build, shell check, 5s Managed and Raw smoke. Both 300s invocations output unique CSV/log filenames without reported errors.
+- **Raw 300s CSV fully validated:** `monitoring-soak-raw-sbHznA.csv`, 63 data rows, 300.000s, 599999 churn and weak-owner expiry checks, rate 1999.994/s. Raw RSS=4500 KiB and glibc uordblks=81504 B from 30 to 300s, no second-half slope; phases 255/0 modeled only, no actual sweep/quota in Raw.
+- **Managed numeric CSV MISSING in conversation**, despite command completion. Its run ID is `monitoring-soak-managed-enfJiz` and file exists on owner's machine at `build/monitoring-soak-results/monitoring-soak-managed-enfJiz.csv`. Owner's included log contains only metadata. Full MON-OPEN-06 300s gate **OPEN**, not leak-free proof.
+- **Only next owner action:** paste or attach the existing Managed CSV, ideally with `cat build/monitoring-soak-results/monitoring-soak-managed-enfJiz.csv`; **do not rerun** merely to supply existing evidence.
+- Next agent action: check Managed 300s elapsed, expiry/quota/sweep phase, post-warmup and 150→300s RSS/heap trend, pre/post Sweep effect; document technical conclusion in `.codex/MONITORING_MEMORY_SOAK_2026-11-14.md`, `MONITORING_TASKS.md`, `TEST_MATRIX.md`, `HANDOFF.md`. No runtime change/profiler without evidence. No MON-OPEN-07/merge.
+- For short continuation, user says «ادامه VEX». First inspect GitHub HEAD and read this handoff.
+
+---
+
 # VEX handoff — 2026-11-14 soak tool added
 
 - Repository majiddarvishan/vex; ONLY branch feature/monitoring-correctness-tests, Draft PR #3, base feature/cmake-ctest-foundation; do not merge or change Draft/base.
