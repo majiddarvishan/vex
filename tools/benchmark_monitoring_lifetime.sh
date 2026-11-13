@@ -4,11 +4,13 @@ set -Eeuo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 rounds="${1:-8}"
 batch="${2:-512}"
-if [[ $# -gt 2 || ! "$rounds" =~ ^[0-9]+$ ||
+mode="${3:-managed}"
+if [[ $# -gt 3 || ! "$rounds" =~ ^[0-9]+$ ||
       ! "$batch" =~ ^[0-9]+$ ||
       $rounds -lt 1 || $rounds -gt 20 ||
-      $batch -lt 256 || $batch -gt 2048 ]]; then
-    printf 'Usage: tools/benchmark_monitoring_lifetime.sh [rounds=1..20] [registries_per_round=256..2048]\n' >&2
+      $batch -lt 256 || $batch -gt 2048 ||
+      ( "$mode" != managed && "$mode" != raw ) ]]; then
+    printf 'Usage: tools/benchmark_monitoring_lifetime.sh [rounds=1..20] [registries_per_round=256..2048] [managed|raw]\n' >&2
     exit 2
 fi
 if [[ "$(uname -s)" != Linux ]]; then
@@ -38,5 +40,11 @@ printf 'BENCH_LIFETIME_COMPILER ' >&2
 grep '^CMAKE_CXX_COMPILER:FILEPATH=' "$build_dir/CMakeCache.txt" >&2 || true
 printf 'BENCH_LIFETIME_NOTE RSS, VmHWM and glibc heap are process snapshots; they cannot prove leak freedom.\n' >&2
 printf 'BENCH_LIFETIME_EXPECTED_CSV_LINES %s\n' "$((rounds + 1))" >&2
-"$build_dir/modules/monitoring/vex_monitoring_lifetime_benchmark" \
-    "$rounds" "$batch"
+printf 'BENCH_LIFETIME_MODE %s\n' "$mode" >&2
+if [[ "$mode" == raw ]]; then
+    "$build_dir/modules/monitoring/vex_monitoring_lifetime_benchmark" \
+        "$rounds" "$batch" raw
+else
+    "$build_dir/modules/monitoring/vex_monitoring_lifetime_benchmark" \
+        "$rounds" "$batch"
+fi

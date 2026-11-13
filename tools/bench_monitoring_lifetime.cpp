@@ -38,6 +38,22 @@ std::int64_t heap_bytes() {
 #endif
     return -1;
 }
+// A direct prometheus-cpp baseline lets us separate Registry/allocator
+// churn from managed weak-owner ledger bookkeeping. Run each mode in a
+// fresh process; raw mode deliberately cannot enforce Vex quotas.
+prometheus::Counter& make_counter(
+    bool raw, const std::shared_ptr<prometheus::Registry>& registry,
+    const std::string& name, const std::string& help)
+{
+    const prometheus::Labels labels{{"id", "first"}};
+    if (raw) {
+        auto& family = prometheus::BuildCounter()
+            .Name(name).Help(help).Register(*registry);
+        return family.Add(labels);
+    }
+    return vex::MetricsManager::CreateCounter(
+        registry, name, help, labels);
+}
 void check_quota(const std::shared_ptr<prometheus::Registry>& registry,
                  const std::string& metric, const std::string& help) {
     bool rejected = false;
@@ -50,15 +66,15 @@ void check_quota(const std::shared_ptr<prometheus::Registry>& registry,
     if (!rejected)
         throw std::runtime_error("live Registry quota was not enforced");
 }
-void run(int rounds, int batch) {
+void run(int rounds, int batch, bool raw) {
     using vex::MetricsManager;
     if (!MetricsManager::Init())
         throw std::runtime_error("manager initialization failed");
     MetricsManager::SetMaxSeriesPerMetric(1);
     auto persistent = std::make_shared<prometheus::Registry>();
-    auto& live = MetricsManager::CreateCounter(
-        persistent, "vex_lifetime_persistent_total",
-        "Persistent owner", {{"id", "first"}});
+    auto& live = make_counter(
+        raw, persistent, "vex_lifetime_persistent_total",
+        "Persistent owner");
     live.Increment();
 
     const auto start_rss = proc_kib("VmRSS:");
@@ -75,9 +91,9 @@ void run(int rounds, int batch) {
             {
                 auto registry = std::make_shared<prometheus::Registry>();
                 weak = registry;
-                auto& counter = MetricsManager::CreateCounter(
-                    registry, "vex_lifetime_transient_total",
-                    "Transient owner", {{"id", "first"}});
+                auto& counter = make_counter(
+                    raw, registry, "vex_lifetime_transient_total",
+                    "Transient owner");
                 counter.Increment();
                 if (counter.Value() != 1.0)
                     throw std::runtime_error("transient metric invalid");
@@ -91,15 +107,17 @@ void run(int rounds, int batch) {
         // transfer quota, HELP or label history to a new Registry owner.
         {
             auto fresh = std::make_shared<prometheus::Registry>();
-            (void)MetricsManager::CreateCounter(
-                fresh, "vex_lifetime_transient_total",
-                "Fresh HELP", {{"id", "first"}});
-            check_quota(fresh, "vex_lifetime_transient_total", "Fresh HELP");
+            (void)make_counter(
+                raw, fresh, "vex_lifetime_transient_total", "Fresh HELP");
+            if (!raw)
+                check_quota(
+                    fresh, "vex_lifetime_transient_total", "Fresh HELP");
         }
         if (live.Value() != 1.0)
             throw std::runtime_error("persistent metric changed");
-        check_quota(
-            persistent, "vex_lifetime_persistent_total", "Persistent owner");
+        if (!raw)
+            check_quota(
+                persistent, "vex_lifetime_persistent_total", "Persistent owner");
 
         const double elapsed = std::chrono::duration<double, std::milli>(
             Clock::now() - start).count();
@@ -124,13 +142,16 @@ void run(int rounds, int batch) {
 
 int main(int argc, char** argv) {
     try {
-        if (argc > 3) throw std::invalid_argument("too many arguments");
+        if (argc > 4) throw std::invalid_argument("too many arguments");
         const int rounds = argc >= 2 ? std::stoi(argv[1]) : 8;
         const int batch = argc >= 3 ? std::stoi(argv[2]) : 512;
+        const bool raw = argc == 4 && std::string(argv[3]) == "raw";
+        if (argc == 4 && !raw)
+            throw std::invalid_argument("third argument must be raw");
         if (rounds < 1 || rounds > 20 || batch < 256 || batch > 2048)
             throw std::invalid_argument(
-                "Usage: vex_monitoring_lifetime_benchmark [1..20] [256..2048]");
-        run(rounds, batch);
+                "Usage: vex_monitoring_lifetime_benchmark [1..20] [256..2048] [raw]");
+        run(rounds, batch, raw);
     } catch (const std::exception& e) {
         std::cerr << "MONITORING_LIFETIME_BENCHMARK_FAIL "
                   << e.what() << '\n';
