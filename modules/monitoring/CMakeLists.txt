@@ -25,6 +25,24 @@ endif()
 
 set_target_properties(monitoring PROPERTIES OUTPUT_NAME vex_monitoring)
 
+# On ELF platforms a packaged shared Monitoring library must find its
+# colocated prometheus-cpp shared dependencies without requiring the
+# consumer to export LD_LIBRARY_PATH or modify the system loader paths.
+# This is deliberately scoped to Monitoring; the other Vex modules stay
+# unchanged. Installed dependencies still need to be deployed alongside
+# the library (the CPM dependency's install rules do this for fetched
+# shared builds).
+if(UNIX AND NOT APPLE AND BUILD_SHARED_LIBS)
+    set_property(TARGET monitoring APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
+
+    # When prometheus-cpp is built as a subproject (not an imported
+    # system package), pull itself depends on core. DT_RUNPATH is not
+    # transitive on Linux, so give pull its own sibling-library lookup.
+    if(TARGET pull)
+        set_property(TARGET pull APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
+    endif()
+endif()
+
 # Optional executable benchmark, not a correctness gate or CI assertion.
 # Enable with -DVEX_BUILD_MONITORING_BENCHMARK=ON.
 option(VEX_BUILD_MONITORING_BENCHMARK
