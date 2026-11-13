@@ -1,3 +1,9 @@
+## Update: four-mode package acceptance PASS; benchmark data received
+
+All GCC/Clang static/shared consumers now PASS 11/11 each. Controlled 180 and load 33 raw samples are archived; shared Counter contention and invalid peak RSS identified. [Full result](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md). Optional clang-tidy not run; MON-OPEN-06 targeted diagnostics remain open.
+
+---
+
 ## Latest report — Full Monitoring PASS, shared package runtime still failing
 
 Owner's `Pasted text(7).txt` confirms **10/10 each**
@@ -40,8 +46,8 @@ an isolated PIC dependency strategy were subsequently committed;
 
 | ID | Priority | Work | Acceptance gate |
 |---|---|---|---|
-| MON-OPEN-05 | P2 | **PARTIAL, 2/4 modes PASS.** After isolated pinned PIC dependency: GCC/Clang Static **11/11 each PASS**; GCC/Clang Shared build + 10 Monitoring tests PASS, but installed consumer **FAIL** loading `libprometheus-cpp-pull.so.1.3` (each 10/11). ELF `$ORIGIN` RUNPATH candidate added **AFTER** owner log, NOT YET TESTED. | Re-run both Shared modes and verify external package consumer without `LD_LIBRARY_PATH`; inspect installed RPATH if failure persists; optional clang-tidy remains unverified |
-| MON-OPEN-06 | P2 | **Tools built and executed** (controlled 15, load 3) but numeric CSVs not provided. No RSS, concurrent-load percentiles, or registration variance verdict yet. | Obtain controlled and load CSVs (181/34 lines) and analyze throughput, RSS, collect/HTTP p95/p99, 1000-series variability. Optional heaptrack not run |
+| MON-OPEN-05 | P2 | **Portability/package gate PASS: GCC/Clang × Static/Shared, 11/11 each, external consumer PASS.** Shared RUNPATH fixed. `CPM` cache dirty warning persists; optional clang-tidy NOT RUN. | If comprehensive static analysis is mandatory, run targeted clang-tidy; do not reopen the passed 4-mode packaging matrix without new evidence |
+| MON-OPEN-06 | P2 | **Measured:** 180 controlled samples + 33 load/resource samples archived. 1000-Family median 11.061ms; 1000-series one-Family median 3.237ms. Shared Counter 1/4/8-thread throughput ~19.74M/2.35M/4.30M ops/s. **Peak RSS invalid in 32/33 rows.** | Fix peak RSS reporting; compare raw shared and independently sharded Counter controls; optional heaptrack; matched pre/post controlled runs to assess suspected one-Family regression |
 | MON-OPEN-07 | Process | Final owner code review and release/merge decision | Freeze reviewed SHA, resolve PR comments, preserve stacked foundation dependency, require explicit owner authorization before merge |
 
 ## Evidence and boundaries

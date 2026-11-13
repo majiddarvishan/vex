@@ -166,3 +166,7 @@ require environment-variable workarounds. **Unverified
 candidate** pending the GCC/Clang Shared package consumer rerun.
 Details:
 [MONITORING_PORTABILITY_RUNTIME_2026-11-10.md](MONITORING_PORTABILITY_RUNTIME_2026-11-10.md).
+
+## New full owner evidence — 2026-11-10
+
+Compiler/linkage and installed consumer matrix: **4/4 PASS, 11/11 CTests each**. Benchmarks: 180 controlled samples and 33 load samples, raw data archived. Counter contention observed, 1000-series regression remains uncertain without same-harness pre/post A/B; `peak_rss_kib` is invalid in 32/33 rows. Optional clang-tidy/heaptrack not run. See [analysis](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md) for actual observations and follow-ups; historical “pending” language above is superseded where evidence is now available.

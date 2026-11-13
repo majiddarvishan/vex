@@ -1,3 +1,9 @@
+## Current owner evidence — every GCC/Clang Static/Shared consumer PASS
+
+GCC Static **11/11**, GCC Shared **11/11**, Clang Static **11/11**, Clang Shared **11/11** (including package consumer). Shared RUNPATH issue resolved in the tested staging layout. Previous full 10/10×4, 900/900, 13/13 remain PASS. Controlled CSV 181 lines; resource CSV 34 lines. Peak RSS inconsistent in 32/33 records; cannot use that field. Optional clang-tidy NOT RUN. Complete [report](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md).
+
+---
+
 ## Latest report — Full Monitoring PASS, shared package runtime still failing
 
 Owner's `Pasted text(7).txt` confirms **10/10 each**

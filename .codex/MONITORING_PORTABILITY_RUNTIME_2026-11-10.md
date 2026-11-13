@@ -110,3 +110,7 @@ concurrency scaling or registration variability result.
 
 **PR #3 stays Draft/unmerged.** Other modules' runtime
 behavior remains outside the approved Monitoring scope.
+
+## New evidence supersedes prior Shared failure
+
+Owner reran GCC Shared and Clang Shared after the `$ORIGIN` RUNPATH fix: **11/11 PASS in each**, including the external installed package consumer. Previously GCC/Clang Static both passed 11/11. Dirty CPM cache warning persists but does not block these CTests. See [complete evidence and resource results](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md). Prior Shared failure descriptions above are historical only.
