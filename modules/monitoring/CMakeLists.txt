@@ -56,4 +56,10 @@ if(VEX_BUILD_MONITORING_BENCHMARK)
             ${PROJECT_SOURCE_DIR}/tools/bench_monitoring_load.cpp)
         target_link_libraries(vex_monitoring_load_benchmark PRIVATE Vex::monitoring)
     endif()
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        add_executable(vex_monitoring_lifetime_benchmark
+            ${PROJECT_SOURCE_DIR}/tools/bench_monitoring_lifetime.cpp)
+        target_link_libraries(vex_monitoring_lifetime_benchmark
+            PRIVATE Vex::monitoring)
+    endif()
 endif()
