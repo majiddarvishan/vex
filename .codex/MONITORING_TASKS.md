@@ -1,3 +1,20 @@
+## Most recent: 2026-11-13 controlled Counter and RSS verification
+
+Owner-built `--controls` mode emitted all **60/60 expected samples**.
+Peak RSS is consistent with current RSS in **60/60**, resolving the
+previous 32/33 inconsistent `getrusage` fields. At eight threads,
+Counter-per-worker Vex throughput is **223.97M ops/s**, one shared
+Counter **8.73M ops/s**; direct Prometheus reproduces the same effect.
+**MON-OPEN-06's targeted workload/measurement validation is complete
+for the tested cases**, but true allocation-call-site profiling and
+matched old/new 1000-series regression verification remain additional
+unmeasured research. No production hot-path change is indicated.
+
+[Full analysis](MONITORING_LOAD_CONTROLS_2026-11-13.md) ·
+[Raw CSV](benchmarks/2026-11-13-monitoring-load-controls-3.csv).
+
+---
+
 ## Follow-up tool improvement after owner results (not yet built)
 
 The user-supplied load report revealed a hot shared Counter throughput drop and invalid `peak_rss_kib` in 32/33 records. An opt-in `--controls` load mode adds direct Prometheus shared Counter and per-thread sharded Counter comparisons (Vex/raw) while preserving the original 34-line output when omitted. Peak reporting now derives from Linux `VmHWM` and returns -1 for inconsistent values. **No owner-run verification yet for this newest benchmark code.** See [MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md).
@@ -53,7 +70,7 @@ an isolated PIC dependency strategy were subsequently committed;
 | ID | Priority | Work | Acceptance gate |
 |---|---|---|---|
 | MON-OPEN-05 | P2 | **Portability/package gate PASS: GCC/Clang × Static/Shared, 11/11 each, external consumer PASS.** Shared RUNPATH fixed. `CPM` cache dirty warning persists; optional clang-tidy NOT RUN. | If comprehensive static analysis is mandatory, run targeted clang-tidy; do not reopen the passed 4-mode packaging matrix without new evidence |
-| MON-OPEN-06 | P2 | **Owner evidence archived:** 180 controlled and 33 resource samples; measured hot shared Counter contention and invalid peak RSS in 32/33 prior records. **Benchmark diagnostic enhancement committed, NOT YET TESTED:** Linux VmHWM consistency with invalid=-1, opt-in raw/shared and Vex/raw per-thread-sharded Counter control. | Run `./tools/benchmark_monitoring_load.sh 3 --controls > build/monitoring-load-controls.csv` (61 lines expected), analyze controls and validated peak RSS. Optional heaptrack and historical same-harness A/B remain future/owner-optional |
+| MON-OPEN-06 | P2 | **New raw/sharded controls VERIFIED:** owner compiled and ran 61-line CSV (60 records), all 60/60 peak RSS >= current RSS. Managed and raw shared/sharded Counter throughput nearly matches; hot shared Counter contention observed in both, no Vex-specific increment-path bug shown. | Measured workload characterization completed. Deeper allocation-site/retained-memory profiling (optional heaptrack) and historic same-harness A/B for 1000-series regression remain unverified; keep as follow-up, do not infer absence of memory leak |
 | MON-OPEN-07 | Process | Final owner code review and release/merge decision | Freeze reviewed SHA, resolve PR comments, preserve stacked foundation dependency, require explicit owner authorization before merge |
 
 ## Evidence and boundaries

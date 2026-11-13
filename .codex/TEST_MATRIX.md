@@ -1,3 +1,22 @@
+## New owner-controlled Counter comparison and peak RSS — 2026-11-13
+
+Opt-in `benchmark_monitoring_load.sh 3 --controls` **BUILD/RUN PASS**,
+CSV **61 lines / 60 records**. Compared Vex-managed/Prometheus-raw
+shared versus per-thread sharded Counters; direct underlying
+Counter::Increment path used for both. Strong shared Counter
+contention in both libraries; Vex sharded 8 threads **223.97M**
+vs shared **8.73M ops/s** (medians, N=3).
+`peak_rss_kib >= rss_kib` **60/60** records after Linux VmHWM
+change. Resource checks do not establish leak freedom or allocation
+site counts. Concurrent Collect p95 **774.616µs**, HTTP p95
+**187.720µs**. [Report](MONITORING_LOAD_CONTROLS_2026-11-13.md).
+
+Previous GCC/Clang Static/Shared matrix **11/11 each PASS**,
+full Monitoring tests 10/10 ×4, stress 900/900, foundation 13/13
+remain accepted. Optional clang-tidy not run.
+
+---
+
 ## New optional raw/sharded Counter load control — acceptance pending
 
 The earlier owner-run load CSV (33 samples) is archived and fully analyzed. 32/33 `peak_rss_kib` rows were internally inconsistent. The benchmark source has since been adjusted to use Linux `VmHWM` and invalidate impossible peaks, and to add a raw/sharded Counter contention control behind `--controls`. **New code NOT YET compiled or run**. Original 34-line default format is unchanged; `--controls` emits 61 lines with 3 rounds. Test only the new tool; existing full sanitizer/stress suites already passed for the production Monitoring source.

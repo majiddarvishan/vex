@@ -174,3 +174,15 @@ Compiler/linkage and installed consumer matrix: **4/4 PASS, 11/11 CTests each**.
 ## Benchmark follow-up: optional raw/sharded update controls
 
 The owner-run previous load CSV showed single hot Counter throughput falling as writer threads increased and peak RSS inconsistent in 32/33 rows. A benchmark-only, **unverified** fix changes peak to Linux `VmHWM` (flags impossible values as -1) and adds `--controls` (raw hot Counter and Vex/raw sharded Counter variants). Old `benchmark_monitoring_load.sh 3` still produces 34 lines; new `benchmark_monitoring_load.sh 3 --controls` expects **61 lines**. See [MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md) for prior raw data and follow-up methodology.
+
+## Latest opt-in Counter attribution and VmHWM results — 2026-11-13
+
+The `--controls` benchmark built and ran on owner Linux/GCC,
+61 CSV lines with 60 samples. Shared-vs-sharded Counter
+control matches direct Prometheus behavior; after reading
+peak RSS via `VmHWM`, **60/60** rows satisfy
+peak RSS >= current RSS, fixing prior contradictory measurements.
+No additional Vex runtime hot-path fix is indicated by this
+microbenchmark. Allocation call-site and long-duration memory
+profiling remain unmeasured; none of the measurements establishes
+absence of leaks. [Full report](MONITORING_LOAD_CONTROLS_2026-11-13.md).

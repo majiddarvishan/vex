@@ -72,3 +72,15 @@ The old invocation `benchmark_monitoring_load.sh 3` is preserved and still emits
 For memory integrity, Linux peak RSS is now read via `VmHWM` in the same `/proc/self/status` accounting family as `VmRSS`, instead of comparing `getrusage` to `VmRSS`. If a peak still falls below current RSS, it is emitted as **-1 (invalid/unavailable)**, not as a plausible value. This does not guarantee transient memory peaks were captured and does not substitute for heap profiling.
 
 **No full Vex build or benchmark run has occurred for this latest tool change.** Previous owner results above remain historical observations; do not close MON-OPEN-06 until a fresh controlled-load output is inspected.
+
+## 2026-11-13 new owner run: raw/shared/sharded controls and VmHWM PASS
+
+The earlier benchmark peak inconsistency (32/33 rows) is historical.
+Owner recompiled and executed `--controls`, producing all **60**
+expected data records. **0/60** current RSS/peak RSS contradictions.
+Direct Prometheus raw Counters exhibit the same shared-hot-series
+contention as Vex-created Counters; per-thread sharding improves
+throughput in this synthetic workload, with nontrivial cardinality
+semantics. Updated Collect p95 median **774.616µs**, loopback HTTP
+p95 median **187.720µs**. Raw CSV and limitations:
+[MONITORING_LOAD_CONTROLS_2026-11-13.md](MONITORING_LOAD_CONTROLS_2026-11-13.md).
