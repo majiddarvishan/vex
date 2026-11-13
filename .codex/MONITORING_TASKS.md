@@ -1,3 +1,9 @@
+## MON-OPEN-06 five-minute soak — 2026-11-14
+
+New time-bounded Monitoring synthetic soak tool (Managed/Raw, 300s default, phase 255→0, quota/weak-owner assertions, unique CSV/log) and [report](MONITORING_MEMORY_SOAK_2026-11-14.md) prepared. **Build, 5s smoke and 300s runs NOT RUN; five-minute subgate OPEN.** Existing short lifetime PASS evidence remains separate; no leak-free claim. No runtime code change.
+
+---
+
 ## 2026-11-13 owner sweep-aligned Lifetime check: PASS in measured scope
 
 `8 509 managed` completed **4072/4072 Registry expirations**

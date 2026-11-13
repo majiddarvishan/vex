@@ -1,3 +1,17 @@
+## MON-OPEN-06 300s soak — 2026-11-14
+
+| Gate | Evidence |
+|---|---|
+| Offline Monitoring Release build | **NOT RUN** |
+| 5-second Managed and Raw smoke | **NOT RUN** |
+| Managed 300-second phase-aligned soak | **NOT RUN** |
+| Raw 300-second independent control | **NOT RUN** |
+| RSS/heap second-half trend assessment | **BLOCKED pending CSV** |
+
+Tool and run instructions: [MONITORING_MEMORY_SOAK_2026-11-14.md](MONITORING_MEMORY_SOAK_2026-11-14.md). Earlier 8×509/8×512 PASS does not replace the new 300-second test.
+
+---
+
 ## Owner sweep-aligned weak-owner reclamation — 2026-11-13
 
 `benchmark_monitoring_lifetime.sh 8 509 managed` **built and

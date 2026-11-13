@@ -1,3 +1,13 @@
+# VEX handoff — 2026-11-14 soak tool added
+
+- Repository majiddarvishan/vex; ONLY branch feature/monitoring-correctness-tests, Draft PR #3, base feature/cmake-ctest-foundation; do not merge or change Draft/base.
+- Current: optional `tools/benchmark_monitoring_soak.sh` with Managed/Raw synthetic Registry churn, 300s default, time-bounded and phase-aligned pre/post-sweep samples; unique CSV/log, quota/expiry checks. **Build/Smoke/300s NOT RUN.**
+- Owner next: run `bash -n tools/benchmark_monitoring_soak.sh`, then `./tools/benchmark_monitoring_soak.sh 5 managed 1 1 2000`, `./tools/benchmark_monitoring_soak.sh 5 raw 1 1 2000`, then each mode at 300 10 30 2000. Send CSV and log pairs. If offline CMake dependency unavailable, mark BLOCKED; do not install packages.
+- Agent next: validate CSV phase/expiry/quota, compare RSS/heap over post-warmup and second half, profile only if sustained unexplained growth, update `.codex`. No merge.
+- Detailed [soak report](MONITORING_MEMORY_SOAK_2026-11-14.md). User can simply say 'ادامه VEX' in new chat; read this handoff and current GitHub HEAD first.
+
+---
+
 # Vex Monitoring handoff — sweep-aligned lifetime evidence received
 
 **Branch:** `feature/monitoring-correctness-tests`, [Draft PR #3](https://github.com/majiddarvishan/vex/pull/3)
