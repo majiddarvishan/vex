@@ -1,13 +1,22 @@
-# Vex Monitoring handoff: four-mode packaging PASS, resource diagnostics pending
+# Current Vex Monitoring handoff — portability verified; optional Counter controls pending
 
-Branch `feature/monitoring-correctness-tests`, [Draft PR #3](https://github.com/majiddarvishan/vex/pull/3), foundation base. No merge.
+Branch `feature/monitoring-correctness-tests`, Draft PR #3 stacked on Foundation; no merge.
 
-**Verified:** full Monitoring baseline/threaded/ASan/TSan 10/10 each, stress 900/900, foundation/package 13/13; GCC & Clang × Static & Shared **11/11 each**, including installed-package consumers. `$ORIGIN` RUNPATH resolved previous Shared loader failures.
+Owner-provided evidence: baseline/threaded/ASan/TSan 10/10 each; stress 900/900; full foundation 13/13; GCC/Clang Static/Shared **11/11 each** including installed-package consumers. `$ORIGIN` Shared loader resolution PASS in tested staging layout. Optional clang-tidy NOT RUN; pinned prometheus-cpp CPM cache emits dirty warning.
 
-**New raw CSVs:** [180 controlled rows](benchmarks/2026-11-10-monitoring-controlled-15.csv), [33 concurrent/resource rows](benchmarks/2026-11-10-monitoring-load-3.csv). Latest medians at N=1000: managed many_families **11.061ms** vs raw **9.678ms**; managed many_series **3.237ms** vs raw **0.942ms**. Shared single-Counter throughput 1/4/8 threads **19.74M/2.35M/4.30M ops/s**. Concurrent Collect p95 **759.385µs**, sequential HTTP p95 **193.933µs**.
+Raw data archived: [180 controlled samples](benchmarks/2026-11-10-monitoring-controlled-15.csv), [33 load samples](benchmarks/2026-11-10-monitoring-load-3.csv). Managed 1000-Family registration median 11.061ms and 1000-series median 3.237ms; hot shared Counter median 1/4/8 threads ~19.74M/2.35M/4.30M increments/s. Collect/HTTP p95 759.385µs/193.933µs. Previous `peak_rss` invalid for 32/33 records.
 
-**Important:** peak RSS < current RSS in 32/33 records; unusable. The existing benchmark lacks raw/sharded Counter controls and a matched historical warmup/order pre-vs-post comparison. No allocation count/profile was supplied. MON-OPEN-06 remains open pending minimal benchmark corrections. MON-OPEN-05 package/compiler matrix PASS but optional clang-tidy remains unverified; dirty CPM dependency cache is noted. MON-OPEN-07 is owner-only review/merge.
+**Source changes after owner measurements are benchmark-only and NOT YET owner-tested**: `tools/bench_monitoring_load.cpp` uses Linux `VmHWM` instead of conflicting `getrusage` process peak, flags inconsistencies as unavailable (-1), and offers opt-in raw/managed shared vs per-thread sharded Counter controls. The existing no-options benchmark keeps its former schema and 34-line output. New `--controls` mode expects **61 CSV lines** (1 header + 3 rounds × 20 workloads).
 
-[Complete result and limitations](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md) and [task board](MONITORING_TASKS.md).
+Smallest next owner action:
+```sh
+git pull --ff-only origin feature/monitoring-correctness-tests
+git rev-parse HEAD
+./tools/benchmark_monitoring_load.sh 3 --controls > build/monitoring-load-controls.csv
+wc -l build/monitoring-load-controls.csv
+cat build/monitoring-load-controls.csv
+```
 
-No Monitoring core runtime or unrelated module behavior was changed by data-report commits.
+Do not claim new measurement success without these outputs. MON-OPEN-05 portability/package PASS; optional static analysis still unverified. MON-OPEN-06 OPEN for enhanced controls and memory validity. MON-OPEN-07 owner review/merge decision remains open. Non-Monitoring runtime modules remain frozen.
+
+Full context: [MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md), [MONITORING_TASKS.md](MONITORING_TASKS.md).

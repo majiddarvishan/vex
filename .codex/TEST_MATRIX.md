@@ -1,3 +1,9 @@
+## New optional raw/sharded Counter load control — acceptance pending
+
+The earlier owner-run load CSV (33 samples) is archived and fully analyzed. 32/33 `peak_rss_kib` rows were internally inconsistent. The benchmark source has since been adjusted to use Linux `VmHWM` and invalidate impossible peaks, and to add a raw/sharded Counter contention control behind `--controls`. **New code NOT YET compiled or run**. Original 34-line default format is unchanged; `--controls` emits 61 lines with 3 rounds. Test only the new tool; existing full sanitizer/stress suites already passed for the production Monitoring source.
+
+---
+
 ## Current owner evidence — every GCC/Clang Static/Shared consumer PASS
 
 GCC Static **11/11**, GCC Shared **11/11**, Clang Static **11/11**, Clang Shared **11/11** (including package consumer). Shared RUNPATH issue resolved in the tested staging layout. Previous full 10/10×4, 900/900, 13/13 remain PASS. Controlled CSV 181 lines; resource CSV 34 lines. Peak RSS inconsistent in 32/33 records; cannot use that field. Optional clang-tidy NOT RUN. Complete [report](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md).

@@ -1,3 +1,9 @@
+## Follow-up tool improvement after owner results (not yet built)
+
+The user-supplied load report revealed a hot shared Counter throughput drop and invalid `peak_rss_kib` in 32/33 records. An opt-in `--controls` load mode adds direct Prometheus shared Counter and per-thread sharded Counter comparisons (Vex/raw) while preserving the original 34-line output when omitted. Peak reporting now derives from Linux `VmHWM` and returns -1 for inconsistent values. **No owner-run verification yet for this newest benchmark code.** See [MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md).
+
+---
+
 ## Update: four-mode package acceptance PASS; benchmark data received
 
 All GCC/Clang static/shared consumers now PASS 11/11 each. Controlled 180 and load 33 raw samples are archived; shared Counter contention and invalid peak RSS identified. [Full result](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md). Optional clang-tidy not run; MON-OPEN-06 targeted diagnostics remain open.
@@ -47,7 +53,7 @@ an isolated PIC dependency strategy were subsequently committed;
 | ID | Priority | Work | Acceptance gate |
 |---|---|---|---|
 | MON-OPEN-05 | P2 | **Portability/package gate PASS: GCC/Clang × Static/Shared, 11/11 each, external consumer PASS.** Shared RUNPATH fixed. `CPM` cache dirty warning persists; optional clang-tidy NOT RUN. | If comprehensive static analysis is mandatory, run targeted clang-tidy; do not reopen the passed 4-mode packaging matrix without new evidence |
-| MON-OPEN-06 | P2 | **Measured:** 180 controlled samples + 33 load/resource samples archived. 1000-Family median 11.061ms; 1000-series one-Family median 3.237ms. Shared Counter 1/4/8-thread throughput ~19.74M/2.35M/4.30M ops/s. **Peak RSS invalid in 32/33 rows.** | Fix peak RSS reporting; compare raw shared and independently sharded Counter controls; optional heaptrack; matched pre/post controlled runs to assess suspected one-Family regression |
+| MON-OPEN-06 | P2 | **Owner evidence archived:** 180 controlled and 33 resource samples; measured hot shared Counter contention and invalid peak RSS in 32/33 prior records. **Benchmark diagnostic enhancement committed, NOT YET TESTED:** Linux VmHWM consistency with invalid=-1, opt-in raw/shared and Vex/raw per-thread-sharded Counter control. | Run `./tools/benchmark_monitoring_load.sh 3 --controls > build/monitoring-load-controls.csv` (61 lines expected), analyze controls and validated peak RSS. Optional heaptrack and historical same-harness A/B remain future/owner-optional |
 | MON-OPEN-07 | Process | Final owner code review and release/merge decision | Freeze reviewed SHA, resolve PR comments, preserve stacked foundation dependency, require explicit owner authorization before merge |
 
 ## Evidence and boundaries

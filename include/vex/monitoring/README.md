@@ -146,3 +146,13 @@ the loader to find adjacent third-party libraries without setting
 owner's GCC/Clang Shared consumer load failure; **a fresh installed
 consumer run is still required**. Details are documented in
 [the package report](../../../.codex/MONITORING_PORTABILITY_RUNTIME_2026-11-10.md).
+
+### Optional Counter contention attribution and peak memory integrity
+
+After analyzing 15-run controlled and 3-run multi-thread datasets, a further opt-in Linux Release benchmark mode was added:
+
+```sh
+./tools/benchmark_monitoring_load.sh 3 --controls > build/monitoring-load-controls.csv
+```
+
+It compares raw Prometheus and Vex-managed shared Counter updates with raw/managed per-thread sharded Counter updates. The existing default run remains available unchanged. The new control mode adds 9 records per repetition: **61 CSV lines** for 3 rounds versus **34** for the old default. Peak RSS now reads Linux `VmHWM`, returning `-1` for contradictory measurements rather than reporting a smaller peak than current RSS. Neither new control data nor validated peak readings have yet been obtained on the owner host.

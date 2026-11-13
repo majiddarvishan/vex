@@ -60,3 +60,15 @@ RSS snapshots across phases range **5,512–7,992 KiB** in the single benchmark 
 **MON-OPEN-06:** data collection and basic performance/resource characterization complete, but still OPEN for peak-RSS instrumentation correction, shared-vs-sharded and raw Counter control, optional allocation profiling (only if heaptrack already installed), and a matched old/new methodology if regression attribution is required.
 
 **MON-OPEN-07:** owner-only code review/merge decision; PR #3 stays Draft/unmerged. Logger, ObjectPool, ThreadPool behavior remains unchanged.
+
+## Subsequent benchmark diagnostic enhancement — not yet owner tested
+
+To test whether the measured throughput collapse on one shared Counter originates from intrinsic prometheus-cpp cache-line contention rather than Vex wrapper overhead, an **optional**, opt-in mode was added:
+```sh
+./tools/benchmark_monitoring_load.sh 3 --controls > build/monitoring-load-controls.csv
+```
+The old invocation `benchmark_monitoring_load.sh 3` is preserved and still emits 34 CSV lines. The new mode emits **61 lines**: 3 runs × (3 thread counts × [managed/raw registration, existing managed shared update, new raw shared update, managed sharded update, raw sharded update] + Collect + HTTP) = 60 records plus header. The new controls use the same 25,000 increments/thread, distinguish hot shared vs independent writer-local series, check final counts, and keep registration/counter construction outside the timed update region. The results are **not comparable** to the previous 33-row CSV as an identical workload mix because additional cases change execution order and process state.
+
+For memory integrity, Linux peak RSS is now read via `VmHWM` in the same `/proc/self/status` accounting family as `VmRSS`, instead of comparing `getrusage` to `VmRSS`. If a peak still falls below current RSS, it is emitted as **-1 (invalid/unavailable)**, not as a plausible value. This does not guarantee transient memory peaks were captured and does not substitute for heap profiling.
+
+**No full Vex build or benchmark run has occurred for this latest tool change.** Previous owner results above remain historical observations; do not close MON-OPEN-06 until a fresh controlled-load output is inspected.

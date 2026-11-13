@@ -170,3 +170,7 @@ Details:
 ## New full owner evidence — 2026-11-10
 
 Compiler/linkage and installed consumer matrix: **4/4 PASS, 11/11 CTests each**. Benchmarks: 180 controlled samples and 33 load samples, raw data archived. Counter contention observed, 1000-series regression remains uncertain without same-harness pre/post A/B; `peak_rss_kib` is invalid in 32/33 rows. Optional clang-tidy/heaptrack not run. See [analysis](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md) for actual observations and follow-ups; historical “pending” language above is superseded where evidence is now available.
+
+## Benchmark follow-up: optional raw/sharded update controls
+
+The owner-run previous load CSV showed single hot Counter throughput falling as writer threads increased and peak RSS inconsistent in 32/33 rows. A benchmark-only, **unverified** fix changes peak to Linux `VmHWM` (flags impossible values as -1) and adds `--controls` (raw hot Counter and Vex/raw sharded Counter variants). Old `benchmark_monitoring_load.sh 3` still produces 34 lines; new `benchmark_monitoring_load.sh 3 --controls` expects **61 lines**. See [MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md) for prior raw data and follow-up methodology.
