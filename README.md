@@ -1,117 +1,87 @@
-<!-- ![Vex Logo](assets/logo.png) -->
-<p align="center">
-  <img src="assets/logo.png" alt="Vex Logo" width="180"/>
-</p>
+# Vex — C++17 utility modules
 
-# Vex — Fast. Simple. Professional.
+Vex is an evolving modular C++17 library. **Source-level correctness and
+concurrency issues are still under review.** See [the audit](.codex/AUDIT.md)
+and [owner-approved priorities](.codex/DECISIONS.md) before production use.
 
-A modern C++ utility library focused on **performance**, **simplicity**, and **professional-grade tooling**.
+## Available build targets
 
-**Vex** is a modern C++ utility library.
-It provides **thread-safe logging, thread pool management, and networking modules** out of the box.
-Vex is modular, so you can enable only the features you need.
+| Flag | CMake target | Notes |
+|---|---|---|
+| `BUILD_THREADPOOL` (ON) | `Vex::thread_pool` | Header-only; worker lifecycle risks tracked |
+| `BUILD_OBJECT_POOL` (ON) | `Vex::object_pool` | Header-only, presently requires prometheus-cpp |
+| `BUILD_MONITORING` (ON) | `Vex::monitoring` | Compiled; prometheus-cpp core + pull |
+| `BUILD_LOGGER` (OFF) | unavailable | Explicitly rejected if ON until missing dependencies are resolved |
 
-## Features
-- 🚀 Zero-overhead
-- ⚡ High-performance
-- 🛠 Minimal, header-only
+Networking is **not implemented** in this repository snapshot. SegmentedLogger
+is tracked as experimental/unintegrated. The older README described examples
+and `vex/vex.h` that do not exist.
 
-- **Logger**: Thread-safe singleton logging system with `Info`, `Warning`, and `Error` levels.
-- **ThreadPool**: Flexible thread pool for parallel task execution.
-- **Networking**: TCP server and client for asynchronous communication.
-- **Modular CMake**: Select which modules to build: Logger, ThreadPool, Networking.
-- **Expandable**: Easily add new modules (database, serialization, etc.) without breaking existing code.
+## Build and test with no network access
 
-## Directory Structure
+Use `./tools/verify_foundation.sh thread` for the repeatable offline
+foundation checks, or `./tools/verify_foundation.sh full` when
+Prometheus dependencies are available. These run CTest, including the
+external installed-package consumer. The equivalent commands follow.
 
-```bash
-vex/
-├── CMakeLists.txt
-├── include/vex/ # Public headers
-├── src/ # Source files
-├── examples/ # Usage examples
-└── tests/ # Unit tests
+ThreadPool-only build (does not need prometheus-cpp):
+
+```sh
+cmake -S . -B build/thread-only -DBUILD_EXAMPLES=OFF \
+  -DBUILD_TESTING=ON -DBUILD_THREADPOOL=ON \
+  -DBUILD_OBJECT_POOL=OFF -DBUILD_MONITORING=OFF \
+  -DVEX_ALLOW_DEPENDENCY_FETCH=OFF
+cmake --build build/thread-only
+ctest --test-dir build/thread-only --output-on-failure
 ```
 
-## Build Instructions
+CTest registers a ThreadPool smoke test and a **separate installed-package
+consumer** that builds against exported `Vex::` targets.
 
-1. **Clone the repository**
+For Monitoring or ObjectPool, install `prometheus-cpp` 1.3.x with `core`
+and `pull` CMake targets, or leave `VEX_ALLOW_DEPENDENCY_FETCH=ON` (default)
+to allow CPM to obtain version 1.3.0. Set `CMAKE_PREFIX_PATH` when
+dependencies are not in a system search path. Build-only dependencies may
+also require the dependency's own third-party libraries.
 
-```bash
-git clone <your-repo-url> vex
-cd vex
+```sh
+cmake -S . -B build/full -DBUILD_TESTING=ON -DBUILD_EXAMPLES=ON
+cmake --build build/full --parallel
+ctest --test-dir build/full --output-on-failure
 ```
 
-2. **Configure the build**
+`BUILD_EXAMPLES` is ON by default. Examples are built **only** for enabled
+modules; an example never forces a disabled module on.
+`ENABLE_METRICS_THREADING` is OFF by default, maps to the
+`METRICS_MULTI_THREADED` compile definition, and **does not mean**
+concurrent registry/reset handling is validated yet.
 
-- Build all modules (default):
+## Install and use from another CMake project
 
-```bash
-cmake -S . -B build
+```sh
+cmake --install build/thread-only --prefix /tmp/vex-prefix
+cmake -S tests/package_consumer -B build/consumer \
+  -DCMAKE_PREFIX_PATH=/tmp/vex-prefix
+cmake --build build/consumer
 ```
 
-- Build specific modules only:
+For an external project:
 
-```bash
-cmake -S . -B build \
-  -DBUILD_LOGGER=ON \
-  -DBUILD_THREADPOOL=OFF \
-  -DBUILD_NETWORKING=ON
+```cmake
+find_package(Vex CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE Vex::thread_pool)
 ```
 
-3. **Build**
+Installable targets export their transitive dependencies; an installed
+Monitoring/ObjectPool package additionally requires a discoverable
+`prometheus-cpp` package. More build cases and validation limitations are
+documented in [the test matrix](.codex/TEST_MATRIX.md).
 
-```bash
-cmake --build build
-```
+## Development
 
-4. **Run examples**
+Read [AGENTS.md](AGENTS.md) and [.codex/README.md](.codex/README.md).
+Initial CTest smoke tests are **not** a substitute for sanitizer, stress,
+benchmark or comprehensive Monitoring tests. Other implementation fixes
+remain deferred until explicitly approved by the project owner.
 
-```bash
-./build/examples/example_logger
-./build/examples/example_network
-```
-
-## Install (Optional)
-
-To install headers and library system-wide:
-
-```bash
-cmake --install build --prefix /usr/local
-```
-
-This will install:
-
-- libvex.a → /usr/local/lib
-- include/vex/* → /usr/local/include/vex
-
-## Quick Start
-
-```cpp
-#include "vex/vex.h"
-
-int main() {
-#ifdef BUILD_LOGGER
-    auto &logger = ::vexLogger::instance();
-    logger.log(::vexLogLevel::Info, "Vex Logger is working!");
-#endif
-
-#ifdef BUILD_THREADPOOL
-    ::vexThreadPool pool(4);
-    pool.enqueue([]{ /* your task */ });
-#endif
-
-#ifdef BUILD_NETWORKING
-    ::vexTCPClient client("127.0.0.1", 8080);
-    client.connectToServer();
-#endif
-
-    return 0;
-}
-```
-
-## Dependencies
-
-- C++17 or newer
-- POSIX-compliant system (Linux/macOS) for Networking module (Windows requires Winsock adjustments)
-- CMake >= 3.16
+License: [MIT](LICENSE).

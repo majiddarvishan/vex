@@ -45,17 +45,20 @@ namespace vex
 
 } // namespace vex
 
-/// Macro for compile-time validated metric creation
-/// Note: These macros perform compile-time validation of metric names
-#define SAFE_CREATE_COUNTER(registry, name, help, ...)                         \
-    (detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
-     vex::MetricsManager::CreateCounter(registry, name, help, ##__VA_ARGS__))
+/// Macro for compile-time validated metric creation.
+/// The required first variadic argument is the metric HELP text, followed by
+/// optional labels/buckets; this keeps empty optional tails C++17-conforming
+/// without the non-standard GCC ", ##__VA_ARGS__" comma-swallowing extension.
 
-#define SAFE_CREATE_GAUGE(registry, name, help, ...)                           \
-    (detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
-     vex::MetricsManager::CreateGauge(registry, name, help, ##__VA_ARGS__))
+#define SAFE_CREATE_COUNTER(registry, name, ...)                         \
+    (static_cast<void>(vex::detail::MetricNameChecker<vex::detail::ValidateName(name)> {}),            \
+     vex::MetricsManager::CreateCounter(registry, name, __VA_ARGS__))
 
-#define SAFE_CREATE_HISTOGRAM(registry, name, help, ...)                       \
-    (detail::MetricNameChecker<vex::detail::ValidateName(name)> {},            \
-     vex::MetricsManager::CreateHistogram(registry, name, help, ##__VA_ARGS__) \
+#define SAFE_CREATE_GAUGE(registry, name, ...)                           \
+    (static_cast<void>(vex::detail::MetricNameChecker<vex::detail::ValidateName(name)> {}),            \
+     vex::MetricsManager::CreateGauge(registry, name, __VA_ARGS__))
+
+#define SAFE_CREATE_HISTOGRAM(registry, name, ...)                       \
+    (static_cast<void>(vex::detail::MetricNameChecker<vex::detail::ValidateName(name)> {}),            \
+     vex::MetricsManager::CreateHistogram(registry, name, __VA_ARGS__) \
     )

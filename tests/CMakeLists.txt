@@ -1,49 +1,103 @@
-# -----------------------------
-# Logger tests
-# -----------------------------
-# if(BUILD_LOGGER)
-#     add_executable(test_logger test_logger.cpp)
-#     target_link_libraries(test_logger PRIVATE vex)
-#     add_test(NAME LoggerTest COMMAND test_logger)
-# endif()
+# Executable smoke tests with real CTest registration and no GTest dependency.
+# Legacy pool_tsan_test.cpp and prometheus_metrics_cpp/ are intentionally not
+# built: they refer to removed headers/targets and are tracked as VEX-018.
+if(BUILD_THREADPOOL)
+    add_executable(vex_thread_pool_smoke thread_pool_smoke.cpp)
+    target_link_libraries(vex_thread_pool_smoke PRIVATE Vex::thread_pool)
+    add_test(NAME vex.thread_pool.smoke COMMAND vex_thread_pool_smoke)
+endif()
 
-# -----------------------------
-# Networking tests
-# -----------------------------
-# You can add networking tests similarly
-# if(BUILD_NETWORKING)
-#     add_executable(test_network test_network.cpp)
-#     target_link_libraries(test_network PRIVATE vex)
-#     add_test(NAME NetworkTest COMMAND test_network)
-# endif()
-
-# -----------------------------
-# ObjectPool test
-# -----------------------------
 if(BUILD_OBJECT_POOL)
-    # add_compile_options(-O1 -g -fsanitize=thread,address -fno-omit-frame-pointer)
-    add_compile_options(-O1 -g -fsanitize=thread -fno-omit-frame-pointer)
-    add_link_options(-fsanitize=thread)
+    add_executable(vex_object_pool_smoke object_pool_smoke.cpp)
+    target_link_libraries(vex_object_pool_smoke PRIVATE Vex::object_pool)
+    add_test(NAME vex.object_pool.smoke COMMAND vex_object_pool_smoke)
+endif()
 
-    add_executable(pool_tsan_test pool_tsan_test.cpp)
+if(BUILD_MONITORING)
+    add_executable(vex_monitoring_smoke monitoring_smoke.cpp)
+    target_link_libraries(vex_monitoring_smoke PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.smoke COMMAND vex_monitoring_smoke)
 
-    option(ENABLE_PROMETHEUS_METRICS "Enable Prometheus metrics" ON)
-
-    if(ENABLE_PROMETHEUS_METRICS)
-        message(STATUS "ENABLE_PROMETHEUS_METRICS is ON - adding definition")
-        target_compile_definitions(pool_tsan_test PRIVATE ENABLE_PROMETHEUS_METRICS)
-        target_link_libraries(pool_tsan_test
-            PRIVATE
-            vex
-            prometheus-cpp::pull
-            pthread
-        )
-    else()
-        message(STATUS "ENABLE_PROMETHEUS_METRICS is OFF")
-        target_link_libraries(pool_tsan_test
-            PRIVATE
-            vex
-            pthread
-        )
+    add_executable(vex_monitoring_contract monitoring_contract.cpp)
+    target_link_libraries(vex_monitoring_contract PRIVATE Vex::monitoring)
+    # A prior Clang 20 TSan run exposed -Wunused-value in SAFE_* macros.
+    # Fail this regression at compile time with both GCC and Clang.
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(vex_monitoring_contract PRIVATE
+            -Werror=unused-value -Werror=pedantic)
     endif()
+    add_test(NAME vex.monitoring.contract COMMAND vex_monitoring_contract)
+
+    add_executable(vex_monitoring_decorators_contract
+        monitoring_decorators_contract.cpp)
+    target_link_libraries(vex_monitoring_decorators_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.decorators
+        COMMAND vex_monitoring_decorators_contract)
+
+    add_executable(vex_monitoring_raii_contract monitoring_raii_contract.cpp)
+    target_link_libraries(vex_monitoring_raii_contract PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.raii COMMAND vex_monitoring_raii_contract)
+
+    add_executable(vex_monitoring_validation_contract
+        monitoring_validation_contract.cpp)
+    target_link_libraries(vex_monitoring_validation_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.validation
+        COMMAND vex_monitoring_validation_contract)
+
+    add_executable(vex_monitoring_lifecycle_contract
+        monitoring_lifecycle_contract.cpp)
+    target_link_libraries(vex_monitoring_lifecycle_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.lifecycle
+        COMMAND vex_monitoring_lifecycle_contract)
+
+    add_executable(vex_monitoring_registration_contract
+        monitoring_registration_contract.cpp)
+    target_link_libraries(vex_monitoring_registration_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.registration
+        COMMAND vex_monitoring_registration_contract)
+
+    add_executable(vex_monitoring_legacy_contract
+        monitoring_legacy_contract.cpp)
+    target_link_libraries(vex_monitoring_legacy_contract
+        PRIVATE Vex::monitoring)
+    add_test(NAME vex.monitoring.legacy
+        COMMAND vex_monitoring_legacy_contract)
+
+    # Loopback-only HTTP integration with an OS-assigned ephemeral port.
+    # No curl, external service or fixed test port is required.
+    if(UNIX)
+        add_executable(vex_monitoring_http_contract
+            monitoring_http_contract.cpp)
+        target_link_libraries(vex_monitoring_http_contract
+            PRIVATE Vex::monitoring)
+        add_test(NAME vex.monitoring.http COMMAND vex_monitoring_http_contract)
+        set_tests_properties(vex.monitoring.http PROPERTIES TIMEOUT 30)
+    endif()
+
+    if(UNIX)
+        find_program(VEX_BASH_EXECUTABLE bash)
+        if(VEX_BASH_EXECUTABLE)
+            add_test(NAME vex.monitoring.compiler-selection
+                COMMAND "${VEX_BASH_EXECUTABLE}"
+                    "${PROJECT_SOURCE_DIR}/tests/compiler_discovery_test.sh"
+            )
+        endif()
+    endif()
+endif()
+
+# Ensure the installed CMake package can be consumed from outside this tree.
+# This test runs only after the normal build, and must not use source includes.
+if(VEX_EXPORT_TARGETS)
+    add_test(NAME vex.package.consumer
+        COMMAND ${CMAKE_COMMAND}
+            "-DVEX_SOURCE_DIR=${PROJECT_SOURCE_DIR}"
+            "-DVEX_BINARY_DIR=${PROJECT_BINARY_DIR}"
+            "-DVEX_GENERATOR=${CMAKE_GENERATOR}"
+            "-DVEX_CONFIG=$<CONFIG>"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/run_package_smoke.cmake"
+    )
 endif()

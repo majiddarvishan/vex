@@ -8,20 +8,17 @@
 #include <prometheus/registry.h>
 
 #include <chrono>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <regex>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include <unordered_map>
 
-#ifdef METRICS_MULTI_THREADED
 #include <mutex>
-#define METRICS_LOCK_GUARD std::lock_guard<std::mutex> lock(mutex_)
-#else
-#define METRICS_LOCK_GUARD
-#endif
 
 namespace vex
 {
@@ -30,10 +27,11 @@ namespace vex
     {
     public:
         /// Initialize the metrics manager. Must be called before any other
-        /// methods. Thread-safe only if compiled with METRICS_MULTI_THREADED.
+        /// methods. Manager control state is synchronized in all builds.
         /// Idempotent (safe to call multiple times).
-        /// @param enable_threading Enable runtime thread safety (only works if
-        /// compiled with METRICS_MULTI_THREADED)
+        /// @param enable_threading Report requested legacy metrics threading
+        /// mode when built with METRICS_MULTI_THREADED. The manager's own
+        /// metadata access is synchronized regardless of this flag.
         /// @return true if initialization succeeded, false if already
         /// initialized
         [[nodiscard]] static bool Init(bool enable_threading = false);
@@ -48,7 +46,9 @@ namespace vex
           GetSubsystemRegistry(const std::string& ns);
 
         /// Reset the metrics manager (primarily for testing).
-        /// Warning: Invalidates all existing metric references.
+        /// Call only when metric users are quiescent. Previously returned raw
+        /// metric references become invalid when their Registry is destroyed;
+        /// caller-owned shared Registries can outlive this manager.
         static void Reset();
 
         /// Register all registries (main + subsystems) with a Prometheus
@@ -128,6 +128,19 @@ namespace vex
           const std::vector<double>& buckets               = {}
         );
 
+        /// Optional cap on series created through CreateCounter/Gauge/
+        /// Histogram, per Registry + family name + metric type.
+        /// 0 means unlimited (the default). Existing series and duplicate
+        /// label sets do not consume additional quota.
+        /// Raw prometheus-cpp Family::Add calls bypass this cap.
+        static void SetMaxSeriesPerMetric(std::size_t maximum);
+        [[nodiscard]] static std::size_t GetMaxSeriesPerMetric();
+
+        /// Optional cap on the number of subsystem registries created by
+        /// this manager. 0 = unlimited (default). Reuse does not count twice.
+        static void SetMaxSubsystemRegistries(std::size_t maximum);
+        [[nodiscard]] static std::size_t GetMaxSubsystemRegistries();
+
         /// Check if the manager has been initialized.
         [[nodiscard]] static bool IsInitialized();
 
@@ -136,9 +149,6 @@ namespace vex
         [[nodiscard]] static double GetUptimeSeconds();
 
     private:
-        /// Ensure the manager has been initialized, throw if not.
-        static void EnsureInitialized();
-
         /// Validate metric name according to Prometheus naming conventions.
         /// Must match [a-zA-Z_:][a-zA-Z0-9_:]* and not start with __
         static void ValidateMetricName(const std::string& name);
@@ -150,6 +160,61 @@ namespace vex
         /// Validate label value (basic check for printable characters).
         [[nodiscard]] static bool ValidateLabelValue(const std::string& value);
 
+        using Labels = std::map<std::string, std::string>;
+
+        // The Registry identity must be based on shared ownership,
+        // never raw address: allocator reuse after expiration must not
+        // make a new Registry inherit old quotas/HELP/bucket signatures.
+        struct TrackedMetricKey
+        {
+            std::weak_ptr<prometheus::Registry> registry;
+            std::string name;
+            std::string kind;
+        };
+
+        struct TrackedMetricKeyLess
+        {
+            bool operator()(const TrackedMetricKey& lhs,
+                            const TrackedMetricKey& rhs) const
+            {
+                const std::owner_less<
+                  std::weak_ptr<prometheus::Registry>> less{};
+                if (less(lhs.registry, rhs.registry))
+                    return true;
+                if (less(rhs.registry, lhs.registry))
+                    return false;
+                if (lhs.name != rhs.name)
+                    return lhs.name < rhs.name;
+                return lhs.kind < rhs.kind;
+            }
+        };
+
+        struct TrackedMetricSeries
+        {
+            std::string help;
+            std::map<Labels, std::vector<double>> signatures;
+        };
+
+        template <typename Fn>
+        static auto RegisterTracked(
+          const std::shared_ptr<prometheus::Registry>& registry,
+          const std::string& name,
+          const std::string& kind,
+          const std::string& help,
+          const Labels& labels,
+          const std::vector<double>& bucket_signature,
+          Fn&& create
+        ) -> decltype(create());
+
+        inline static std::size_t max_series_per_metric_ = 0;
+        inline static std::size_t max_subsystem_registries_ = 0;
+        // Ordered owner-aware lookup: avoids O(N) name scans for every
+        // registration when a Registry contains many metric families.
+        inline static std::map<
+          TrackedMetricKey, TrackedMetricSeries,
+          TrackedMetricKeyLess> tracked_metric_series_;
+        inline static std::size_t tracked_registration_calls_ = 0;
+
         inline static std::shared_ptr<prometheus::Registry> registry_;
         inline static std::unordered_map<
           std::string, std::shared_ptr<prometheus::Registry>>
@@ -160,9 +225,9 @@ namespace vex
         inline static bool threading_enabled_ = false;
         inline static std::chrono::steady_clock::time_point start_time_ {};
 
-#ifdef METRICS_MULTI_THREADED
+        // Always protect manager metadata; the optional build flag remains
+        // for compatibility with the existing IsThreadingEnabled API.
         inline static std::mutex mutex_;
-#endif
     };
 
 } // namespace vex
