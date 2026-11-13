@@ -1,3 +1,9 @@
+## MON-OPEN-06 300-second memory soak — CLOSED in tested scope (2026-11-14)
+
+**PASS:** Monitoring-only GCC13 Release Build, shell syntax, Managed + Raw 5s smoke; independent Managed + Raw 300s runs with complete CSVs (63 rows each). At 300s each mode completed 599999 churn/expiry checks, ~1999.99 ops/s. Managed 2374 quota checks, phase 255→0 paired actual Sweep, 2371 total actual sweeps by final snapshot; 30→300s and 150→300s same-phase post-Sweep RSS and glibc heap deltas **0 KiB / 0 B**. Managed heap pre→post final Sweep **169008→90352 B** (−78656 B), a repeatable bounded weak-ledger sweep sawtooth; Raw heap remained **81504 B**, RSS **4500 KiB** post-warmup with modeled phases only. All weak Registry checks, peak/current RSS invariants and phase invariants passed. **No persistent growth in this workload; not proof of leak freedom.** No Runtime change/heaptrack justified. Historical PENDING entries below predate the supplied Managed CSV. See [complete final result](MONITORING_MEMORY_SOAK_2026-11-14.md). MON-OPEN-07 remains out of scope and PR #3 remains Draft.
+
+---
+
 ## MON-OPEN-06 owner-run update — 2026-11-14
 
 **PASS:** GCC13 Release Monitoring-only Build, shell check, 5s Managed/Raw smoke (owner transcript). **Raw 300s evidence validated:** 63 rows, elapsed 300.000s, 599999/599999 expired, 1999.994 ops/s; phase 255/0; RSS 4500 KiB and glibc live heap 81504 B stable from 30–300s, including second half. Raw phases are synthetic and bypass manager quotas. **Managed 300s command completed and yielded CSV/log paths, but managed CSV contents were not provided; managed trend/actual Sweep/quota acceptance PENDING.** Do not close 300s subgate or claim leak freedom. Details: [soak report](MONITORING_MEMORY_SOAK_2026-11-14.md). Obtain **only existing managed CSV**, then finish trend/sweep analysis; no rerun is necessary for the current missing-evidence issue.

@@ -1,3 +1,24 @@
+## MON-OPEN-06 FINAL 300s owner-run acceptance — 2026-11-14
+
+| Gate | Outcome / evidence |
+|---|---|
+| Linux GCC13 Monitoring-only Release build and script syntax | **PASS** (owner transcript) |
+| 5s Managed and Raw Smoke | **PASS** (owner transcript) |
+| Independent Managed/Raw 300s completion | **PASS**, final elapsed 300.001 / 300.000 s |
+| Valid independent CSV samples and phase integrity | **PASS**, 63 rows per run, 31 pre/post pairs plus after_reset, 255→0 |
+| Weak-owner expiration | **PASS**, both modes 599999/599999 |
+| Managed quota behavior | **PASS**, 2374 rejection checks |
+| Actual Managed 256-attempt Sweep | **PASS**, source-audited and 2371 cycle count; final 169008→90352 B |
+| RSS / peak RSS consistency | **PASS**, every sample peak >= current RSS |
+| Post-warmup / second-half RSS and glibc heap slopes | **PASS in scope**, 0 KiB and 0 B each mode, same post-phase comparisons |
+| Profiling or Runtime bugfix | **NOT REQUIRED by observed trend**; not a leak-free proof |
+| Full MON-OPEN-06 five-minute scope | **PASS / CLOSED** |
+| MON-OPEN-07 / Merge | **OUT OF SCOPE**, no action |
+
+[Detailed result](MONITORING_MEMORY_SOAK_2026-11-14.md). Older “PENDING managed CSV” and “NOT RUN” sections below are historical snapshots superseded by this result.
+
+---
+
 ## MON-OPEN-06 300s owner-run update — 2026-11-14
 
 | Gate | Result / evidence |

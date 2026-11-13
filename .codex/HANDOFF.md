@@ -1,3 +1,16 @@
+# VEX latest handoff — 2026-11-14 MON-OPEN-06 CLOSED
+
+- Working repo `majiddarvishan/vex`; only `feature/monitoring-correctness-tests`; PR #3 remains Open/Draft and base `feature/cmake-ctest-foundation`. **Never merge, change base or mark Ready without explicit owner approval.**
+- **MON-OPEN-06 300s memory soak: PASS/CLOSED in tested scope.** Owner ran GCC13 Monitoring-only Release build, syntax check, 5s Managed+Raw smoke, 300s Managed+Raw separate processes, and supplied both complete 63-row CSVs. Original test source SHA `63d90c07ae78435f387ece30fac6a43d9f58a90f`; Linux `6.8.0-147-generic`.
+- Managed run `monitoring-soak-managed-enfJiz`: 300.001s, 599999/599999 churn/weak-expiry, 2374 quota checks, 2371 actual 256-registration Sweeps, sample phases 255→0, valid HWM; RSS=5016 KiB and glibc heap after Sweep=90352 B **constant 30–300s**. Final pre/post heap=169008→90352 B (−78656 B).
+- Raw control `monitoring-soak-raw-sbHznA`: 300.000s, 599999/599999 expiry, RSS=4500 KiB and glibc heap=81504 B **constant 30–300s**; Raw does NOT perform manager sweep/quota. Both second-half same-phase trends flat.
+- Interpretation: observed bounded pending-expired-ledger metadata reclaimed by periodic Sweep; **no sustained growth in this workload, not a global no-leak proof**. No heaptrack or Runtime change warranted. No owner rerun required for MON-OPEN-06.
+- Existing prior acceptance: Monitoring 10/10 ×4 baseline/threaded/ASan+UBSan/Clang20 TSan; stress 900/900; Foundation+package 13/13; GCC/Clang Static/Shared portability 11/11 each; selected clang-tidy 5/5 PASS; registration, load and lifetime benchmarks already analyzed.
+- Report: `.codex/MONITORING_MEMORY_SOAK_2026-11-14.md`; task board `.codex/MONITORING_TASKS.md`; matrix `.codex/TEST_MATRIX.md`. Raw per-run CSVs remain on owner's local `build/monitoring-soak-results/`.
+- **Next phase is MON-OPEN-07 owner-controlled final review**; do not start merge/change Draft/base without explicit permission. User may just write «ادامه VEX» in a new chat; verify GitHub branch HEAD and read this Handoff. Earlier partial/pending handoffs below are superseded.
+
+---
+
 # VEX handoff — 2026-11-14 owner 300s soak evidence
 
 - Branch: `feature/monitoring-correctness-tests` ONLY; PR #3 open/Draft; base `feature/cmake-ctest-foundation`; no merge, base, or Draft-state changes.
