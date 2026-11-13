@@ -1,3 +1,22 @@
+## Owner result: clang-tidy static PASS; managed/raw lifetime contrast
+
+Source SHA `34587f820e6384ce06c220a8edc12860711bc8e0`, Linux GCC 13.3 Release and LLVM20
+clang-tidy. **Static: checked 5/5 failed 0** on selected checks;
+five narrow NOLINT exceptions explain deliberate contract choices.
+
+Lifetime (8×512) in separate managed/raw processes: **9 CSV
+lines each, 4096 expiration checks, 8/8 peak/current RSS coherent**.
+Managed glibc `uordblks` 88672→104768 (+16096B), raw
+81136→81136 (+0B); both RSS plateau rounds 2–8.
+The managed runner performs **515 tracked registration attempts**
+per round despite 512 transient Registries, causing measurement
+phase drift relative to the manager's 256-registration weak-key
+sweep. Hypothesis: bounded post-sweep weak entries; **requires
+8×509 aligned experiment**. Not leak/leak-free proof.
+[Detailed report](MONITORING_STATIC_LIFETIME_COMPARISON_2026-11-13.md).
+
+---
+
 ## 2026-11-13 owner lifetime/clang-tidy evidence — managed owner lifetime PASS, static FAIL
 
 Owner's exact prior SHA `6df93958decb1ccc9f68176e0f817af2602e04b9`.

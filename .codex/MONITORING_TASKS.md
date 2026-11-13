@@ -1,3 +1,18 @@
+## Latest owner result — 2026-11-13 static PASS; managed/raw heap difference under audit
+
+LLVM20 clang-tidy warnings-as-errors **PASS checked=5 failed=0**
+on all five Monitoring sources after narrow NOLINT contracts.
+Both managed/raw Lifetime 8×512 runs yielded nine CSV lines,
+4096 expirations and valid peak RSS. Managed glibc live heap
+increased **16,096 B** rounds 1→8; raw stayed unchanged.
+Code audit discovered **515 managed registration attempts per
+512-Registry round**, against a periodic sweep every 256 calls;
+the sampling phase drifts three registrations per round.
+**Hypothesis pending 8×509 sweep-aligned test**, not proven leak.
+See [report](MONITORING_STATIC_LIFETIME_COMPARISON_2026-11-13.md).
+
+---
+
 ## 2026-11-13 owner results: Lifetime 4096/4096; static analysis 5 findings
 
 Owner provided both redirected files. The 8×512 Registry lifetime
@@ -45,8 +60,8 @@ without those files. See
 
 | Task | Priority | Scope | Acceptance/evidence |
 |---|---|---|---|
-| MON-OPEN-05 static-analysis follow-up | P2 | **Owner run FAIL:** clang-tidy 20.1.2, 5 actionable errors across 3/5 files (2 swappable constructor arguments, 1 shared_ptr-by-value, 2 intentional cleanup catches). Five scoped NOLINTNEXTLINE explanations committed after log. | Rerun focused clang-tidy, require `MONITORING_STATIC_PASS checked=5 failed=0`. If warnings persist, fix only the relevant Monitoring contract; no blanket disable. |
-| MON-OPEN-06 memory/retention follow-up | P2 | **Owner-run lifetime PASS for 4096 expired Registry checks and 8/8 consistent HWM/RSS.** RSS plateau 4,940 KiB rounds 2–8, but glibc uordblks increased **88,672→104,784 B** (+16,112 B) from round 1 to 8; cause not attributed. Added optional isolated raw Prometheus comparison, not yet run. | Rerun 8×512 managed and raw in fresh processes, compare allocator trends; consider preinstalled heaptrack if growth persists. No leak-freedom assertion. |
+| MON-OPEN-05 static-analysis follow-up | P2 | **PASS:** Ubuntu LLVM clang-tidy 20.1.2 with selected `clang-analyzer-*`, `bugprone-*`, `performance-*` warnings-as-errors; `MONITORING_STATIC_PASS checked=5 failed=0`. Existing five narrow documented NOLINT exceptions retained; no unsuppressed finding. | Targeted static analysis gate closed for selected checks. No global clean bill for all third-party headers or all lint configurations. |
+| MON-OPEN-06 memory/retention follow-up | P2 | **Managed/raw Lifetime evidence obtained** (8×512 Registry expirations each): managed `uordblks` 88672→104768 B (+16096 B), raw constant at 81136 B; both RSS plateau rounds 2–8. Source audit: 515 tracked attempts/round vs sweep every 256 shifts snapshot phase 3 attempts/round; consistent with bounded unswept weak keys, NOT proven. | Run one `8 509 managed` sweep-aligned sample (9 lines, 4072 expirations), compare `uordblks` plateau; no runtime alteration or leak claim before this test. |
 | MON-OPEN-06 historical registration noise | P2 / research | The old-vs-new 1000-series one-family +6.1% in three ordered repeats | Requires both revisions measured by the **same** warmed/rotated harness on one host to establish causality. Do not call it a confirmed regression. |
 | MON-OPEN-07 | Process | Final owner review, release/merge decision | Resolve reviews, freeze reviewed SHA, retain stacked base and require explicit approval for any merge or Ready-for-Review change. |
 

@@ -114,3 +114,16 @@ Clang20 TSan 10/10 each; 900/900 stress; foundation 13/13; GCC/Clang
 Static/Shared installed package consumers 11/11 each; 60/60 coherent
 RSS/peak RSS in earlier concurrency tests. PR #3 stays Draft and
 unmerged, stacked on Foundation; unrelated runtime modules unchanged.
+
+## Later evidence — Static PASS; managed/raw lifetime comparison obtained
+
+On owner checkout `34587f820e6384ce06c220a8edc12860711bc8e0`, after five localized
+NOLINT explanations, targeted LLVM20 `clang-tidy` completed
+with `MONITORING_STATIC_PASS checked=5 failed=0`.
+New independent 8×512 lifetime CSVs show managed allocator live
+heap growing +16096 B across eight rounds while the raw path
+remains flat. Static FAIL and unverified raw controls described
+above are now **historical**. A source-level sweep-phase
+hypothesis suggests 515 tracked calls per 512-Registry round
+versus sweep every 256. Follow-up uses 509 per round to align.
+[Full subsequent analysis](MONITORING_STATIC_LIFETIME_COMPARISON_2026-11-13.md).
