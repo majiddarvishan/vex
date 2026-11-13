@@ -16,7 +16,7 @@ CMake installed target: `Vex::monitoring`; dependency: prometheus-cpp 1.3+.
 
 - `CreateCounter`, `CreateGauge`, and `CreateHistogram` take a Registry shared_ptr, a name, HELP and optional labels.
 - Names use `[a-zA-Z_:][a-zA-Z0-9_:]*`, labels use `[a-zA-Z_][a-zA-Z0-9_]*`; leading `__` is rejected.
-- Label values must be well-formed UTF-8: invalid continuation bytes, overlong encodings, surrogate sequences and codepoints above U+10FFFF are rejected. ASCII controls other than TAB and DEL are rejected. As always, bound untrusted input sizes upstream.
+- Label values must be well-formed UTF-8: invalid continuation bytes, overlong encodings, surrogate sequences and codepoints above U+10FFFF are rejected. ASCII controls except TAB (including DEL) are rejected. As always, bound untrusted input sizes upstream.
 - Default labels are merged first and explicit labels override them. Histograms reject the reserved `le` label.
 - Histogram buckets must be finite and strictly increasing. Empty buckets use default boundaries: 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10.
 - Conflicting buckets when re-registering an existing managed histogram series throw invalid_argument.
@@ -93,5 +93,4 @@ On UNIX, the `vex.monitoring.http` CTest opens a real local-only
 validates main/subsystem Registry samples and verifies expired
 Registry collectables do not reappear after Reset. It needs no
 installed curl command and no external Prometheus service. It is
-included in `./tools/verify_monitoring.sh all`. This recently added
-integration test is awaiting owner-run verification.
+included in `./tools/verify_monitoring.sh all`. The owner subsequently verified it as part of the Linux **10/10 Monitoring CTest PASS** in baseline, threaded, ASan+UBSan and Clang TSan modes.

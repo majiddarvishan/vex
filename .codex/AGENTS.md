@@ -1,9 +1,6 @@
 # Current Monitoring scope and acceptance
 
-Owner approved completing Monitoring only. All non-Monitoring
-behavioral fixes stay frozen. The latest Monitoring implementation
-and test suite are not yet owner-run. Do not promote or merge the
-Draft PR until the real checkout passes the complete test matrix.
+Owner approved completing Monitoring only. All non-Monitoring behavioral fixes remain frozen. **Latest owner evidence already passed** Monitoring CTest 10/10 in four modes, stress 900/900, full foundation/package 13/13, portability GCC/Clang Static/Shared 11/11 each, focused static analysis 5/5, and Managed/Raw 300s soak (scope-limited). See `MONITORING_FINAL_REVIEW_2026-11-14.md` and the final memory-soak report. Technical review handoff is prepared; **PR #3 remains Draft/unmerged**, stacked on PR #2, and ONLY explicit owner approval can authorize Ready/merge/base changes. New commits with runtime changes require fresh relevant tests; docs-only follow-ups do not retroactively rerun tests.
 
 Single-command acceptance:
 `./tools/verify_monitoring.sh all`

@@ -1,3 +1,9 @@
+## MON-OPEN-07 final focused review completed — 2026-11-14
+
+**No newly confirmed Monitoring Runtime blocker** in inspected core paths; owner-executed acceptance matrix and 300s soak remain scoped PASS. Public docs, source ownership boundaries, CMake/test integration and partial review coverage/remaining risks are recorded in [the final review report](MONITORING_FINAL_REVIEW_2026-11-14.md). No merge/Ready/base change authorized. Historical 'not yet verified' entries below predate the later owner results and are retained as dated snapshots.
+
+---
+
 ## Latest verification of follow-up changes — 2026-11-10
 
 The owner supplied a complete `verify_monitoring.sh all` transcript **after** the label snapshot, ledger/HELP changes and `vex.monitoring.http` test. Baseline/threaded/ASan+UBSan/Clang TSan all **10/10**, stress **900/900**, foundation/consumer **13/13**. Prior 'not yet run' notes below are historical and superseded. Raw concurrent Family mutation remains unsupported. See [MONITORING_ACCEPTANCE_2026-11-10_HTTP.md](MONITORING_ACCEPTANCE_2026-11-10_HTTP.md).

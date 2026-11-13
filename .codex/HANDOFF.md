@@ -1,3 +1,13 @@
+# VEX current handoff — 2026-11-14 MONITORING REVIEW COMPLETE
+
+**Technical status:** `MON-OPEN-01..06` scoped PASS/CLOSED; `MON-OPEN-07` technical final review/documentation COMPLETE. Focused source audit found no new demonstrated Monitoring Runtime blocker; no Runtime changes after last owner suite acceptance. Owner-run evidence: 10/10×4 baseline/threaded/ASan+UBSan/Clang TSan, stress 900/900, foundation+consumer 13/13, four compiler/linkage portability modes 11/11 each, targeted clang-tidy 5/5, 300s Managed+Raw soak PASS (599999/599999 weak-owner expirations each, 2374 Managed quota checks, flat post-warmup same-phase RSS/heap). **No general leak-free/production certification implied**. Reports: `.codex/MONITORING_FINAL_REVIEW_2026-11-14.md` and `.codex/MONITORING_MEMORY_SOAK_2026-11-14.md`.
+
+**PR process status:** [#3](https://github.com/majiddarvishan/vex/pull/3) **Open/Draft**, base `feature/cmake-ctest-foundation` (PR #2 also Draft/unmerged). No PR reviews or GitHub Actions checks observed for the inspected review head. **Never merge, change base or mark Ready without explicit owner authorization.** Technical handoff complete ≠ merge approved. All new changes in this closing review are documentation-only; no new owner-executed test claims.
+
+**Future continuation:** Say «ادامه VEX»; first read this file and actual GitHub HEAD. Next scope beyond Monitoring requires owner authorization. The owner may explicitly decide PR transition/merge later; do not repeatedly rerun previously passed soak simply for documentation updates.
+
+---
+
 # VEX latest handoff — 2026-11-14 MON-OPEN-06 CLOSED
 
 - Working repo `majiddarvishan/vex`; only `feature/monitoring-correctness-tests`; PR #3 remains Open/Draft and base `feature/cmake-ctest-foundation`. **Never merge, change base or mark Ready without explicit owner approval.**

@@ -2,6 +2,21 @@
 
 A C++17 Prometheus monitoring module. Public header `vex/monitoring/monitoring.hpp`, namespace `vex`, CMake target `Vex::monitoring`.
 
+## Verified Monitoring handoff (2026-11-14)
+
+Monitoring work items **MON-OPEN-01 through MON-OPEN-06** are accepted for their measured scope. Owner-run Linux evidence includes Monitoring baseline/threaded/ASan+UBSan/Clang 20 TSan **10/10 each**, stress **900/900**, full foundation/package-consumer **13/13**, GCC/Clang × Static/Shared package configurations **11/11 each**, and focused clang-tidy 20.1.2 **checked=5 failed=0**. The final 300-second independent Managed and Raw Registry-soak probes each completed **599,999 Registry churn/expiration checks** with no persistent post-warmup RSS or glibc live-heap growth at an aligned sample phase. These are scoped checks, **not guarantees of leak/race freedom**.
+
+A final **MON-OPEN-07 focused review** found no new demonstrated Monitoring Runtime defect; review handoff and residual risks are recorded in [final review](../../../.codex/MONITORING_FINAL_REVIEW_2026-11-14.md). There are no new code changes after the owner-verified Monitoring source (the last follow-ups are benchmark/documentation-only). GitHub-hosted CI was not observed for the latest review commit; manual owner-run results must not be represented as CI. PR [#3](https://github.com/majiddarvishan/vex/pull/3) remains **Open/Draft**, stacked on Draft PR #2, and the owner alone authorizes any Ready/merge or base changes.
+
+Optional 300s soak commands, on a Linux host with existing dependencies:
+
+```sh
+./tools/benchmark_monitoring_soak.sh 300 managed 10 30 2000
+./tools/benchmark_monitoring_soak.sh 300 raw 10 30 2000
+```
+
+The runs are **already completed** for current acceptance and should not be repeated solely for this documentation update. Full data interpretation: [memory soak report](../../../.codex/MONITORING_MEMORY_SOAK_2026-11-14.md).
+
 ## Configure and test
 
 ```sh
@@ -63,7 +78,7 @@ and collection at 10/100/1000 samples using both **many-series** and
 
 The script prints the environment to stderr and structured CSV to stdout.
 Build and execution are optional and not part of the correctness gate.
-No performance numbers are asserted until owner measurements are supplied.
+See the owner-measured registration and load results in `.codex/MONITORING_TASKS.md` and `.codex/MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md`; performance numbers are workload-specific.
 
 **Scoped metric ownership:** An existing externally created counter
 or gauge series is not adopted by `ScopedCounter`/`ScopedGauge`;
@@ -90,8 +105,7 @@ shape produces the expected family/sample counts and fails if it does
 not. Runs for N=10,100,1000, three repeats by default (36 CSV rows).
 This provides a controlled comparison of Vex-tracking overhead vs
 upstream registration cost; it does not prove bottleneck location
-without profiling and does not replace ASan/TSan/CTest. **Not yet
-compiled/run on the owner's checkout.**
+without profiling and does not replace ASan/TSan/CTest. **Later owner-run acceptance and benchmark reports supersede this original unverified status.**
 
 ## Optional resource/load and packaging validation (2026-11-10)
 
@@ -131,9 +145,7 @@ This optional test may require fetching source if not cached. To
 explicitly test known PIC-compatible *installed* artifacts instead,
 set `VEX_PORTABILITY_SHARED_DEPENDENCY=installed`.
 
-The old GCC Static 11/11 run passed; GCC Shared failed to link against
-previous installed archives; Clang modes did not run. The new script
-and C++17 warning fixes **are pending verification on owner checkout**.
+After those interim failures, the owner completed the final four-mode portability matrix: **GCC Static, GCC Shared, Clang Static and Clang Shared all 11/11 PASS**. See `.codex/MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md`.
 Details: [Monitoring partial report](../../../.codex/MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).
 
 ### Runtime lookup of installed Shared dependencies
@@ -142,9 +154,7 @@ When Shared Monitoring and prometheus-cpp are installed in the
 same ELF library directory, `$ORIGIN` in the installed
 `libvex_monitoring.so` and fetched `prometheus-cpp-pull` allows
 the loader to find adjacent third-party libraries without setting
-`LD_LIBRARY_PATH`. This is a candidate packaging fix following the
-owner's GCC/Clang Shared consumer load failure; **a fresh installed
-consumer run is still required**. Details are documented in
+`LD_LIBRARY_PATH`. This packaging fix was subsequently verified by the owner in GCC/Clang Shared package-consumer runs (**11/11 each**). Details are documented in
 [the package report](../../../.codex/MONITORING_PORTABILITY_RUNTIME_2026-11-10.md).
 
 ### Optional Counter contention attribution and peak memory integrity
@@ -155,7 +165,7 @@ After analyzing 15-run controlled and 3-run multi-thread datasets, a further opt
 ./tools/benchmark_monitoring_load.sh 3 --controls > build/monitoring-load-controls.csv
 ```
 
-It compares raw Prometheus and Vex-managed shared Counter updates with raw/managed per-thread sharded Counter updates. The existing default run remains available unchanged. The new control mode adds 9 records per repetition: **61 CSV lines** for 3 rounds versus **34** for the old default. Peak RSS now reads Linux `VmHWM`, returning `-1` for contradictory measurements rather than reporting a smaller peak than current RSS. Neither new control data nor validated peak readings have yet been obtained on the owner host.
+It compares raw Prometheus and Vex-managed shared Counter updates with raw/managed per-thread sharded Counter updates. The existing default run remains available unchanged. The new control mode adds 9 records per repetition: **61 CSV lines** for 3 rounds versus **34** for the old default. Peak RSS now reads Linux `VmHWM`, returning `-1` for contradictory measurements rather than reporting a smaller peak than current RSS. The owner subsequently validated the **60-record control dataset** and **60/60** peak RSS consistency checks; see `.codex/MONITORING_LOAD_CONTROLS_2026-11-13.md`.
 
 ### Optional long-running Registry churn and static-analysis probes (2026-11-14)
 
@@ -171,7 +181,6 @@ reports VmRSS, VmHWM and optional glibc Heap trends. It **does not**
 prove memory-leak freedom or provide allocation call-site data. The
 clang-tidy script performs a focused warning-as-error check of the
 Monitoring source and public headers, without automatic source fixes;
-it never installs clang-tidy if absent. Both tools are **optional and
-unverified on the owner's checkout** as of this documentation change.
+it never installs clang-tidy if absent. Both tools were subsequently exercised on the owner's checkout: selected clang-tidy **5/5 PASS**; lifetime Managed/Raw and aligned 8×509 probes completed. The additional 300-second Managed/Raw soak also passed its measured scope; this remains no proof of global leak freedom.
 
 Details: [Monitoring follow-up plan](../../../.codex/MONITORING_FOLLOWUP_PLAN_2026-11-14.md).
