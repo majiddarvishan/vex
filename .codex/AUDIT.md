@@ -1,6 +1,36 @@
 # Source-level engineering audit — Vex
 
+**New Monitoring completion candidate (2026-11-10):** Decorators, scoped metrics, UTF-8, histogram validation, opt-in cardinality, registry lifetime and legacy adapter receive fixes and new regression tests. They have NOT been executed on the owner checkout. Historical Clang TSan PASS applies to earlier commits. Do not mark Monitoring complete until new tests pass. All non-Monitoring findings remain frozen.
+
+
+**Post-warning-fix Monitoring verification (owner, 2026-11-10):**
+Clang 20 TSan **3/3 PASS** (no reported races, prior unused-value
+compiler warning absent); full foundation CTest **6/6 PASS**
+including package consumer. Baseline/threaded/ASan and 100-repeat
+stress cases also passed earlier. This supports candidate VEX-008 and
+partial VEX-011 remediation for tested paths only. Wider Monitoring
+ownership, RAII counter semantics, concurrent lifecycle and
+registration/error/cardinality edge cases remain open. Source:
+[MONITORING_RUNS.md](MONITORING_RUNS.md). No non-Monitoring issue
+status or authorization changed.
+
+
+**Latest owner-run TSan evidence (2026-11-10):**
+Clang 20.1.2 TSan independent probe **10/10 PASS twice**; actual
+Monitoring TSan CTest **3/3 PASS**, with no data-race reports observed
+on exercised paths. Existing GCC 13.3.0 TSan instability is **toolchain-
+specific**, not a clean GCC result. This gives positive Clang TSan
+evidence for the candidate fixes to VEX-008 and portions of VEX-011,
+but does not close broader registry/metric lifetime or concurrent
+reset concerns. One SAFE_CREATE_GAUGE unused-value warning was fixed
+after these test logs; new commit not yet compiled on owner's checkout.
+All non-Monitoring findings remain deferred. See
+[MONITORING_RUNS.md](MONITORING_RUNS.md).
+
+
 **Baseline:** `71e74d221f182f0567f43531f7f933104cb58c68` (`main`). **Date:** 2026-11-10.
+
+**Monitoring remediation candidate (PARTIALLY VERIFIED):** Branch `feature/monitoring-correctness-tests` addresses VEX-008 and portions of VEX-011 (metadata synchronization and registry lifetime), and SAFE_* namespace qualification and UTF-8 value validation. Owner-run baseline/threaded/ASan tests passed (2/2 each), and full foundation CTest passed (5/5); **TSan NOT PASS** due to `unexpected memory mapping` on the smoke executable (contract passed). See [MONITORING_RUNS.md](MONITORING_RUNS.md). Do not mark Monitoring concurrency completely fixed without clean TSan plus broader stress coverage. Non-Monitoring findings remain frozen.
 **Method:** GitHub source inspection of first-party headers, C++ sources, examples, tests and CMake. **Execution:** configure/build/tests/sanitizers/benchmarks NOT RUN due to unavailable local checkout/network dependency. Findings below are code-backed; runtime consequences should be verified with the regression cases in `REPRO_GUIDE.md`.
 
 Severity is an initial technical assessment, not a CVSS score. Lines refer to the above baseline. Paths below are relative to repository root.
