@@ -123,3 +123,14 @@ the ledger or weakening quota/lifetime safety.
   the mechanism. **Not closed**; no leak claim.
 - **MON-OPEN-07:** Draft PR owner code review / merge decision
   remains open. No merge authorized; no unrelated Runtime changes.
+
+## 2026-11-13 subsequent owner evidence: 8×509 sweep-aligned run
+
+Owner ran the expected `8 509 managed` diagnostic on
+`eee490533c98fc66568d2915ff7bfa45761f9743`: 9 CSV lines, 4072/4072 expiry checks, 8/8 coherent
+RSS/HWM. Glibc `uordblks` 88432→89968 B (+1536 B), compared
+with +16096 B in the 8×512 experiment, a **90.5% reduction**.
+The previously pending phase hypothesis is now **strongly
+supported within the measured workload**; it is not proof of
+absence of leaks in all settings. See
+[MONITORING_LIFETIME_ALIGNED_RESULT_2026-11-13.md](MONITORING_LIFETIME_ALIGNED_RESULT_2026-11-13.md).

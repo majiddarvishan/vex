@@ -1,53 +1,51 @@
-# Vex Monitoring handoff — static PASS; sweep-phase heap test pending
+# Vex Monitoring handoff — sweep-aligned lifetime evidence received
 
-Branch `feature/monitoring-correctness-tests`, Draft [PR #3](https://github.com/majiddarvishan/vex/pull/3),
-base Foundation branch. No merge; no other module runtime edits.
+**Branch:** `feature/monitoring-correctness-tests`, [Draft PR #3](https://github.com/majiddarvishan/vex/pull/3)
+stacked on Foundation; **unmerged**, no Ready-for-Review change.
 
-## Owner-verified at source commit 34587f82
+## Current owner-verified state
 
-- Focused `clang-tidy` 20.1.2, 5/5 Monitoring source files,
-  `MONITORING_STATIC_PASS checked=5 failed=0` on configured
-  analyzer/bugprone/performance checks with warnings-as-errors.
-  Existing five local, reasoned NOLINT annotations remain.
-- 8×512 managed and raw Lifetime benchmarks built/reran in
-  separate process invocations; each 9-line CSV, total 4096
-  expired Registry checks and 8/8 coherent VmHWM/RSS.
-- RSS plateaus after round2: managed **4892 KiB**, raw **4444 KiB**.
-  Glibc `uordblks`: managed 88672→104768 B (+16096 B),
-  raw 81136→81136 B (+0 B). Neither proves leak freedom.
+- Latest source checkout before this docs commit:
+  `eee490533c98fc66568d2915ff7bfa45761f9743`.
+- GCC/Clang Static/Shared package consumer **11/11 each PASS**;
+  main Monitoring baseline/threaded/ASan+UBSan/Clang TSan
+  **10/10 each**, stress **900/900**, foundation+consumer **13/13**.
+- Focused LLVM20 clang-tidy `MONITORING_STATIC_PASS checked=5 failed=0`.
+- Registration optimized for many Families in matched microbenchmark:
+  **17.151→11.169ms (−34.9%)** at N=1000.
+- 60-record shared/sharded raw-vs-managed Counter controls:
+  60/60 internally consistent RSS/HWM; hot Counter contention
+  reproduced directly in prometheus-cpp.
+- Lifecycle tests: managed 8×512 4096 expired Registry checks,
+  raw 8×512 4096, and **new managed 8×509 4072**;
+  all run successfully, with all RSS/HWM checks coherent.
 
-## Source-level explanation under test
+**Heap source-level explanation supported:** the Manager sweeps
+expired weak Registry records on every **256th** registration
+attempt. The Lifetime runner performs `batch + 3`
+tracked attempts/round. Batch 512 drifts by 3 attempts/round;
+batch 509 aligns to exactly 512 attempts per round.
+Live allocator heap growth over eight rounds fell from
+**16,096 B** (batch 512) to **1,536 B** (batch 509)
+(−90.5%), with RSS stable after round 2. This supports
+periodic, delayed weak-ledger reclamation; does not prove
+no leaks under arbitrary longer workloads. Without further
+registration, expired bookkeeping may remain until the
+next sweep/Reset, but external Registry ownership is not
+kept alive.
 
-Manager sweeps expired weak-key ledgers every **256
-registration attempts**. Managed Lifetime does **512 ephemeral
-+ 1 fresh + 2 expected quota-failing registrations = 515
-attempts per round**, plus one persistent registration at start.
-This shifts each end-of-round sample by **three additional
-attempts** beyond a sweep phase, plausibly accumulating bounded
-unswept weak keys. Running **509 ephemeral Registries per round**
-aligns each round to exactly 512 registration attempts. This
-diagnostic needs NO new code change.
+**Decisions:** MON-OPEN-01/02/03/04 PASS;
+MON-OPEN-05 portability/selected static PASS;
+MON-OPEN-06 targeted resource and weak-owner check PASS.
+Optional heaptrack/longer duration and historically suspected
+1000-series regression remain research tasks requiring
+matched-methodology data, not assumed failures.
+MON-OPEN-07 owner-only PR review/merge decision open.
 
-**Next minimal command:**
-```sh
-git pull --ff-only origin feature/monitoring-correctness-tests
-./tools/benchmark_monitoring_lifetime.sh 8 509 managed \
-  > build/monitoring-lifetime-managed-aligned.csv
-wc -l build/monitoring-lifetime-managed-aligned.csv
-cat build/monitoring-lifetime-managed-aligned.csv
-```
-Expected 9 CSV lines, 4072 expired checks. Evaluate live heap
-trend after warmup. Do NOT conclude leak absent if the trend
-merely stabilizes over eight rounds; a profiler/longer run may
-still be justified.
+No additional tests are needed to record current findings.
+Do not modify production Runtime or non-Monitoring modules
+without a reproducible issue. No merge without approval.
 
-The previous owner-verified acceptance remains: 10/10 each
-baseline/threaded/ASan/Clang TSan, stress 900/900,
-foundation+consumer 13/13; GCC/Clang Static/Shared 11/11
-each. MON-OPEN-01/02/03/04 completed.
-MON-OPEN-05 four-mode and selected static gates PASS.
-MON-OPEN-06 pending the aligned heap trend and optional
-allocation-site attribution. MON-OPEN-07 owner-only review.
-
-[Current report](MONITORING_STATIC_LIFETIME_COMPARISON_2026-11-13.md),
-[task board](MONITORING_TASKS.md).
+[Detailed result](MONITORING_LIFETIME_ALIGNED_RESULT_2026-11-13.md);
+[raw aligned CSV](benchmarks/2026-11-13-monitoring-lifetime-managed-aligned-8x509.csv);
+[task register](MONITORING_TASKS.md).

@@ -96,3 +96,16 @@ memory-trend comparison. **New changes unverified.** See
 ./tools/benchmark_monitoring_lifetime.sh 8 512 managed > build/monitoring-lifetime-managed-new.csv
 ./tools/benchmark_monitoring_lifetime.sh 8 512 raw > build/monitoring-lifetime-raw.csv
 ```
+
+## Owner-aligned Lifetime observation (new evidence)
+
+The `8 509 managed` run completed all 4072 expired Registry
+checks and all eight memory samples without failure. This
+fixes the sample phase relative to the manager's 256-call
+reclamation cycle and reduces measured heap growth by 90.5%
+versus 8×512. The scoped resource/lifetime question is
+accepted as **delayed amortized cleanup, strongly supported by
+code + experiment**. Long-horizon leak assurance and
+heaptrack exact call-site attribution remain optional research,
+not proven outcomes. See
+[MONITORING_LIFETIME_ALIGNED_RESULT_2026-11-13.md](MONITORING_LIFETIME_ALIGNED_RESULT_2026-11-13.md).

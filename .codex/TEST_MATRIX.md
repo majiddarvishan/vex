@@ -1,3 +1,25 @@
+## Owner sweep-aligned weak-owner reclamation — 2026-11-13
+
+`benchmark_monitoring_lifetime.sh 8 509 managed` **built and
+completed**; 9 CSV lines, 4072/4072 expiry checks, VmHWM >=
+VmRSS in all eight samples. RSS stable at 4940KiB from
+round 2. glibc live `uordblks` 88432→89968 B (+1536 B)
+versus +16096 B for 8×512 managed (−90.5% growth).
+The Manager sweeps every 256 tracked attempts; the
+fixture adds 3 non-transient tracked attempts per round.
+Batch 509 holds the sweep/sample phase steady.
+This supports bounded delayed-reclamation behavior in the
+tested workload; does not prove leak absence or provide
+allocation-site counts.
+
+Earlier suites: 10/10 ×4, stress 900/900, package 13/13;
+GCC/Clang Static/Shared 11/11 each; selected LLVM20
+clang-tidy 5/5 PASS; Counter controls 60/60 peak consistent.
+
+[Full analysis](MONITORING_LIFETIME_ALIGNED_RESULT_2026-11-13.md).
+
+---
+
 ## Owner result: clang-tidy static PASS; managed/raw lifetime contrast
 
 Source SHA `34587f820e6384ce06c220a8edc12860711bc8e0`, Linux GCC 13.3 Release and LLVM20
