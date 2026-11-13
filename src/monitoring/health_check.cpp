@@ -3,6 +3,10 @@
 namespace vex
 {
     void HealthCheck::RegisterHealthMetrics(
+      // Keep an owning Registry handle throughout registration so that
+      // the metric pointers cannot outlive the passed Registry mid-call.
+      // Preserve the established public by-value API.
+      // NOLINTNEXTLINE(performance-unnecessary-value-param)
       std::shared_ptr<prometheus::Registry> registry
     )
     {

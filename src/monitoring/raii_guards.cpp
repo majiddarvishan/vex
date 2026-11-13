@@ -84,6 +84,10 @@ namespace
                 {
                     family.Remove(metric);
                 }
+                // Never replace the original bookkeeping exception with
+                // a secondary rollback/removal failure. This is best
+                // effort cleanup; the original exception is rethrown.
+                // NOLINTNEXTLINE(bugprone-empty-catch)
                 catch (...) {}
             }
             throw;
@@ -118,9 +122,13 @@ namespace
                 else
                     MetricsManager::remove_gauge(*family, metric);
             }
+            // A scoped guard destructor/move assignment is noexcept.
+            // No safe recovery channel exists for removal failure here;
+            // retain the established best-effort cleanup contract.
+            // NOLINTNEXTLINE(bugprone-empty-catch)
             catch (...)
             {
-                // Destruction/assignment must not throw.
+                // Preserve noexcept while unwinding; do not terminate.
             }
         }
     }
