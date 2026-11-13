@@ -156,3 +156,22 @@ After analyzing 15-run controlled and 3-run multi-thread datasets, a further opt
 ```
 
 It compares raw Prometheus and Vex-managed shared Counter updates with raw/managed per-thread sharded Counter updates. The existing default run remains available unchanged. The new control mode adds 9 records per repetition: **61 CSV lines** for 3 rounds versus **34** for the old default. Peak RSS now reads Linux `VmHWM`, returning `-1` for contradictory measurements rather than reporting a smaller peak than current RSS. Neither new control data nor validated peak readings have yet been obtained on the owner host.
+
+### Optional long-running Registry churn and static-analysis probes (2026-11-14)
+
+```sh
+./tools/benchmark_monitoring_lifetime.sh 8 512 > build/monitoring-lifetime.csv
+./tools/verify_monitoring_static.sh check-tools
+./tools/verify_monitoring_static.sh > build/monitoring-static.log 2>&1
+```
+
+The bounded Linux lifetime probe creates 4096 short-lived Registries
+across eight rounds, checks weak ownership/manager quota isolation and
+reports VmRSS, VmHWM and optional glibc Heap trends. It **does not**
+prove memory-leak freedom or provide allocation call-site data. The
+clang-tidy script performs a focused warning-as-error check of the
+Monitoring source and public headers, without automatic source fixes;
+it never installs clang-tidy if absent. Both tools are **optional and
+unverified on the owner's checkout** as of this documentation change.
+
+Details: [Monitoring follow-up plan](../../../.codex/MONITORING_FOLLOWUP_PLAN_2026-11-14.md).

@@ -1,83 +1,61 @@
-## Most recent: 2026-11-13 controlled Counter and RSS verification
+# Vex Monitoring — open work and acceptance (2026-11-14)
 
-Owner-built `--controls` mode emitted all **60/60 expected samples**.
-Peak RSS is consistent with current RSS in **60/60**, resolving the
-previous 32/33 inconsistent `getrusage` fields. At eight threads,
-Counter-per-worker Vex throughput is **223.97M ops/s**, one shared
-Counter **8.73M ops/s**; direct Prometheus reproduces the same effect.
-**MON-OPEN-06's targeted workload/measurement validation is complete
-for the tested cases**, but true allocation-call-site profiling and
-matched old/new 1000-series regression verification remain additional
-unmeasured research. No production hot-path change is indicated.
+**Repository:** `majiddarvishan/vex`  
+**Working branch:** `feature/monitoring-correctness-tests`  
+**PR:** [#3](https://github.com/majiddarvishan/vex/pull/3) — Draft, stacked on `feature/cmake-ctest-foundation`, **unmerged**.
 
-[Full analysis](MONITORING_LOAD_CONTROLS_2026-11-13.md) ·
-[Raw CSV](benchmarks/2026-11-13-monitoring-load-controls-3.csv).
+## Verified work (owner-run evidence, before this tool-only follow-up)
 
----
+- [x] **MON-OPEN-01 (P1)** — Managed 1000-Family registration median improved **17.151ms → 11.169ms (−34.9%)** in matched three-run Release benchmark. A separate controlled, warmed 15-run measurement of the current revision gives **11.061ms**; do not conflate those separate protocols.
+- [x] **MON-OPEN-02 (P1)** — Scoped RAII label-ownership snapshot regression; concurrent uncoordinated raw Family mutation remains unsupported.
+- [x] **MON-OPEN-03 (P1)** — Managed quota rollback and HELP metadata consistency, including failure and owner-churn tests; raw external mutations bypass ledger/quota.
+- [x] **MON-OPEN-04 (P2)** — Real loopback HTTP `/metrics` integration, sample values and Registry lifecycle.
+- [x] **MON-OPEN-05 portability/package subgate (P2)** — GCC 13.3 and Clang 20 × Static and Shared **11/11 PASS each** with installed external CMake-package consumers. The tested Linux `$ORIGIN` RUNPATH resolves Shared dependency loading.
+- [x] **MON-OPEN-06 measured workload subgate (P2)** — Controlled 15-run Release benchmark (180 records), load 33-record baseline and new 60-record raw/shared/sharded Counter comparisons. Latest Linux peak RSS internally consistent **60/60** records. Shared hot Counter bottleneck appears in direct prometheus-cpp as well; no Vex-specific update-path defect shown.
 
-## Follow-up tool improvement after owner results (not yet built)
+**Established system acceptance (owner-run):** baseline/threaded/ASan+UBSan/Clang20 TSan **10/10 per mode**, stress **900/900**, foundation/installed consumer **13/13**. Benchmark outcomes are platform/workload specific and do not prove leak freedom or production SLAs.
 
-The user-supplied load report revealed a hot shared Counter throughput drop and invalid `peak_rss_kib` in 32/33 records. An opt-in `--controls` load mode adds direct Prometheus shared Counter and per-thread sharded Counter comparisons (Vex/raw) while preserving the original 34-line output when omitted. Peak reporting now derives from Linux `VmHWM` and returns -1 for inconsistent values. **No owner-run verification yet for this newest benchmark code.** See [MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md).
+## Remaining work on this same branch
 
----
-
-## Update: four-mode package acceptance PASS; benchmark data received
-
-All GCC/Clang static/shared consumers now PASS 11/11 each. Controlled 180 and load 33 raw samples are archived; shared Counter contention and invalid peak RSS identified. [Full result](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md). Optional clang-tidy not run; MON-OPEN-06 targeted diagnostics remain open.
-
----
-
-## Latest report — Full Monitoring PASS, shared package runtime still failing
-
-Owner's `Pasted text(7).txt` confirms **10/10 each**
-baseline/threaded/ASan+UBSan/Clang20 TSan; **900/900** stress;
-**13/13** full foundation/package.
-GCC Static and Clang Static: **11/11 PASS** each.
-GCC Shared and Clang Shared: **10/11** each; ten Monitoring
-cases pass, installed consumer cannot load `libprometheus-cpp-pull.so.1.3`.
-The previous PIC link blocker is fixed. A Monitoring-only
-`$ORIGIN` installed RUNPATH candidate is now committed, but
-**NOT YET OWNER-RUN**. See
-[MONITORING_PORTABILITY_RUNTIME_2026-11-10.md](MONITORING_PORTABILITY_RUNTIME_2026-11-10.md).
-
----
-
-## Latest 2026-11-10 owner report — GCC static PASS, shared PIC dependency BLOCKED
-
-See [MONITORING_PORTABILITY_PARTIAL_2026-11-10.md](MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).
-Benchmarks built/executed but CSVs not provided; GCC static 11/11 PASS;
-GCC shared link failed on installed non-PIC prometheus-cpp archives.
-Clang variants never ran. A source-level C++17 macro warning fix and
-an isolated PIC dependency strategy were subsequently committed;
-**both remain unverified on owner checkout**.
-
----
-
-# Vex Monitoring — current task register (2026-11-10)
-
-**Branch:** `feature/monitoring-correctness-tests` · [Draft PR #3](https://github.com/majiddarvishan/vex/pull/3), stacked on foundation PR #2. Only Monitoring behavior is within the approved remediation scope.
-
-## Verified completed work
-
-- [x] **MON-OPEN-01 — indexed-ledger registration improvement (P1).** Full post-change automated acceptance: baseline/threaded/ASan+UBSan/Clang 20 TSan **10/10 each**, stress **900/900**, foundation/package **13/13**. Paired Release CSV shows 1000 managed-Family registration median **17.151 → 11.169 ms (34.9% lower)**, versus raw **9.568 → 9.575 ms** (essentially unchanged). The target bottleneck is improved within this synthetic workload. Source, all 36 before/after rows, and variability: [MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md). No production SLA implied.
-- [x] **MON-OPEN-02 (P1).** Fix scoped-series identity/ownership TOCTOU. Concurrent direct raw Prometheus Family mutations remain outside supported contract.
-- [x] **MON-OPEN-03 (P1).** Managed cardinality rollback and HELP metadata validation under failure. Raw external Family mutation bypasses wrapper quota accounting.
-- [x] **MON-OPEN-04 (P2).** Loopback real HTTP `/metrics` integration, values, transient Registry expiration and teardown.
-- [x] Monitoring baseline CMake/CTest, existing decorators, RAII, health, labels, installed consumer and sanitizer/stress suites.
-
-## Still open
-
-| ID | Priority | Work | Acceptance gate |
+| Task | Priority | Scope | Acceptance/evidence |
 |---|---|---|---|
-| MON-OPEN-05 | P2 | **Portability/package gate PASS: GCC/Clang × Static/Shared, 11/11 each, external consumer PASS.** Shared RUNPATH fixed. `CPM` cache dirty warning persists; optional clang-tidy NOT RUN. | If comprehensive static analysis is mandatory, run targeted clang-tidy; do not reopen the passed 4-mode packaging matrix without new evidence |
-| MON-OPEN-06 | P2 | **New raw/sharded controls VERIFIED:** owner compiled and ran 61-line CSV (60 records), all 60/60 peak RSS >= current RSS. Managed and raw shared/sharded Counter throughput nearly matches; hot shared Counter contention observed in both, no Vex-specific increment-path bug shown. | Measured workload characterization completed. Deeper allocation-site/retained-memory profiling (optional heaptrack) and historic same-harness A/B for 1000-series regression remain unverified; keep as follow-up, do not infer absence of memory leak |
-| MON-OPEN-07 | Process | Final owner code review and release/merge decision | Freeze reviewed SHA, resolve PR comments, preserve stacked foundation dependency, require explicit owner authorization before merge |
+| MON-OPEN-05 static-analysis follow-up | P2 | Focused `clang-tidy` `clang-analyzer-*`, `bugprone-*`, `performance-*` checks with warnings-as-errors | Run `tools/verify_monitoring_static.sh`; record Clang/clang-tidy versions and diagnostics. Missing tool is **NOT RUN**, never PASS. No auto-fix or dependency install. |
+| MON-OPEN-06 memory/retention follow-up | P2 | Bounded repeated external Registry ownership churn, periodic weak-ledger reclamation and process RSS/heap trend | **New optional tool NOT YET RUN**: `tools/benchmark_monitoring_lifetime.sh 8 512`; expect 9 CSV lines, verify weak ownership/quotas and report memory trend without claiming leak freedom. Optional heaptrack call-site profiling requires preinstalled tool. |
+| MON-OPEN-06 historical registration noise | P2 / research | The old-vs-new 1000-series one-family +6.1% in three ordered repeats | Requires both revisions measured by the **same** warmed/rotated harness on one host to establish causality. Do not call it a confirmed regression. |
+| MON-OPEN-07 | Process | Final owner review, release/merge decision | Resolve reviews, freeze reviewed SHA, retain stacked base and require explicit approval for any merge or Ready-for-Review change. |
 
-## Evidence and boundaries
+## Most recent added tooling (NOT owner-run)
 
-- [Most recent all-mode acceptance](MONITORING_INDEXED_ACCEPTANCE_2026-11-10.md): 10/10 × four modes; 900/900 Stress; 13/13 foundation.
-- [Before/after comparison](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md), [before raw CSV](benchmarks/2026-11-10-monitoring-managed-vs-raw.csv), [after raw CSV](benchmarks/2026-11-10-monitoring-managed-vs-raw-after.csv).
-- Only three sequential Release repetitions per scenario. Observed 1000-family improvement is credible for that measured setup; do not claim absent race conditions for unsupported operations or that other machine configurations share identical performance.
-- PR #3 remains **Draft and unmerged**. No Logger, ObjectPool or ThreadPool behavioral changes authorized.
+1. `tools/bench_monitoring_lifetime.cpp` and `tools/benchmark_monitoring_lifetime.sh` with a Linux-only, bounded 8 × 512-Registry default churn probe, 1 live persistent Registry, quota isolation checks, `weak_ptr::expired()` checks, and RSS/HWM/glibc heap trend samples.
+2. `tools/verify_monitoring_static.sh` with targeted warning-as-error `clang-tidy`. It uses `build/monitoring-portability-clang-static/compile_commands.json` if available; otherwise generates it by running the previously verified Clang Static portability suite. It never edits source.
 
-**Next recommended order:** MON-OPEN-06 (resource/load and 1000-series concern), MON-OPEN-05 (portability/static), MON-OPEN-07 (owner-only merge decision).
+These tools have **not been built, run or proven clean** on the owner's machine. Avoid claiming new test PASS.
+
+## Suggested commands (only remaining focused probes)
+
+```sh
+git pull --ff-only origin feature/monitoring-correctness-tests
+git rev-parse HEAD
+git status --short
+
+./tools/benchmark_monitoring_lifetime.sh 8 512 > build/monitoring-lifetime.csv
+wc -l build/monitoring-lifetime.csv
+
+./tools/verify_monitoring_static.sh check-tools
+./tools/verify_monitoring_static.sh > build/monitoring-static.log 2>&1
+```
+
+The last command only works if `clang-tidy` is installed; a missing tool should not trigger an automatic installation.
+
+## References
+
+- [Most recent Counter/RSS verification](MONITORING_LOAD_CONTROLS_2026-11-13.md)
+- [Raw 60-record Counter control CSV](benchmarks/2026-11-13-monitoring-load-controls-3.csv)
+- [Four-mode package and controlled/load analysis](MONITORING_PORTABILITY_LOAD_RESULTS_2026-11-10.md)
+- [Historical old-vs-new registration comparison](MONITORING_PROFILE_BEFORE_AFTER_2026-11-10.md)
+- [Memory-lifetime and static check acceptance plan](MONITORING_FOLLOWUP_PLAN_2026-11-14.md)
+
+Older task-board state snapshots are archived in
+[MONITORING_TASKS_HISTORY_BEFORE_2026-11-14.md](MONITORING_TASKS_HISTORY_BEFORE_2026-11-14.md).
+
+**Boundaries:** No Logger, ObjectPool or ThreadPool runtime changes. No merge or Draft-state change without owner authorization.

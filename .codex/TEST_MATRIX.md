@@ -1,3 +1,21 @@
+## 2026-11-14 optional Monitoring memory/static probes pending
+
+Historical owner-run tests **PASS**: 10/10 ×4 modes, stress 900/900,
+foundation+consumer 13/13, four compiler/linkage package
+configurations 11/11 each; raw/shared/sharded Counter load 60 records
+with 60/60 consistent VmRSS/VmHWM.
+
+**New tool-only changes, not yet run:**
+`benchmark_monitoring_lifetime.sh 8 512` expects 9 CSV lines and
+validates 4096 short-lived Registry expirations while sampling
+RSS/heap trends; `verify_monitoring_static.sh` requires
+preinstalled clang-tidy, emits explicit warning-as-error PASS/FAIL.
+No new build, heaptrend, clang-tidy or leak-free result may be
+asserted until measured. See
+[MONITORING_FOLLOWUP_PLAN_2026-11-14.md](MONITORING_FOLLOWUP_PLAN_2026-11-14.md).
+
+---
+
 ## New owner-controlled Counter comparison and peak RSS — 2026-11-13
 
 Opt-in `benchmark_monitoring_load.sh 3 --controls` **BUILD/RUN PASS**,
