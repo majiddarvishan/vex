@@ -149,3 +149,20 @@ The portability tool was changed to use an isolated pinned PIC-capable
 dependency for Shared and to aggregate results, and C++17 macro/test
 warnings were addressed. **Changes NOT YET owner-run.** Full record:
 [MONITORING_PORTABILITY_PARTIAL_2026-11-10.md](MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).
+
+## Shared installed-package consumer failure and candidate RUNPATH fix
+
+Owner re-ran the full matrix. Both GCC 13.3 and Clang 20.1
+Static builds **11/11 PASS**. Both Shared builds produced
+`libvex_monitoring.so` and passed **10/10 Monitoring tests**,
+but the installed external consumer failed because
+`libprometheus-cpp-pull.so.1.3` could not be located by the ELF
+runtime loader. The earlier non-PIC linker problem no longer occurs.
+
+A Monitoring-only `$ORIGIN` installed RUNPATH and a
+fetched-Prometheus `pull` sibling RUNPATH were committed
+**after** this report. These paths are relative and do not
+require environment-variable workarounds. **Unverified
+candidate** pending the GCC/Clang Shared package consumer rerun.
+Details:
+[MONITORING_PORTABILITY_RUNTIME_2026-11-10.md](MONITORING_PORTABILITY_RUNTIME_2026-11-10.md).

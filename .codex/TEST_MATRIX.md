@@ -1,3 +1,19 @@
+## Latest report — Full Monitoring PASS, shared package runtime still failing
+
+Owner's `Pasted text(7).txt` confirms **10/10 each**
+baseline/threaded/ASan+UBSan/Clang20 TSan; **900/900** stress;
+**13/13** full foundation/package.
+GCC Static and Clang Static: **11/11 PASS** each.
+GCC Shared and Clang Shared: **10/11** each; ten Monitoring
+cases pass, installed consumer cannot load `libprometheus-cpp-pull.so.1.3`.
+The previous PIC link blocker is fixed. A Monitoring-only
+`$ORIGIN` installed RUNPATH candidate is now committed, but
+**NOT YET OWNER-RUN**. See
+[MONITORING_PORTABILITY_RUNTIME_2026-11-10.md](MONITORING_PORTABILITY_RUNTIME_2026-11-10.md).
+
+
+---
+
 ## Owner Portability partial (2026-11-10) and pending new macro/PIC rerun
 
 `benchmark_monitoring_controlled.sh 15` and

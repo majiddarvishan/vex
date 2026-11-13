@@ -135,3 +135,14 @@ The old GCC Static 11/11 run passed; GCC Shared failed to link against
 previous installed archives; Clang modes did not run. The new script
 and C++17 warning fixes **are pending verification on owner checkout**.
 Details: [Monitoring partial report](../../../.codex/MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).
+
+### Runtime lookup of installed Shared dependencies
+
+When Shared Monitoring and prometheus-cpp are installed in the
+same ELF library directory, `$ORIGIN` in the installed
+`libvex_monitoring.so` and fetched `prometheus-cpp-pull` allows
+the loader to find adjacent third-party libraries without setting
+`LD_LIBRARY_PATH`. This is a candidate packaging fix following the
+owner's GCC/Clang Shared consumer load failure; **a fresh installed
+consumer run is still required**. Details are documented in
+[the package report](../../../.codex/MONITORING_PORTABILITY_RUNTIME_2026-11-10.md).

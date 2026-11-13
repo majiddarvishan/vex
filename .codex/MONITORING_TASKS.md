@@ -1,3 +1,18 @@
+## Latest report — Full Monitoring PASS, shared package runtime still failing
+
+Owner's `Pasted text(7).txt` confirms **10/10 each**
+baseline/threaded/ASan+UBSan/Clang20 TSan; **900/900** stress;
+**13/13** full foundation/package.
+GCC Static and Clang Static: **11/11 PASS** each.
+GCC Shared and Clang Shared: **10/11** each; ten Monitoring
+cases pass, installed consumer cannot load `libprometheus-cpp-pull.so.1.3`.
+The previous PIC link blocker is fixed. A Monitoring-only
+`$ORIGIN` installed RUNPATH candidate is now committed, but
+**NOT YET OWNER-RUN**. See
+[MONITORING_PORTABILITY_RUNTIME_2026-11-10.md](MONITORING_PORTABILITY_RUNTIME_2026-11-10.md).
+
+---
+
 ## Latest 2026-11-10 owner report — GCC static PASS, shared PIC dependency BLOCKED
 
 See [MONITORING_PORTABILITY_PARTIAL_2026-11-10.md](MONITORING_PORTABILITY_PARTIAL_2026-11-10.md).
@@ -25,8 +40,8 @@ an isolated PIC dependency strategy were subsequently committed;
 
 | ID | Priority | Work | Acceptance gate |
 |---|---|---|---|
-| MON-OPEN-05 | P2 | **PARTIAL: GCC Static 11/11 PASS**, GCC Shared blocked by non-PIC `/usr/local/lib/libprometheus-cpp-*.a`; Clang cases not reached. PIC-isolated shared dependency and C++17 macro/test warning fixes committed, **NOT YET RERUN**. | Run revised four-mode matrix and the full Monitoring regression; require installed-package consumer PASS for each; document any remaining compiler or dependency errors |
-| MON-OPEN-06 | P2 | **Tools built and executed** (controlled 15, load 3), but stdout redirected to CSV and not provided. No numeric resource/load results. Optional heaptrack absent from log. | Obtain both CSV files (181/34 lines expected) and analyze RSS, thread scaling, p95/p99, and 1000-series registration variability before closing |
+| MON-OPEN-05 | P2 | **PARTIAL, 2/4 modes PASS.** After isolated pinned PIC dependency: GCC/Clang Static **11/11 each PASS**; GCC/Clang Shared build + 10 Monitoring tests PASS, but installed consumer **FAIL** loading `libprometheus-cpp-pull.so.1.3` (each 10/11). ELF `$ORIGIN` RUNPATH candidate added **AFTER** owner log, NOT YET TESTED. | Re-run both Shared modes and verify external package consumer without `LD_LIBRARY_PATH`; inspect installed RPATH if failure persists; optional clang-tidy remains unverified |
+| MON-OPEN-06 | P2 | **Tools built and executed** (controlled 15, load 3) but numeric CSVs not provided. No RSS, concurrent-load percentiles, or registration variance verdict yet. | Obtain controlled and load CSVs (181/34 lines) and analyze throughput, RSS, collect/HTTP p95/p99, 1000-series variability. Optional heaptrack not run |
 | MON-OPEN-07 | Process | Final owner code review and release/merge decision | Freeze reviewed SHA, resolve PR comments, preserve stacked foundation dependency, require explicit owner authorization before merge |
 
 ## Evidence and boundaries
