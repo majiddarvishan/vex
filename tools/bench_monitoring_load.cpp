@@ -31,30 +31,40 @@ double ms_since(Clock::time_point start) {
     return std::chrono::duration<double, std::milli>(
         Clock::now() - start).count();
 }
-std::int64_t rss_kib() {
+std::int64_t proc_status_kib(const char* wanted) {
 #if defined(__linux__)
     std::ifstream input("/proc/self/status");
     std::string key;
     while (input >> key) {
-        if (key == "VmRSS:") {
+        if (key == wanted) {
             std::int64_t value = -1;
             std::string unit;
-            if (input >> value >> unit) return value;
-            return -1;
+            return (input >> value >> unit && unit == "kB") ? value : -1;
         }
-        std::string ignore;
-        std::getline(input, ignore);
+        std::string rest;
+        std::getline(input, rest);
     }
+#else
+    (void)wanted;
 #endif
     return -1;
 }
+std::int64_t rss_kib() {
+    return proc_status_kib("VmRSS:");
+}
 std::int64_t peak_rss_kib() {
+#if defined(__linux__)
+    // Same /proc accounting source as current RSS. Prior getrusage
+    // ru_maxrss and VmRSS disagreed in 32/33 user benchmark rows.
+    return proc_status_kib("VmHWM:");
+#else
     struct rusage usage {};
     if (::getrusage(RUSAGE_SELF, &usage) != 0) return -1;
 #if defined(__APPLE__)
     return static_cast<std::int64_t>(usage.ru_maxrss / 1024);
 #else
     return static_cast<std::int64_t>(usage.ru_maxrss);
+#endif
 #endif
 }
 std::int64_t heap_live_bytes() {
@@ -77,6 +87,11 @@ void emit(const char* phase, const char* impl, int threads, int series,
           const std::vector<double>& microseconds, std::int64_t before) {
     const auto after = rss_kib();
     const auto delta = before < 0 || after < 0 ? -1 : after - before;
+    // A peak smaller than current RSS is physically inconsistent.
+    // Report unavailable (-1), never silently accept that estimate.
+    const auto candidate_peak = peak_rss_kib();
+    const auto peak = candidate_peak >= 0 && after >= 0 &&
+                      candidate_peak < after ? -1 : candidate_peak;
     std::cout << phase << ',' << impl << ',' << threads << ',' << series
               << ',' << operations << ',' << std::fixed
               << std::setprecision(3) << elapsed << ','
@@ -85,7 +100,7 @@ void emit(const char* phase, const char* impl, int threads, int series,
               << ',' << percentile(microseconds, 0.95)
               << ',' << percentile(microseconds, 0.99)
               << ',' << after << ',' << delta
-              << ',' << peak_rss_kib() << ',' << heap_live_bytes() << '\n';
+              << ',' << peak << ',' << heap_live_bytes() << '\n';
 }
 template <typename Fn>
 double parallel(int threads, Fn&& fn) {
@@ -155,6 +170,52 @@ void update(int threads) {
     if (counter.Value() != static_cast<double>(operations))
         throw std::runtime_error("lost shared counter increments");
     emit("counter_update", "managed", threads, 1, operations,
+         elapsed, {}, before);
+}
+// Distinguish a hot shared Counter from one Counter per writer. For both
+// arrangements, compare wrapper-created and direct Prometheus Counters.
+void counter_control(int threads, bool managed, bool sharded) {
+    constexpr int per_thread = 25000;
+    auto registry = std::make_shared<prometheus::Registry>();
+    prometheus::Family<prometheus::Counter>* raw_family = nullptr;
+    if (!managed) {
+        raw_family = &prometheus::BuildCounter()
+            .Name("vex_load_control_total").Help("Counter control")
+            .Register(*registry);
+    }
+
+    std::vector<prometheus::Counter*> counters;
+    counters.reserve(static_cast<std::size_t>(sharded ? threads : 1));
+    for (int i = 0; i < (sharded ? threads : 1); ++i) {
+        const prometheus::Labels labels = sharded
+            ? prometheus::Labels{{"worker", std::to_string(i)}}
+            : prometheus::Labels{};
+        if (managed) {
+            counters.push_back(&vex::MetricsManager::CreateCounter(
+                registry, "vex_load_control_total", "Counter control",
+                labels));
+        } else {
+            counters.push_back(&raw_family->Add(labels));
+        }
+    }
+
+    const auto before = rss_kib();
+    const auto elapsed = parallel(threads, [&](int t) {
+        auto& counter = *counters[static_cast<std::size_t>(sharded ? t : 0)];
+        for (int i = 0; i < per_thread; ++i) counter.Increment();
+    });
+
+    const auto operations = static_cast<std::uint64_t>(threads) * per_thread;
+    for (auto* counter : counters) {
+        const auto expected = sharded
+            ? static_cast<double>(per_thread)
+            : static_cast<double>(operations);
+        if (counter->Value() != expected)
+            throw std::runtime_error("lost controlled Counter increments");
+    }
+    emit(sharded ? "counter_update_sharded" : "counter_update",
+         managed ? "managed" : "raw", threads,
+         static_cast<int>(counters.size()), operations,
          elapsed, {}, before);
 }
 void collect_during_updates() {
@@ -296,14 +357,22 @@ void http_scrape() {
 
 int main(int argc, char** argv) {
     int repeats = 3;
-    if (argc > 2) {
-        std::cerr << "Usage: vex_monitoring_load_benchmark [1|3|5]\n";
+    bool controls = false;
+    if (argc > 3) {
+        std::cerr << "Usage: vex_monitoring_load_benchmark [1|3|5] [--controls]\n";
         return 2;
     }
-    if (argc == 2) {
+    if (argc == 3) {
+        controls = std::string(argv[2]) == "--controls";
+        if (!controls) {
+            std::cerr << "Usage: vex_monitoring_load_benchmark [1|3|5] [--controls]\n";
+            return 2;
+        }
+    }
+    if (argc >= 2) {
         const std::string n(argv[1]);
         if (n != "1" && n != "3" && n != "5") {
-            std::cerr << "Usage: vex_monitoring_load_benchmark [1|3|5]\n";
+            std::cerr << "Usage: vex_monitoring_load_benchmark [1|3|5] [--controls]\n";
             return 2;
         }
         repeats = std::stoi(n);
@@ -323,6 +392,13 @@ int main(int argc, char** argv) {
                     registration(n, true);
                 }
                 update(n);
+                if (controls) {
+                    // New controls are opt-in: preserve the historical
+                    // 34-line CSV for the default benchmark.
+                    counter_control(n, false, false); // raw shared
+                    counter_control(n, true, true);   // managed sharded
+                    counter_control(n, false, true);  // raw sharded
+                }
             }
             collect_during_updates();
             http_scrape();

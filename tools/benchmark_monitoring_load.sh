@@ -4,6 +4,15 @@
 set -Eeuo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 repeats="${1:-3}"
+mode="${2:-}"
+if [[ $# -gt 2 ]]; then
+    printf 'Usage: tools/benchmark_monitoring_load.sh [1|3|5] [--controls]\n' >&2
+    exit 2
+fi
+case "$mode" in
+    ""|--controls) ;;
+    *) printf 'Usage: tools/benchmark_monitoring_load.sh [1|3|5] [--controls]\n' >&2; exit 2 ;;
+esac
 case "$repeats" in
     1|3|5) ;;
     *) printf 'Usage: tools/benchmark_monitoring_load.sh [1|3|5]\n' >&2; exit 2 ;;
@@ -36,4 +45,9 @@ printf 'BENCH_LOAD_COMPILER ' >&2
 grep '^CMAKE_CXX_COMPILER:FILEPATH=' "$build_dir/CMakeCache.txt" >&2 || true
 printf 'BENCH_LOAD_NOTE RSS/heap are process snapshots, not allocation counts. Percentiles apply to Collect/HTTP only and use microseconds.\n' >&2
 printf 'BENCH_LOAD_NOTE loopback-only and OS-assigned port; do not execute alongside production load.\n' >&2
-"$build_dir/modules/monitoring/vex_monitoring_load_benchmark" "$repeats"
+args=("$repeats")
+if [[ "$mode" == "--controls" ]]; then
+    args+=("--controls")
+    printf 'BENCH_LOAD_CONTROLS raw_vs_managed=yes shared_vs_sharded=yes expected_csv_lines=%s\n' "$((1 + repeats * 20))" >&2
+fi
+"$build_dir/modules/monitoring/vex_monitoring_load_benchmark" "${args[@]}"
