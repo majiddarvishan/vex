@@ -1,0 +1,43 @@
+# Build, tests, sanitizers and performance acceptance matrix
+
+**Status:** all rows `NOT RUN` for this review. No local checkout/environment capable of repository build was available. Re-run on pinned commits and capture tool versions.
+
+## Build and install
+| ID | Configuration/command | Required assertion |
+|---|---|---|
+| B01 | `cmake -S . -B build/min -DBUILD_EXAMPLES=OFF -DBUILD_MONITORING=OFF -DBUILD_OBJECT_POOL=OFF -DBUILD_THREADPOOL=ON` | Configures/builds without network or Prometheus; thread target visible |
+| B02 | `cmake -S . -B build/pool -DBUILD_EXAMPLES=OFF -DBUILD_MONITORING=OFF -DBUILD_OBJECT_POOL=ON` | Object pool stand-alone consumer compiles with correctly declared optional dependencies |
+| B03 | `cmake -S . -B build/monitor -DBUILD_EXAMPLES=OFF -DBUILD_MONITORING=ON` | Monitoring target exists and builds with explicit dependency resolution |
+| B04 | `cmake -S . -B build/examples -DBUILD_EXAMPLES=ON` | Every enabled example builds; examples don't force unrelated modules |
+| B05 | `cmake --install build/monitor --prefix /tmp/vex-install` | No source-tree path leakage; downstream `find_package(Vex CONFIG REQUIRED)` works |
+| B06 | configure each of static/shared and GCC/Clang on Linux, plus supported macOS/Windows where claimed | Headers, package config, symbol/link interface tested |
+| B07 | `cmake -S . -B build/test -DBUILD_TESTING=ON` then `ctest --test-dir build/test -N` | Real tests appear; no missing files or obsolete targets |
+
+## Correctness tests (add when fixing)
+| ID | Component | Cases |
+|---|---|---|
+| T01 | Logger queue | 32 concurrent producers / 1 consumer, same shard; unique IDs; verify exactly-once data on accepted records |
+| T02 | Logger saturation | Block, Reject, DropNewest, DropOldest policies; order and dropped counts; bounded wait |
+| T03 | Logger boundaries | 0 shards, 0/1 capacity, multiple instances with different shard counts; no UB |
+| T04 | Logger I/O | No permission, disk-full injection, cross-device rotation, restart/incomplete recovery; faithful acknowledgment |
+| T05 | ObjectPool | reuse/constructor throws, destructor counters, multiple types, shrink cap, pool destruction before object |
+| T06 | ObjectPool metrics | registry replacement, destroyed registry, registration failure, thread churn; bounded cardinality |
+| T07 | ThreadPool | 0 workers, worker startup fails, task throws, concurrent enqueue/shutdown, no lost accepted tasks |
+| T08 | Monitoring | register/reset/reregister, concurrent uptime/labels/registry, HealthCheck lifetime and moves |
+| T09 | Packaging | clean external consuming CMake project for each installed module, no repository source include |
+
+## Dynamic tools (independent binaries)
+- **ASan + UBSan:** `-fsanitize=address,undefined -fno-omit-frame-pointer -g -O1`. T05/T06/T08/T04; record exit code and stack trace on failure.
+- **TSan:** `-fsanitize=thread -fno-omit-frame-pointer -g -O1`. T01/T02/T07/T08; expect actual test assertions, not only “no TSan warnings”.
+- **Static:** clang-tidy and compiler warnings `-Wall -Wextra -Wpedantic` on all first-party targets; clang-format check without edits.
+- **Stress:** repeat ≥100 runs with seed recorded; random shutdown while producers run; check max resident memory, no hangs.
+
+## Performance after correctness gate
+| Benchmark | Metrics |
+|---|---|
+| Logger 1/8/32 producers; 1/4/16 shards; 64B/1KB payload | accepted/written/durable throughput; p50/p95/p99 enqueue latency; drop count; CPU, allocations |
+| ThreadPool 1/4/32 workers, small/heavy tasks | throughput, queue latency, shutdown latency and RSS |
+| ObjectPool 1/8/32 threads vs new/delete baseline | allocation/reuse count, p99 acquire/release latency, RSS, contention |
+| Monitoring 10/100/1000 metric series | registration/update/scrape cost, memory and series count |
+
+No numerical performance target is assumed; record environment and establish baseline before optimization.
