@@ -1,3 +1,17 @@
+## 2026-11-13 owner results: Lifetime 4096/4096; static analysis 5 findings
+
+Owner provided both redirected files. The 8×512 Registry lifetime
+benchmark completed all expiry checks, with 8/8 coherent RSS/HWM.
+RSS stayed at 4,940 KiB from rounds 2–8 while glibc `uordblks`
+rose by 16,112 B from round 1 to 8. Heap cause **not attributed**.
+LLVM 20.1.2 clang-tidy **FAIL: checked=5 failed=3 translation units,
+five diagnostics**. Five local contract-specific suppressions
+were committed, requiring fresh clang-tidy verification; a
+raw prometheus-cpp baseline mode was added for allocator attribution.
+Full evidence: [MONITORING_LIFETIME_STATIC_FINDINGS_2026-11-13.md](MONITORING_LIFETIME_STATIC_FINDINGS_2026-11-13.md).
+
+---
+
 ## 2026-11-13: Lifetime build successful; static tool available; redirected outputs needed
 
 Owner's checkout SHA `6df93958decb1ccc9f68176e0f817af2602e04b9` ran the 8×512 Registry lifetime tool;
@@ -31,8 +45,8 @@ without those files. See
 
 | Task | Priority | Scope | Acceptance/evidence |
 |---|---|---|---|
-| MON-OPEN-05 static-analysis follow-up | P2 | `clang-tidy` **20.1.2 discovered successfully**; analysis command invoked with stdout/stderr redirected. Log not yet provided. | Inspect `build/monitoring-static.log` for final `MONITORING_STATIC_PASS checked=5 failed=0` or findings; do not claim zero diagnostics before log review. No auto-fix/install. |
-| MON-OPEN-06 memory/retention follow-up | P2 | **GCC 13.3 Release Build PASS**, Lifetime executable invoked at owner checkout `6df9395`; stdout redirected, 9-line CSV expected but not shown. | Review 8-round CSV and per-round RSS/VmHWM/glibc heap trends; check 4096 expirations and quota/HELP assertions before calling Lifetime probe PASS. Do not claim leak freedom. |
+| MON-OPEN-05 static-analysis follow-up | P2 | **Owner run FAIL:** clang-tidy 20.1.2, 5 actionable errors across 3/5 files (2 swappable constructor arguments, 1 shared_ptr-by-value, 2 intentional cleanup catches). Five scoped NOLINTNEXTLINE explanations committed after log. | Rerun focused clang-tidy, require `MONITORING_STATIC_PASS checked=5 failed=0`. If warnings persist, fix only the relevant Monitoring contract; no blanket disable. |
+| MON-OPEN-06 memory/retention follow-up | P2 | **Owner-run lifetime PASS for 4096 expired Registry checks and 8/8 consistent HWM/RSS.** RSS plateau 4,940 KiB rounds 2–8, but glibc uordblks increased **88,672→104,784 B** (+16,112 B) from round 1 to 8; cause not attributed. Added optional isolated raw Prometheus comparison, not yet run. | Rerun 8×512 managed and raw in fresh processes, compare allocator trends; consider preinstalled heaptrack if growth persists. No leak-freedom assertion. |
 | MON-OPEN-06 historical registration noise | P2 / research | The old-vs-new 1000-series one-family +6.1% in three ordered repeats | Requires both revisions measured by the **same** warmed/rotated harness on one host to establish causality. Do not call it a confirmed regression. |
 | MON-OPEN-07 | Process | Final owner review, release/merge decision | Resolve reviews, freeze reviewed SHA, retain stacked base and require explicit approval for any merge or Ready-for-Review change. |
 

@@ -78,3 +78,21 @@ Monitoring** code, add a targeted regression and rerun affected
 acceptance modes. Research gaps not affecting correctness can remain
 explicit follow-ups. PR #3 remains **Draft/unmerged** until the
 owner authorizes MON-OPEN-07.
+
+## Actual owner evidence and follow-up (2026-11-13)
+
+The owner supplied `monitoring-lifetime.csv` (9 lines,
+4096 total expired checks, 8/8 consistent VmHWM; RSS flat
+from round 2 but glibc uordblks increasing each round)
+and `monitoring-static.log` (45 lines, 5 findings across 3 files,
+`checked=5 failed=3`). The previous “not yet run” text is
+superseded by this section. Five scoped NOLINT explanations
+were added for intentional public API/cleanup contracts and
+a raw direct prometheus-cpp Lifetime mode for controlled
+memory-trend comparison. **New changes unverified.** See
+[MONITORING_LIFETIME_STATIC_FINDINGS_2026-11-13.md](MONITORING_LIFETIME_STATIC_FINDINGS_2026-11-13.md).
+```sh
+./tools/verify_monitoring_static.sh > build/monitoring-static-after.log 2>&1
+./tools/benchmark_monitoring_lifetime.sh 8 512 managed > build/monitoring-lifetime-managed-new.csv
+./tools/benchmark_monitoring_lifetime.sh 8 512 raw > build/monitoring-lifetime-raw.csv
+```

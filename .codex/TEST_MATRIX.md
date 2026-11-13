@@ -1,3 +1,22 @@
+## 2026-11-13 owner lifetime/clang-tidy evidence — managed owner lifetime PASS, static FAIL
+
+Owner's exact prior SHA `6df93958decb1ccc9f68176e0f817af2602e04b9`.
+Lifetime **9 CSV lines**, counts 512…4096, owner expiry/quota
+checks completed. RSS flat 4940 KiB rounds 2–8, peak >= current
+RSS in all 8, but live glibc heap climbed **88672→104784 B**.
+Static analysis Ubuntu LLVM 20.1.2 **checked=5 failed=3**, five
+actionable warnings-as-errors: 2 constructor Counter parameter
+ambiguities, 1 HealthCheck by-value shared_ptr, 2 best-effort
+cleanup catches. Five narrowly justified comments were added
+after the owner run, and a raw Prometheus lifetime control
+was introduced. Neither has been reverified. All earlier
+Monitoring CTest/sanitizer/package matrix PASS results still
+refer to previous tested implementation.
+
+[Analysis and raw CSV](MONITORING_LIFETIME_STATIC_FINDINGS_2026-11-13.md).
+
+---
+
 ## New owner Lifetime and static commands: preliminary 2026-11-13
 
 Exact owner SHA `6df93958decb1ccc9f68176e0f817af2602e04b9` before documentation reporting.

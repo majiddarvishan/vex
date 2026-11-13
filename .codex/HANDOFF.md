@@ -1,37 +1,49 @@
-# Vex Monitoring handoff — Lifetime build PASS; redirected evidence pending
+# Vex Monitoring — latest lifetime and static-analysis findings (2026-11-14)
 
-**Branch:** `feature/monitoring-correctness-tests` · [PR #3](https://github.com/majiddarvishan/vex/pull/3)
-Draft/unmerged, stacked on `feature/cmake-ctest-foundation`.
+Branch `feature/monitoring-correctness-tests`; [Draft PR #3](https://github.com/majiddarvishan/vex/pull/3)
+stacked on Foundation. Do not merge or change Draft without explicit owner approval.
 
-**Owner checkout SHA on 2026-11-13:** `6df93958decb1ccc9f68176e0f817af2602e04b9`.
+## Latest owner data (checkout 6df93958)
 
-Latest:
-- `benchmark_monitoring_lifetime.sh 8 512` configured and **built
-  successfully** with GCC 13.3.0. Tool invocation returned to the
-  shell with no visible error. **Expected 9 CSV lines**; actual
-  values and full 4096 weak Registry expiry checks cannot be
-  independently confirmed until redirected CSV is read.
-- `verify_monitoring_static.sh check-tools` **PASS**, Ubuntu
-  LLVM/clang-tidy **20.1.2** available.
-- Full static analyzer was invoked with all output redirected to
-  `build/monitoring-static.log`; no log/exit code is in the pasted
-  output. Do not mark static analyzer PASS without its final
-  `MONITORING_STATIC_PASS checked=5 failed=0` marker.
+- Linux GCC 13.3 Lifetime: **9 CSV lines, 4096/4096 short-lived
+  Registry weak-owner expiration checks**, live owner quota remains
+  enforced, 8/8 VmRSS/VmHWM coherent.
+- RSS: 4808 KiB at round 1, **4940 KiB rounds 2–8**. glibc
+  live heap `uordblks` **88672→104784 B** (monotonic +16112 B).
+  **No leak or leak-free conclusion** without further attribution.
+- Clang-tidy Ubuntu LLVM 20.1.2: **FAIL, checked=5,
+  failed=3 translation units, 5 actionable diagnostics** in
+  decorators.cpp (2), health_check.cpp (1), raii_guards.cpp (2);
+  metrics.cpp/metrics_manager.cpp surfaced none.
+- Post-owner-run changes: add five **narrow NOLINTNEXTLINE**
+  documented exception contracts (no runtime or public signature
+  change), and an **optional raw prometheus-cpp Lifetime control**
+  to isolate wrapper overhead from general Registry/allocator churn.
+  **These edits have NOT passed new static analysis or a new build.**
 
-**Next minimal step (no rerun):**
+Latest evidence/raw CSV:
+[MONITORING_LIFETIME_STATIC_FINDINGS_2026-11-13.md](MONITORING_LIFETIME_STATIC_FINDINGS_2026-11-13.md);
+[managed lifetime CSV](benchmarks/2026-11-13-monitoring-lifetime-managed-8x512.csv).
+Current [task board](MONITORING_TASKS.md).
+
+Minimal follow-up:
 ```sh
-wc -l build/monitoring-lifetime.csv build/monitoring-static.log
-cat build/monitoring-lifetime.csv
-cat build/monitoring-static.log
+git pull --ff-only origin feature/monitoring-correctness-tests
+./tools/verify_monitoring_static.sh > build/monitoring-static-after.log 2>&1
+./tools/benchmark_monitoring_lifetime.sh 8 512 managed > build/monitoring-lifetime-managed-new.csv
+./tools/benchmark_monitoring_lifetime.sh 8 512 raw > build/monitoring-lifetime-raw.csv
+tail -n 30 build/monitoring-static-after.log
+cat build/monitoring-lifetime-managed-new.csv
+cat build/monitoring-lifetime-raw.csv
 ```
 
-Previous accepted gates unchanged: Monitoring baseline/threaded/
-ASan+UBSan/Clang TSan 10/10 each, 900/900 stress,
-foundation/package 13/13, GCC/Clang Static/Shared 11/11
-each with external consumer. 60/60 peak/current RSS consistency in
-prior Counter controls; hot shared-counter contention also reproduced
-directly with prometheus-cpp. No production regression indicated by
-those data, and no leak-free claim is supported.
+Earlier owner acceptance remains: Monitoring 10/10 ×4 modes,
+stress 900/900, foundation/package 13/13, and GCC/Clang
+static/shared 11/11 each including external consumers; 60
+Counter-control samples and consistent memory peaks. These
+prior suites were not rerun after the current comment/control tool edits.
 
-[New evidence note](MONITORING_LIFETIME_STATIC_PRELIM_2026-11-13.md);
-[current task board](MONITORING_TASKS.md). PR remains Draft/unmerged.
+MON-OPEN-05 full static analysis **still PENDING rerun**,
+MON-OPEN-06 lifetime weak ownership **verified** but heap trend
+attribution still OPEN; MON-OPEN-07 owner decision outstanding.
+No Logger/ObjectPool/ThreadPool runtime changes.
