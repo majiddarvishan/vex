@@ -1,3 +1,14 @@
+## Release version contract — v0.1.0 (2026-11-14)
+
+The installed package consumer now checks `vex::version_major/minor/patch`,
+`vex::version()`, and `vex::version_full()` against `0.1.0`.
+This regression was added in the release version commit; it is **NOT RUN**
+in the GitHub-only editing session. Run the normal package-consumer CTest
+after checkout/build. See `.codex/VERSIONING.md` for the required release
+procedure.
+
+---
+
 ## MON-OPEN-07 focused final technical review — 2026-11-14
 
 | Review facet | Result |

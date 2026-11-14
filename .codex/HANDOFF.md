@@ -1,3 +1,17 @@
+# VEX current handoff — v0.1.0 version update on main (2026-11-14)
+
+**Current target:** `main`; the Audit → CMake/CTest Foundation → Monitoring chain is integrated through merged PRs #1–#4. Default branch HEAD before this release update was `d31d11235de8f42a16c9a05e454b45146693264b`.
+
+**Release version:** `0.1.0`. The version update synchronizes `CMakeLists.txt`, `include/vex/version.hpp`, the root README, CHANGELOG, and installed-package consumer version assertions. `cmake/version.hpp.in` remains parameterized from CMake's project version. The test assertion was added but the local CMake/build/CTest suite was **NOT RUN** in this GitHub-only session; do not claim a new test pass.
+
+**Tag:** preserve all existing tags. A new annotated `v0.1.0` tag must point to the final release commit. The connected GitHub actions available in this session do not expose tag-object/ref creation, so if no later tag is verified, the owner must create and push the annotated tag locally using the exact SHA reported after the version commit. Do not create a branch as a substitute for a tag.
+
+**Standing rule:** follow `.codex/VERSIONING.md` and DEC-2026-11-14-04 for all future version changes. Never overwrite an existing tag. User can resume with «ادامه VEX»; inspect the real main HEAD and tag target first.
+
+---
+
+# Historical handoffs (older statuses below are snapshots and are superseded by the current status above)
+
 # VEX current handoff — 2026-11-14 MONITORING REVIEW COMPLETE
 
 **Technical status:** `MON-OPEN-01..06` scoped PASS/CLOSED; `MON-OPEN-07` technical final review/documentation COMPLETE. Focused source audit found no new demonstrated Monitoring Runtime blocker; no Runtime changes after last owner suite acceptance. Owner-run evidence: 10/10×4 baseline/threaded/ASan+UBSan/Clang TSan, stress 900/900, foundation+consumer 13/13, four compiler/linkage portability modes 11/11 each, targeted clang-tidy 5/5, 300s Managed+Raw soak PASS (599999/599999 weak-owner expirations each, 2374 Managed quota checks, flat post-warmup same-phase RSS/heap). **No general leak-free/production certification implied**. Reports: `.codex/MONITORING_FINAL_REVIEW_2026-11-14.md` and `.codex/MONITORING_MEMORY_SOAK_2026-11-14.md`.

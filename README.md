@@ -1,5 +1,7 @@
 # Vex — C++17 utility modules
 
+**Current release: `v0.1.0`.** See [CHANGELOG.md](CHANGELOG.md) for the release scope and [.codex/VERSIONING.md](.codex/VERSIONING.md) for the versioning policy.
+
 Vex is an evolving modular C++17 library. **Source-level correctness and
 concurrency issues are still under review.** See [the audit](.codex/AUDIT.md)
 and [owner-approved priorities](.codex/DECISIONS.md) before production use.

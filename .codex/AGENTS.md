@@ -1,6 +1,11 @@
-# Current Monitoring scope and acceptance
+# Current VEX scope and release status (2026-11-14)
 
-Owner approved completing Monitoring only. All non-Monitoring behavioral fixes remain frozen. **Latest owner evidence already passed** Monitoring CTest 10/10 in four modes, stress 900/900, full foundation/package 13/13, portability GCC/Clang Static/Shared 11/11 each, focused static analysis 5/5, and Managed/Raw 300s soak (scope-limited). See `MONITORING_FINAL_REVIEW_2026-11-14.md` and the final memory-soak report. Technical review handoff is prepared; **PR #3 remains Draft/unmerged**, stacked on PR #2, and ONLY explicit owner approval can authorize Ready/merge/base changes. New commits with runtime changes require fresh relevant tests; docs-only follow-ups do not retroactively rerun tests.
+The Audit, CMake/CTest Foundation, and Monitoring work is integrated into `main` through merged PRs #1–#4. MON-OPEN-01..07 are complete within their documented evidence. Monitoring owner-run results are historical local evidence, not GitHub Actions CI and not proof of universal leak/race freedom.
+
+Current release version: **v0.1.0**. All future version changes must follow `.codex/VERSIONING.md`: update canonical version sources, changelog and package-consumer version assertions; commit to the owner-selected branch; create an annotated `vX.Y.Z` tag on the exact release commit; never overwrite an existing tag.
+
+Logger, ObjectPool, and ThreadPool runtime remediation remains deferred pending explicit owner authorization. For any new runtime work, add regression coverage and run the relevant validation before claiming completion.
+
 
 Single-command acceptance:
 `./tools/verify_monitoring.sh all`
@@ -13,15 +18,15 @@ It fails fast. Historic Clang TSan PASS belonged to older commits.
 
 # Instructions for coding agents
 
-## Binding owner priority (2026-11-10)
-The foundation CMake/CTest baseline was verified by the owner (thread 2/2, full 4/4) on 2026-11-10. Monitoring reliability, lifecycle and tests are now authorized and active. Logger, ObjectPool behavior, ThreadPool behavior, and other implementation improvements remain frozen until explicit owner direction.
+## Binding owner priority (2026-11-14)
+The Foundation and Monitoring work is complete and merged to `main`. Logger, ObjectPool behavior, ThreadPool behavior, and other runtime implementation improvements remain frozen until explicit owner direction.
 
 
 ## Ground rules
 1. Start by comparing current HEAD to audit baseline `71e74d221f182f0567f43531f7f933104cb58c68`. Do not treat these reports as immutable truth.
 2. Separate confirmed source defects, potential bugs pending reproduction, and recommendations. Report file:line references with any code review.
 3. Prefer small, reversible commits scoped to one issue ID. Preserve public APIs unless the change explicitly justifies a breaking version.
-4. Do not change service configuration, install globally, overwrite system files, publish releases, expose credentials, or merge without authorization. Use out-of-tree builds.
+4. Do not change service configuration, install globally, overwrite system files, publish releases, expose credentials, or merge without authorization. Follow `.codex/VERSIONING.md` for explicitly authorized release/version work. Use out-of-tree builds.
 5. Add an automated regression before fixing a correctness or threading bug; test negative/error paths and ownership lifecycle.
 6. Evaluate concurrency under real simultaneous producers/consumers, not only sequential demonstrations. Prefer minimal examples in isolated test binaries; repeat with TSan and ASan separately (do not combine TSan and ASan in the same binary).
 7. Keep Prometheus metrics bounded in label cardinality. Do not use unbounded raw thread IDs as durable labels.
